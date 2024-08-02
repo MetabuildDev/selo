@@ -5,55 +5,53 @@ use bevy::{
 };
 use bevy_mod_picking::prelude::*;
 
-use crate::{point::Point, state::AppState};
+use crate::{
+    line::{AttachedLines, Line, UnfinishedLine},
+    point::Point,
+    state::AppState,
+};
 
-pub struct LinePlugin;
+pub struct TrianglePlugin;
 
-impl Plugin for LinePlugin {
+impl Plugin for TrianglePlugin {
     fn build(&self, app: &mut App) {
-        app.register_type::<UnfinishedLine>()
-            .register_type::<Line>()
-            .register_type::<AttachedLines>()
+        app.register_type::<Triangle>()
             .add_systems(
                 Update,
                 (
                     start_line.run_if(not(any_with_component::<UnfinishedLine>)),
                     finish_line.run_if(any_with_component::<UnfinishedLine>),
+                    finish_triangle,
                 )
-                    .run_if(in_state(AppState::Line)),
+                    .run_if(in_state(AppState::Triangle)),
             )
-            .add_systems(Update, render_lines);
+            .add_systems(Update, render_triangles);
     }
 }
 
-#[derive(Debug, Clone, Component, Default, Reflect)]
-pub struct UnfinishedLine;
-
 #[derive(Debug, Clone, Component, Reflect)]
-pub struct Line {
-    pub start: Entity,
-    pub end: Entity,
+pub struct Triangle {
+    a: Entity,
+    b: Entity,
+    c: Entity,
 }
 
 #[derive(SystemParam)]
-pub struct LineParams<'w, 's> {
-    lines: Query<'w, 's, &'static Line>,
+pub struct TriangleParams<'w, 's> {
+    triangles: Query<'w, 's, &'static Triangle>,
     points: Query<'w, 's, &'static GlobalTransform, With<Point>>,
 }
 
-impl LineParams<'_, '_> {
-    pub fn iter_lines(&self) -> impl Iterator<Item = [Vec2; 2]> + '_ {
-        self.lines.iter().filter_map(|line| {
+impl TriangleParams<'_, '_> {
+    pub fn iter_triangles(&self) -> impl Iterator<Item = [Vec2; 3]> + '_ {
+        self.triangles.iter().filter_map(|triangle| {
             self.points
-                .get_many([line.start, line.end])
+                .get_many([triangle.a, triangle.b, triangle.c])
                 .map(|poss| poss.map(|pos| pos.translation().truncate()))
                 .ok()
         })
     }
 }
-
-#[derive(Debug, Clone, Component, Default, Reflect, Deref, DerefMut)]
-pub struct AttachedLines(pub EntityHashSet);
 
 fn start_line(
     mut cmds: Commands,
@@ -94,15 +92,53 @@ fn finish_line(
     }
 }
 
-fn render_lines(mut gizmos: Gizmos, lines: LineParams) {
-    let color = palettes::basic::GREEN;
-    lines.iter_lines().for_each(|[start, end]| {
-        let difference = end - start;
-        gizmos.line_2d(start, end, color);
-        gizmos.arrow_2d(
-            end - (difference.normalize() * 150.0).clamp_length_max(difference.length()),
-            end,
-            color,
+fn finish_triangle(
+    mut cmds: Commands,
+    lines: Query<&Line>,
+    mut id: Local<usize>,
+    triangles: Query<&Triangle>,
+) {
+    if let Some([a, b, c]) = lines
+        .iter()
+        .enumerate()
+        .flat_map(|(n, line_a)| {
+            lines
+                .iter()
+                .enumerate()
+                .skip(n)
+                .map(move |(m, line_b)| (m, line_a, line_b))
+        })
+        .flat_map(|(m, line_a, line_b)| {
+            lines
+                .iter()
+                .skip(m)
+                .map(move |line_c| (line_a, line_b, line_c))
+        })
+        .filter_map(|(a, b, c)| {
+            (a.end == b.start && b.end == c.start && c.end == a.start)
+                .then_some([a.start, b.start, c.start])
+        })
+        .find(|[a, b, c]| {
+            !triangles
+                .iter()
+                .any(|triangle| triangle.a == *a && triangle.b == *b && triangle.c == *c)
+        })
+    {
+        *id += 1;
+        cmds.spawn((
+            Name::new(format!("Triangle {n}", n = *id)),
+            Triangle { a, b, c },
+        ));
+    }
+}
+
+fn render_triangles(mut gizmos: Gizmos, triangles: TriangleParams) {
+    triangles.iter_triangles().for_each(|[a, b, c]| {
+        gizmos.primitive_2d(
+            &Triangle2d::new(a, b, c),
+            Vec2::ZERO,
+            0.0,
+            palettes::basic::TEAL,
         );
     })
 }

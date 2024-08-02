@@ -17,8 +17,18 @@ impl Plugin for PointPlugin {
                 (spawn_point.run_if(input_just_pressed(MouseButton::Right)),)
                     .run_if(in_state(AppState::Point)),
             )
-            .add_systems(OnEnter(AppState::Play), insert_drag_observers)
-            .add_systems(OnExit(AppState::Play), remove_drag_observers);
+            .add_systems(
+                OnEnter(AppState::Play),
+                (insert_drag_observers, insert_pickability),
+            )
+            .add_systems(
+                OnExit(AppState::Play),
+                (remove_drag_observers, remove_pickability),
+            )
+            .add_systems(OnEnter(AppState::Line), insert_pickability)
+            .add_systems(OnExit(AppState::Line), remove_pickability)
+            .add_systems(OnEnter(AppState::Triangle), insert_pickability)
+            .add_systems(OnExit(AppState::Triangle), remove_pickability);
     }
 }
 
@@ -49,7 +59,6 @@ fn spawn_point(
             transform: Transform::from_translation(position.extend(0.0)),
             ..Default::default()
         },
-        PickableBundle::default(),
     ));
 }
 
@@ -67,5 +76,17 @@ fn insert_drag_observers(mut cmds: Commands, points: Query<Entity, With<Point>>)
 fn remove_drag_observers(mut cmds: Commands, points: Query<Entity, With<Point>>) {
     points.iter().for_each(|point| {
         cmds.entity(point).remove::<On<Pointer<Drag>>>();
+    });
+}
+
+fn insert_pickability(mut cmds: Commands, points: Query<Entity, With<Point>>) {
+    points.iter().for_each(|point| {
+        cmds.entity(point).insert(PickableBundle::default());
+    });
+}
+
+fn remove_pickability(mut cmds: Commands, points: Query<Entity, With<Point>>) {
+    points.iter().for_each(|point| {
+        cmds.entity(point).remove::<PickableBundle>();
     });
 }

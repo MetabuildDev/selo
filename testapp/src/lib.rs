@@ -4,6 +4,7 @@ mod line;
 mod point;
 mod pointer;
 mod state;
+mod triangle;
 
 use bevy::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
@@ -23,6 +24,7 @@ pub fn run() {
         camera::CameraPlugin,
         point::PointPlugin,
         line::LinePlugin,
+        triangle::TrianglePlugin,
         algos::AlgoPlugin,
     ));
 
