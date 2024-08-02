@@ -1,6 +1,6 @@
 use bevy::{color::palettes, prelude::*};
 
-use crate::{line::LineParams, state::AlgoState};
+use crate::{line::LineParams, state::AlgorithmState};
 
 pub struct LineIntersectionPlugin;
 
@@ -8,7 +8,7 @@ impl Plugin for LineIntersectionPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            render_intersection_points.run_if(in_state(AlgoState::LineIntersection)),
+            render_intersection_points.run_if(in_state(AlgorithmState::LineIntersection)),
         );
     }
 }

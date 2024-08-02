@@ -3,6 +3,7 @@ mod camera;
 mod line;
 mod point;
 mod pointer;
+mod polygon;
 mod state;
 mod triangle;
 
@@ -25,6 +26,7 @@ pub fn run() {
         point::PointPlugin,
         line::LinePlugin,
         triangle::TrianglePlugin,
+        polygon::PolygonPlugin,
         algos::AlgoPlugin,
     ));
 

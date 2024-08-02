@@ -15,34 +15,38 @@ pub struct StatePlugin;
 impl Plugin for StatePlugin {
     fn build(&self, app: &mut App) {
         app.init_state::<AppState>()
-            .add_sub_state::<AlgoState>()
+            .add_sub_state::<AlgorithmState>()
             .register_type::<AppState>()
-            .register_type::<AlgoState>()
+            .register_type::<AlgorithmState>()
             .register_type::<PreviousState>()
             .init_resource::<PreviousState>()
             .add_systems(
                 Update,
-                (main_state_ui, sub_state_ui.run_if(in_state(AppState::Play))),
+                (
+                    state_ui::<AppState>,
+                    state_ui::<AlgorithmState>.run_if(in_state(AppState::Algorithms)),
+                ),
             )
             .add_systems(
                 Update,
                 (
-                    change_state(AppState::Point).run_if(input_just_pressed(KeyCode::KeyP)),
+                    change_state(AppState::Point).run_if(input_just_pressed(KeyCode::KeyC)),
                     change_state(AppState::Line).run_if(input_just_pressed(KeyCode::KeyL)),
                     change_state(AppState::Triangle).run_if(input_just_pressed(KeyCode::KeyT)),
-                    change_state(AppState::Play).run_if(input_just_pressed(KeyCode::Escape)),
+                    change_state(AppState::Polygon).run_if(input_just_pressed(KeyCode::KeyP)),
+                    change_state(AppState::Algorithms).run_if(input_just_pressed(KeyCode::Escape)),
                     use_prev_state.run_if(input_just_released(KeyCode::Space)),
                     change_state(AppState::Move).run_if(input_just_pressed(KeyCode::Space)),
                 ),
             )
             .add_systems(
                 Update,
-                unselect_on_state_change.run_if(state_changed::<AppState>),
+                unselect_everything.run_if(state_changed::<AppState>),
             )
             .add_systems(
                 Update,
                 next_algo_on_scroll
-                    .run_if(state_exists::<AlgoState>.and_then(on_event::<MouseWheel>())),
+                    .run_if(state_exists::<AlgorithmState>.and_then(on_event::<MouseWheel>())),
             );
     }
 }
@@ -53,20 +57,21 @@ pub struct PreviousState(AppState);
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, States, Reflect)]
 pub enum AppState {
     #[default]
-    Play,
+    Algorithms,
     Point,
     Line,
     Triangle,
+    Polygon,
     Move,
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, SubStates, Reflect, EnumIter)]
-#[source(AppState = AppState::Play)]
-pub enum AlgoState {
+#[source(AppState = AppState::Algorithms)]
+pub enum AlgorithmState {
     #[default]
     None,
     LineIntersection,
-    Test,
+    PolygonTriangulate,
 }
 
 fn change_state(
@@ -78,23 +83,21 @@ fn change_state(
     }
 }
 
-fn main_state_ui(world: &mut World) {
+fn state_ui<S: bevy::state::state::FreelyMutableState + bevy::prelude::Reflect>(world: &mut World) {
     let mut q = world.query::<&mut EguiContext>();
     let ctx = q.single_mut(world).get_mut().clone();
-    egui::Window::new("State").show(&ctx, |ui| {
-        ui_for_state::<AppState>(world, ui);
+    egui::Window::new(
+        std::any::type_name::<S>()
+            .split("::")
+            .last()
+            .unwrap_or_default(),
+    )
+    .show(&ctx, |ui| {
+        ui_for_state::<S>(world, ui);
     });
 }
 
-fn sub_state_ui(world: &mut World) {
-    let mut q = world.query::<&mut EguiContext>();
-    let ctx = q.single_mut(world).get_mut().clone();
-    egui::SidePanel::left("AlgoState").show(&ctx, |ui| {
-        ui_for_state::<AlgoState>(world, ui);
-    });
-}
-
-fn unselect_on_state_change(mut selected: Query<&mut PickSelection>) {
+pub fn unselect_everything(mut selected: Query<&mut PickSelection>) {
     selected.iter_mut().for_each(|mut selection| {
         selection.is_selected = false;
     });
@@ -106,15 +109,15 @@ fn use_prev_state(prev: Res<PreviousState>, mut next: ResMut<NextState<AppState>
 
 fn next_algo_on_scroll(
     mut ev_scroll: EventReader<MouseWheel>,
-    mut next: ResMut<NextState<AlgoState>>,
-    current: Res<State<AlgoState>>,
+    mut next: ResMut<NextState<AlgorithmState>>,
+    current: Res<State<AlgorithmState>>,
 ) {
     let total = ev_scroll.read().map(|ev| ev.y).sum::<f32>();
     let current = current.get();
     match total.partial_cmp(&0.0) {
         Some(std::cmp::Ordering::Less) => {
             next.set(
-                AlgoState::iter()
+                AlgorithmState::iter()
                     .cycle()
                     .skip_while(|x| x != current)
                     .nth(1)
@@ -123,7 +126,7 @@ fn next_algo_on_scroll(
         }
         Some(std::cmp::Ordering::Greater) => {
             next.set(
-                AlgoState::iter()
+                AlgorithmState::iter()
                     .rev()
                     .cycle()
                     .skip_while(|x| x != current)

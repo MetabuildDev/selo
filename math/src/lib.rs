@@ -42,3 +42,21 @@ pub fn intersect_line_2d_point(
         LineIntersection::Collinear { intersection: _ } => None,
     })
 }
+
+pub fn triangulate_glam(polygon: impl IntoIterator<Item = Vec2>) -> Vec<[Vec2; 3]> {
+    let geo_polygon = Polygon::<f32>::new(
+        LineString::<f32>::new(polygon.into_iter().map(vec2_to_coord).collect::<Vec<_>>()),
+        vec![],
+    );
+
+    let triangles = geo_polygon
+        .constrained_triangulation(triangulate_spade::SpadeTriangulationConfig {
+            snap_radius: 0.001,
+        })
+        .unwrap();
+
+    triangles
+        .into_iter()
+        .map(|tri| [tri.0, tri.1, tri.2].map(coord_to_vec2))
+        .collect::<Vec<_>>()
+}

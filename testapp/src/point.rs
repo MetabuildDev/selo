@@ -14,21 +14,28 @@ impl Plugin for PointPlugin {
         app.register_type::<Point>()
             .add_systems(
                 Update,
-                (spawn_point.run_if(input_just_pressed(MouseButton::Right)),)
-                    .run_if(in_state(AppState::Point)),
+                (
+                    spawn_point.run_if(in_state(AppState::Point)),
+                    (crate::state::unselect_everything, spawn_picked_point)
+                        .chain()
+                        .run_if(in_state(AppState::Line)),
+                )
+                    .run_if(input_just_pressed(MouseButton::Right)),
             )
             .add_systems(
-                OnEnter(AppState::Play),
+                OnEnter(AppState::Algorithms),
                 (insert_drag_observers, insert_pickability),
             )
             .add_systems(
-                OnExit(AppState::Play),
+                OnExit(AppState::Algorithms),
                 (remove_drag_observers, remove_pickability),
             )
             .add_systems(OnEnter(AppState::Line), insert_pickability)
             .add_systems(OnExit(AppState::Line), remove_pickability)
             .add_systems(OnEnter(AppState::Triangle), insert_pickability)
-            .add_systems(OnExit(AppState::Triangle), remove_pickability);
+            .add_systems(OnExit(AppState::Triangle), remove_pickability)
+            .add_systems(OnEnter(AppState::Polygon), insert_pickability)
+            .add_systems(OnExit(AppState::Polygon), remove_pickability);
     }
 }
 
@@ -57,6 +64,37 @@ fn spawn_point(
             mesh,
             material,
             transform: Transform::from_translation(position.extend(0.0)),
+            ..Default::default()
+        },
+    ));
+}
+
+fn spawn_picked_point(
+    mut cmds: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    pointer: PointerParams,
+    mut id: Local<usize>,
+) {
+    *id += 1;
+
+    let name = Name::new(format!("Point {n}", n = *id));
+    let position = pointer.world_position().unwrap_or_default();
+
+    let mesh = meshes.add(Circle::new(10.0)).into();
+    let material = materials.add(ColorMaterial::from(Color::from(palettes::basic::WHITE)));
+
+    cmds.spawn((
+        Point,
+        name,
+        MaterialMesh2dBundle {
+            mesh,
+            material,
+            transform: Transform::from_translation(position.extend(0.0)),
+            ..Default::default()
+        },
+        PickableBundle {
+            selection: PickSelection { is_selected: true },
             ..Default::default()
         },
     ));

@@ -22,14 +22,14 @@ impl Plugin for LinePlugin {
                 )
                     .run_if(in_state(AppState::Line)),
             )
-            .add_systems(Update, render_lines);
+            .add_systems(Update, (render_lines,));
     }
 }
 
 #[derive(Debug, Clone, Component, Default, Reflect)]
 pub struct UnfinishedLine;
 
-#[derive(Debug, Clone, Component, Reflect)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Component, Reflect)]
 pub struct Line {
     pub start: Entity,
     pub end: Entity,
@@ -52,10 +52,13 @@ impl LineParams<'_, '_> {
     }
 }
 
-#[derive(Debug, Clone, Component, Default, Reflect, Deref, DerefMut)]
-pub struct AttachedLines(pub EntityHashSet);
+#[derive(Debug, Clone, Component, Default, Reflect)]
+pub struct AttachedLines {
+    pub incomming: EntityHashSet,
+    pub outgoing: EntityHashSet,
+}
 
-fn start_line(
+pub fn start_line(
     mut cmds: Commands,
     points: Query<(Entity, &PickSelection), (With<Point>, Without<UnfinishedLine>)>,
 ) {
@@ -64,23 +67,36 @@ fn start_line(
     }
 }
 
-fn finish_line(
+pub fn finish_line(
     mut cmds: Commands,
     mut points: Query<(Entity, &mut PickSelection), (With<Point>, Without<UnfinishedLine>)>,
     unfinished: Query<Entity, With<UnfinishedLine>>,
     mut attached_lines: Query<&mut AttachedLines>,
     mut id: Local<usize>,
 ) {
-    let mut add_or_attach_line = |cmds: &mut Commands, point: Entity, line: Entity| {
-        if let Ok(mut lines) = attached_lines.get_mut(point) {
-            lines.insert(line);
-        } else {
-            cmds.entity(point)
-                .insert(AttachedLines(EntityHashSet::from_iter(std::iter::once(
-                    point,
-                ))));
-        }
-    };
+    let mut add_or_attach_line =
+        |cmds: &mut Commands, point: Entity, line: Entity, is_start: bool| {
+            if let Ok(mut lines) = attached_lines.get_mut(point) {
+                if is_start {
+                    lines.outgoing.insert(line);
+                } else {
+                    lines.incomming.insert(line);
+                }
+            } else {
+                let attached_lines = if is_start {
+                    AttachedLines {
+                        outgoing: EntityHashSet::from_iter(std::iter::once(point)),
+                        incomming: Default::default(),
+                    }
+                } else {
+                    AttachedLines {
+                        incomming: EntityHashSet::from_iter(std::iter::once(point)),
+                        outgoing: Default::default(),
+                    }
+                };
+                cmds.entity(point).insert(attached_lines);
+            }
+        };
     if let Some((end, mut selection)) = points.iter_mut().filter(|(_, p)| p.is_selected).next() {
         *id += 1;
         selection.is_selected = false;
@@ -89,8 +105,8 @@ fn finish_line(
         let line = cmds
             .spawn((Name::new(format!("Line {n}", n = *id)), Line { start, end }))
             .id();
-        add_or_attach_line(&mut cmds, start, line);
-        add_or_attach_line(&mut cmds, end, line);
+        add_or_attach_line(&mut cmds, start, line, true);
+        add_or_attach_line(&mut cmds, end, line, false);
     }
 }
 
