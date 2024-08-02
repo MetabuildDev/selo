@@ -1,0 +1,15 @@
+[workspace]
+resolver = "2"
+member = [ ]
+members = ["math", "testapp"]
+
+[workspace.dependencies]
+geo = "0.28"
+glam = "0.27"
+
+bevy = "0.14"
+bevy-inspector-egui = "0.25"
+bevy_egui = "0.28"
+bevy_mod_picking = "0.20"
+
+math = { path = "math" }

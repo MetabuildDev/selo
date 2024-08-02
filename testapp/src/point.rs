@@ -1,0 +1,71 @@
+use bevy::{
+    color::palettes, input::common_conditions::input_just_pressed, prelude::*,
+    sprite::MaterialMesh2dBundle,
+};
+use bevy_mod_picking::prelude::*;
+use math::Mirror2D;
+
+use crate::{pointer::PointerParams, state::AppState};
+
+pub struct PointPlugin;
+
+impl Plugin for PointPlugin {
+    fn build(&self, app: &mut App) {
+        app.register_type::<Point>()
+            .add_systems(
+                Update,
+                (spawn_point.run_if(input_just_pressed(MouseButton::Right)),)
+                    .run_if(in_state(AppState::Point)),
+            )
+            .add_systems(OnEnter(AppState::Play), insert_drag_observers)
+            .add_systems(OnExit(AppState::Play), remove_drag_observers);
+    }
+}
+
+#[derive(Debug, Clone, Component, Default, Reflect)]
+pub struct Point;
+
+fn spawn_point(
+    mut cmds: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    pointer: PointerParams,
+    mut id: Local<usize>,
+) {
+    *id += 1;
+
+    let name = Name::new(format!("Point {n}", n = *id));
+    let position = pointer.world_position().unwrap_or_default();
+
+    let mesh = meshes.add(Circle::new(10.0)).into();
+    let material = materials.add(ColorMaterial::from(Color::from(palettes::basic::WHITE)));
+
+    cmds.spawn((
+        Point,
+        name,
+        MaterialMesh2dBundle {
+            mesh,
+            material,
+            transform: Transform::from_translation(position.extend(0.0)),
+            ..Default::default()
+        },
+        PickableBundle::default(),
+    ));
+}
+
+fn insert_drag_observers(mut cmds: Commands, points: Query<Entity, With<Point>>) {
+    points.iter().for_each(|point| {
+        cmds.entity(point)
+            .insert(On::<Pointer<Drag>>::target_component_mut::<Transform>(
+                |drag, transform| {
+                    transform.translation += drag.delta.mirror_y().extend(0.0);
+                },
+            ));
+    });
+}
+
+fn remove_drag_observers(mut cmds: Commands, points: Query<Entity, With<Point>>) {
+    points.iter().for_each(|point| {
+        cmds.entity(point).remove::<On<Pointer<Drag>>>();
+    });
+}
