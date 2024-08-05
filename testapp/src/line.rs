@@ -74,11 +74,11 @@ pub struct LineParams<'w, 's, F: QueryFilter + 'static = ()> {
 }
 
 impl<F: QueryFilter + 'static> LineParams<'_, '_, F> {
-    pub fn iter_lines(&self) -> impl Iterator<Item = [Vec2; 2]> + '_ {
+    pub fn iter_lines(&self) -> impl Iterator<Item = [Vec3; 2]> + '_ {
         self.lines.iter().filter_map(|line| {
             self.points
                 .get_many([line.start, line.end])
-                .map(|poss| poss.map(|pos| pos.translation().truncate()))
+                .map(|poss| poss.map(|pos| pos.translation()))
                 .ok()
         })
     }
@@ -169,12 +169,12 @@ pub fn render_drawing_line(
     pointer: PointerParams,
     points: Query<&GlobalTransform, (With<Point>, With<UnfinishedLine>)>,
 ) {
-    let pointer_pos = pointer.world_position().unwrap_or_default();
+    let pointer_pos = pointer.world_position_3d().unwrap_or_default();
     points
         .iter()
-        .map(|transform| transform.translation().truncate())
+        .map(|transform| transform.translation())
         .for_each(|start| {
-            gizmos.line_2d(start, pointer_pos, palettes::basic::GREEN);
+            gizmos.line(start, pointer_pos, palettes::basic::GREEN);
         });
 }
 
@@ -182,8 +182,8 @@ fn render_lines(mut gizmos: Gizmos, lines: LineParams<With<JustLine>>) {
     let color = palettes::basic::GREEN;
     lines.iter_lines().for_each(|[start, end]| {
         let difference = end - start;
-        gizmos.line_2d(start, end, color);
-        gizmos.arrow_2d(
+        gizmos.line(start, end, color);
+        gizmos.arrow(
             end - (difference.normalize() * 150.0).clamp_length_max(difference.length()),
             end,
             color,

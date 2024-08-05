@@ -28,7 +28,26 @@ struct PointerMoveStart {
 }
 
 fn setup_cameras(mut cmds: Commands) {
-    cmds.spawn((MainCamera, Camera2dBundle::default()));
+    cmds.spawn((
+        Name::new("Camera 3D"),
+        MainCamera,
+        Camera3dBundle {
+            transform: Transform::from_translation(Vec3::Z * 10.0).looking_at(Vec3::ZERO, Vec3::Z),
+            ..Default::default()
+        },
+    ));
+
+    cmds.spawn((
+        Name::new("Spotlight"),
+        SpotLightBundle {
+            transform: Transform::from_translation(Vec3::Z * 10.0).looking_at(Vec3::ZERO, Vec3::Z),
+            spot_light: SpotLight {
+                intensity: 5_000_000.0,
+                ..Default::default()
+            },
+            ..Default::default()
+        },
+    ));
 }
 
 fn start_camera_move(

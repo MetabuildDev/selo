@@ -17,6 +17,13 @@ impl Plugin for PolygonTriangulationPlugin {
 fn render_triangulation(mut gizmos: Gizmos, polygons: PolygonParams) {
     polygons
         .iter_polygons()
+        // don't do that anymore and instead rotate to plane
+        .map(|polygon| {
+            polygon
+                .into_iter()
+                .map(|p| p.truncate())
+                .collect::<Vec<_>>()
+        })
         .flat_map(|polygon| triangulate_glam(polygon))
         .for_each(|[a, b, c]| {
             gizmos.primitive_2d(

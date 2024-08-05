@@ -16,10 +16,14 @@ impl Plugin for LineIntersectionPlugin {
 fn render_intersection_points(mut gizmos: Gizmos, lines: LineParams) {
     lines
         .iter_lines()
+        // don't do that anymore and instead rotate to plane
+        .map(|line| line.map(|p| p.truncate()))
         .enumerate()
         .flat_map(|(i, line_a)| {
             lines
                 .iter_lines()
+                // don't do that anymore and instead rotate to plane
+                .map(|line| line.map(|p| p.truncate()))
                 .skip(i + 1)
                 .map(move |line_b| (line_a, line_b))
         })

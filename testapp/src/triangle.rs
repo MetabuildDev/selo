@@ -87,11 +87,11 @@ pub struct TriangleParams<'w, 's> {
 }
 
 impl TriangleParams<'_, '_> {
-    pub fn iter_triangles(&self) -> impl Iterator<Item = [Vec2; 3]> + '_ {
+    pub fn iter_triangles(&self) -> impl Iterator<Item = [Vec3; 3]> + '_ {
         self.triangles.iter().filter_map(|triangle| {
             self.points
                 .get_many([triangle.a, triangle.b, triangle.c])
-                .map(|poss| poss.map(|pos| pos.translation().truncate()))
+                .map(|poss| poss.map(|pos| pos.translation()))
                 .ok()
         })
     }
@@ -146,9 +146,9 @@ fn render_triangle_construction(
     mid: Query<&GlobalTransform, With<TriangleMid>>,
     pointer: PointerParams,
 ) {
-    let pointer_pos = pointer.world_position().unwrap_or_default();
-    let start = start.single().translation().truncate();
-    let mid = mid.get_single().map(|p| p.translation().truncate());
+    let pointer_pos = pointer.world_position_3d().unwrap_or_default();
+    let start = start.single().translation();
+    let mid = mid.get_single().map(|p| p.translation());
 
     [(start, pointer_pos)]
         .into_iter()
@@ -158,16 +158,16 @@ fn render_triangle_construction(
                 .flatten(),
         )
         .for_each(|(a, b)| {
-            gizmos.line_2d(a, b, palettes::basic::TEAL);
+            gizmos.line(a, b, palettes::basic::TEAL);
         });
 }
 
 fn render_triangles(mut gizmos: Gizmos, triangles: TriangleParams) {
     triangles.iter_triangles().for_each(|[a, b, c]| {
-        gizmos.primitive_2d(
-            &Triangle2d::new(a, b, c),
-            Vec2::ZERO,
-            0.0,
+        gizmos.primitive_3d(
+            &Triangle3d::new(a, b, c),
+            Vec3::ZERO,
+            Quat::default(),
             palettes::basic::TEAL,
         );
     })

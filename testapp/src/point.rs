@@ -1,7 +1,4 @@
-use bevy::{
-    color::palettes, input::common_conditions::input_just_pressed, prelude::*,
-    sprite::MaterialMesh2dBundle,
-};
+use bevy::{color::palettes, input::common_conditions::input_just_pressed, prelude::*};
 use bevy_mod_picking::prelude::*;
 use math::Mirror2D;
 
@@ -43,25 +40,27 @@ pub struct JustPoint;
 pub fn spawn_point(
     mut cmds: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
     pointer: PointerParams,
     mut id: Local<usize>,
 ) -> Entity {
     *id += 1;
 
     let name = Name::new(format!("Point {n}", n = *id));
-    let position = pointer.world_position().unwrap_or_default();
+    let position = pointer.world_position_3d().unwrap_or_default();
 
-    let mesh = meshes.add(Circle::new(10.0)).into();
-    let material = materials.add(ColorMaterial::from(Color::from(palettes::basic::WHITE)));
+    let mesh = meshes.add(Circle::new(0.025));
+    let material = materials.add(StandardMaterial::from_color(Color::from(
+        palettes::basic::WHITE,
+    )));
 
     cmds.spawn((
         Point,
         name,
-        MaterialMesh2dBundle {
+        MaterialMeshBundle {
             mesh,
             material,
-            transform: Transform::from_translation(position.extend(0.0)),
+            transform: Transform::from_translation(position),
             ..Default::default()
         },
     ))

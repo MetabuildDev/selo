@@ -103,7 +103,7 @@ pub struct PolygonParams<'w, 's> {
 }
 
 impl PolygonParams<'_, '_> {
-    pub fn iter_polygons(&self) -> impl Iterator<Item = Vec<Vec2>> + '_ {
+    pub fn iter_polygons(&self) -> impl Iterator<Item = Vec<Vec3>> + '_ {
         self.polygon.iter().filter_map(|polygon| {
             polygon
                 .points
@@ -111,9 +111,7 @@ impl PolygonParams<'_, '_> {
                 .map(|entity| {
                     self.points
                         .get(*entity)
-                        .map(|(position, PolygonPoint(idx))| {
-                            (idx, position.translation().truncate())
-                        })
+                        .map(|(position, PolygonPoint(idx))| (idx, position.translation()))
                 })
                 .collect::<Result<Vec<_>, _>>()
                 .map(|mut vec| {
@@ -238,7 +236,7 @@ fn render_polygons(mut gizmos: Gizmos, polygon: PolygonParams) {
             .windows(2)
             .map(|win| (win[0], win[1]))
             .for_each(|(start, end)| {
-                gizmos.line_2d(start, end, palettes::basic::AQUA);
+                gizmos.line(start, end, palettes::basic::AQUA);
             });
     });
 }
@@ -251,22 +249,22 @@ fn render_polygon_construction(
     let points = points
         .iter()
         .sort_by_key::<&PolygonPoint, _>(|PolygonPoint(id)| *id)
-        .map(|(transform, _)| transform.translation().truncate())
+        .map(|(transform, _)| transform.translation())
         .collect::<Vec<_>>();
 
     points
         .windows(2)
         .map(|win| (win[0], win[1]))
         .for_each(|(start, end)| {
-            gizmos.line_2d(start, end, palettes::basic::AQUA);
+            gizmos.line(start, end, palettes::basic::AQUA);
         });
 
-    let pointer_pos = pointer.world_position().unwrap_or_default();
+    let pointer_pos = pointer.world_position_3d().unwrap_or_default();
     if let Some(end) = points.last().cloned() {
-        gizmos.line_2d(pointer_pos, end, palettes::basic::AQUA);
+        gizmos.line(pointer_pos, end, palettes::basic::AQUA);
     }
     if let Some(end) = points.first().cloned() {
-        gizmos.line_2d(pointer_pos, end, palettes::basic::AQUA);
+        gizmos.line(pointer_pos, end, palettes::basic::AQUA);
     }
 }
 
