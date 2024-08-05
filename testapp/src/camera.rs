@@ -7,17 +7,19 @@ pub struct CameraPlugin;
 
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, |mut cmds: Commands| {
-            cmds.spawn(Camera2dBundle::default());
-        })
-        .add_systems(OnEnter(AppState::Move), start_camera_move)
-        .add_systems(OnExit(AppState::Move), stop_camera_move)
-        .add_systems(
-            Update,
-            camera_move.run_if(any_with_component::<PointerMoveStart>),
-        );
+        app.register_type::<MainCamera>()
+            .add_systems(Startup, setup_cameras)
+            .add_systems(OnEnter(AppState::Move), start_camera_move)
+            .add_systems(OnExit(AppState::Move), stop_camera_move)
+            .add_systems(
+                Update,
+                camera_move.run_if(any_with_component::<PointerMoveStart>),
+            );
     }
 }
+
+#[derive(Debug, Clone, Component, Default, Reflect)]
+pub struct MainCamera;
 
 #[derive(Debug, Clone, Component, Default, Reflect)]
 struct PointerMoveStart {
@@ -25,10 +27,14 @@ struct PointerMoveStart {
     camera: Vec3,
 }
 
+fn setup_cameras(mut cmds: Commands) {
+    cmds.spawn((MainCamera, Camera2dBundle::default()));
+}
+
 fn start_camera_move(
     mut cmds: Commands,
     pointer: PointerParams,
-    camera: Query<(Entity, &Transform), With<Camera>>,
+    camera: Query<(Entity, &Transform), With<MainCamera>>,
 ) {
     let (camera_entity, camera_transform) = camera.single();
     cmds.entity(camera_entity).insert(PointerMoveStart {

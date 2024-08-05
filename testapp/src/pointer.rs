@@ -1,9 +1,11 @@
 use bevy::{ecs::system::SystemParam, prelude::*};
 
+use crate::camera::MainCamera;
+
 #[derive(SystemParam)]
 pub struct PointerParams<'w, 's> {
     window: Query<'w, 's, &'static Window>,
-    camera: Query<'w, 's, (&'static Camera, &'static GlobalTransform)>,
+    camera: Query<'w, 's, (&'static Camera, &'static GlobalTransform), With<MainCamera>>,
 }
 
 impl PointerParams<'_, '_> {

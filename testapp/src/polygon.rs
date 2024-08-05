@@ -5,7 +5,7 @@ use bevy::{
 
 use crate::{
     drop_system,
-    line::{construct_lines, Line},
+    line::construct_lines,
     point::{spawn_point, Point},
     pointer::PointerParams,
     state::AppState,
