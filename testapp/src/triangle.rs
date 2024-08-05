@@ -1,8 +1,13 @@
-use bevy::{color::palettes, ecs::system::SystemParam, prelude::*};
+use bevy::{
+    color::palettes, ecs::system::SystemParam, input::common_conditions::input_just_pressed,
+    prelude::*,
+};
 
 use crate::{
-    line::{Line, UnfinishedLine},
-    point::Point,
+    drop_system,
+    line::construct_lines,
+    point::{spawn_point, Point},
+    pointer::PointerParams,
     state::AppState,
 };
 
@@ -11,16 +16,48 @@ pub struct TrianglePlugin;
 impl Plugin for TrianglePlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<Triangle>()
+            .register_type::<TrianglePoint>()
+            .register_type::<TriangleMid>()
+            .register_type::<TriangleLine>()
             .add_systems(
                 Update,
                 (
-                    crate::line::start_line.run_if(not(any_with_component::<UnfinishedLine>)),
-                    crate::line::finish_line.run_if(any_with_component::<UnfinishedLine>),
-                    finish_triangle,
+                    spawn_point
+                        .pipe(triangle_point)
+                        .pipe(triangle_start)
+                        .pipe(drop_system)
+                        .run_if(not(any_with_component::<TriangleStart>)),
+                    spawn_point
+                        .pipe(triangle_point)
+                        .pipe(triangle_mid)
+                        .pipe(drop_system)
+                        .run_if(
+                            any_with_component::<TriangleStart>
+                                .and_then(not(any_with_component::<TriangleMid>)),
+                        ),
+                    spawn_point
+                        .pipe(triangle_point)
+                        .pipe(triangle_end)
+                        .pipe(construct_lines)
+                        .pipe(construct_triangle)
+                        .pipe(drop_system)
+                        .run_if(any_with_component::<TriangleMid>),
                 )
-                    .run_if(in_state(AppState::Triangle)),
+                    .run_if(
+                        in_state(AppState::Triangle)
+                            .and_then(input_just_pressed(MouseButton::Left)),
+                    ),
             )
-            .add_systems(Update, render_triangles);
+            .add_systems(
+                Update,
+                (
+                    render_triangles,
+                    render_triangle_construction.run_if(
+                        in_state(AppState::Triangle).and_then(any_with_component::<TriangleStart>),
+                    ),
+                ),
+            )
+            .add_systems(OnExit(AppState::Triangle), cleanup_unfinished);
     }
 }
 
@@ -30,6 +67,18 @@ pub struct Triangle {
     b: Entity,
     c: Entity,
 }
+
+#[derive(Debug, Clone, Component, Default, Reflect)]
+pub struct TrianglePoint;
+
+#[derive(Debug, Clone, Component, Default, Reflect)]
+pub struct TriangleStart;
+
+#[derive(Debug, Clone, Component, Default, Reflect)]
+pub struct TriangleMid;
+
+#[derive(Debug, Clone, Component, Default, Reflect)]
+pub struct TriangleLine;
 
 #[derive(SystemParam)]
 pub struct TriangleParams<'w, 's> {
@@ -48,46 +97,69 @@ impl TriangleParams<'_, '_> {
     }
 }
 
-fn finish_triangle(
+fn triangle_point(In(entity): In<Entity>, mut cmds: Commands) -> Entity {
+    cmds.entity(entity).insert(TrianglePoint).id()
+}
+
+fn triangle_start(In(entity): In<Entity>, mut cmds: Commands) -> Entity {
+    cmds.entity(entity).insert(TriangleStart).id()
+}
+
+fn triangle_mid(In(entity): In<Entity>, mut cmds: Commands) -> Entity {
+    cmds.entity(entity).insert(TriangleMid).id()
+}
+
+fn triangle_end(
+    In(entity): In<Entity>,
     mut cmds: Commands,
-    lines: Query<&Line>,
-    mut id: Local<usize>,
-    triangles: Query<&Triangle>,
+    start: Query<Entity, With<TriangleStart>>,
+    mid: Query<Entity, With<TriangleMid>>,
+) -> [(Entity, Entity); 3] {
+    let start = start.single();
+    let mid = mid.single();
+    cmds.entity(start).remove::<TriangleStart>();
+    cmds.entity(mid).remove::<TriangleMid>();
+    let end = entity;
+    [(start, mid), (mid, end), (end, start)]
+}
+
+fn construct_triangle(
+    In(lines): In<[(Entity, (Entity, Entity)); 3]>,
+    mut cmds: Commands,
+    mut triangle_id: Local<usize>,
+) -> Entity {
+    lines.iter().for_each(|(line, _)| {
+        cmds.entity(*line).insert(TriangleLine);
+    });
+    let [a, b, c] = lines.map(|(_, (p, _))| p);
+    *triangle_id += 1;
+    cmds.spawn((
+        Name::new(format!("Triangle {n}", n = *triangle_id)),
+        Triangle { a, b, c },
+    ))
+    .id()
+}
+
+fn render_triangle_construction(
+    mut gizmos: Gizmos,
+    start: Query<&GlobalTransform, With<TriangleStart>>,
+    mid: Query<&GlobalTransform, With<TriangleMid>>,
+    pointer: PointerParams,
 ) {
-    if let Some([a, b, c]) = lines
-        .iter()
-        .enumerate()
-        .flat_map(|(n, line_a)| {
-            lines
-                .iter()
-                .enumerate()
-                .skip(n)
-                .map(move |(m, line_b)| (m, line_a, line_b))
-        })
-        .flat_map(|(m, line_a, line_b)| {
-            lines
-                .iter()
-                .skip(m)
-                .map(move |line_c| (line_a, line_b, line_c))
-        })
-        .filter_map(|(a, b, c)| {
-            (a.end == b.start && b.end == c.start && c.end == a.start)
-                .then_some([a.start, b.start, c.start])
-        })
-        .find(|[a, b, c]| {
-            !triangles.iter().any(|triangle| {
-                [triangle.a, triangle.b, triangle.c]
-                    .iter()
-                    .all(|point| [a, b, c].contains(&point))
-            })
-        })
-    {
-        *id += 1;
-        cmds.spawn((
-            Name::new(format!("Triangle {n}", n = *id)),
-            Triangle { a, b, c },
-        ));
-    }
+    let pointer_pos = pointer.world_position().unwrap_or_default();
+    let start = start.single().translation().truncate();
+    let mid = mid.get_single().map(|p| p.translation().truncate());
+
+    [(start, pointer_pos)]
+        .into_iter()
+        .chain(
+            mid.map(|mid| [(start, mid), (mid, pointer_pos)])
+                .into_iter()
+                .flatten(),
+        )
+        .for_each(|(a, b)| {
+            gizmos.line_2d(a, b, palettes::basic::TEAL);
+        });
 }
 
 fn render_triangles(mut gizmos: Gizmos, triangles: TriangleParams) {
@@ -99,4 +171,13 @@ fn render_triangles(mut gizmos: Gizmos, triangles: TriangleParams) {
             palettes::basic::TEAL,
         );
     })
+}
+
+fn cleanup_unfinished(
+    mut cmds: Commands,
+    unfinished: Query<Entity, Or<(With<TriangleStart>, With<TriangleMid>)>>,
+) {
+    unfinished.iter().for_each(|entity| {
+        cmds.entity(entity).despawn_recursive();
+    });
 }

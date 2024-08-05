@@ -32,3 +32,5 @@ pub fn run() {
 
     app.run();
 }
+
+pub fn drop_system<I>(_: In<I>) {}

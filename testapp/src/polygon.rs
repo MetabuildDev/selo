@@ -1,12 +1,13 @@
 use bevy::{
-    color::palettes,
-    ecs::{entity::EntityHashSet, system::SystemParam},
+    color::palettes, ecs::system::SystemParam, input::common_conditions::input_just_pressed,
     prelude::*,
 };
 
 use crate::{
-    line::{Line, UnfinishedLine},
-    point::Point,
+    drop_system,
+    line::{construct_lines, Line},
+    point::{spawn_point, Point},
+    pointer::PointerParams,
     state::AppState,
 };
 
@@ -15,18 +16,80 @@ pub struct PolygonPlugin;
 impl Plugin for PolygonPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<Polygon2D>()
+            .register_type::<PolygonPoint>()
+            .register_type::<PolygonLine>()
+            .register_type::<LastPolyPoint>()
+            .register_type::<UnfinishedPolyPoint>()
+            .register_type::<UnfinishedPolyLine>()
+            .register_type::<PolygonPointIdSource>()
+            .init_resource::<PolygonPointIdSource>()
             .add_systems(
                 Update,
                 (
-                    crate::line::start_line.run_if(not(any_with_component::<UnfinishedLine>)),
-                    crate::line::finish_line.run_if(any_with_component::<UnfinishedLine>),
-                    finish_polygon,
-                )
-                    .run_if(in_state(AppState::Polygon)),
+                    (
+                        spawn_point
+                            .pipe(polygon_start)
+                            .pipe(polygon_point)
+                            .pipe(drop_system)
+                            .run_if(not(any_with_component::<LastPolyPoint>)),
+                        spawn_point
+                            .pipe(polygon_point)
+                            .pipe(polygon_continue)
+                            .pipe(construct_lines)
+                            .pipe(unfinished_polygon_line)
+                            .pipe(drop_system)
+                            .run_if(any_with_component::<LastPolyPoint>),
+                    )
+                        .run_if(
+                            in_state(AppState::Polygon)
+                                .and_then(input_just_pressed(MouseButton::Left)),
+                        ),
+                    (
+                        get_sorted_polygon_points
+                            .pipe(get_last_line_point)
+                            .pipe(construct_lines)
+                            .pipe(polygon_line)
+                            .pipe(drop_system),
+                        get_sorted_polygon_points
+                            .pipe(construct_polygon)
+                            .pipe(drop_system),
+                        cleanup_construction_components,
+                    )
+                        .run_if(
+                            in_state(AppState::Polygon)
+                                .and_then(input_just_pressed(MouseButton::Right))
+                                .and_then(polygon_finishable),
+                        ),
+                ),
             )
-            .add_systems(Update, render_polygons);
+            .add_systems(
+                Update,
+                (
+                    render_polygons.run_if(any_with_component::<Polygon2D>),
+                    render_polygon_construction.run_if(any_with_component::<PolygonPoint>),
+                ),
+            )
+            .add_systems(OnExit(AppState::Polygon), cleanup_unfinished);
     }
 }
+
+#[derive(Debug, Clone, Resource, Default, Reflect, Deref, DerefMut)]
+pub struct PolygonPointIdSource(usize);
+
+#[derive(Debug, Clone, Component, Default, Reflect)]
+pub struct PolygonPoint(usize);
+
+#[derive(Debug, Clone, Component, Default, Reflect)]
+pub struct PolygonLine;
+
+#[derive(Debug, Clone, Component, Default, Reflect)]
+pub struct LastPolyPoint;
+
+#[derive(Debug, Clone, Component, Default, Reflect)]
+pub struct UnfinishedPolyPoint;
+
+#[derive(Debug, Clone, Component, Default, Reflect)]
+pub struct UnfinishedPolyLine;
 
 #[derive(Debug, Clone, Component, Reflect)]
 pub struct Polygon2D {
@@ -36,8 +99,7 @@ pub struct Polygon2D {
 #[derive(SystemParam)]
 pub struct PolygonParams<'w, 's> {
     polygon: Query<'w, 's, &'static Polygon2D>,
-    lines: Query<'w, 's, &'static Line>,
-    points: Query<'w, 's, &'static GlobalTransform, With<Point>>,
+    points: Query<'w, 's, (&'static GlobalTransform, &'static PolygonPoint), With<Point>>,
 }
 
 impl PolygonParams<'_, '_> {
@@ -46,84 +108,125 @@ impl PolygonParams<'_, '_> {
             polygon
                 .points
                 .iter()
-                .map(|p| {
-                    let line = self.lines.get(*p)?;
+                .map(|entity| {
                     self.points
-                        .get(line.start)
-                        .map(|p| p.translation().truncate())
+                        .get(*entity)
+                        .map(|(position, PolygonPoint(idx))| {
+                            (idx, position.translation().truncate())
+                        })
                 })
                 .collect::<Result<Vec<_>, _>>()
+                .map(|mut vec| {
+                    vec.sort_by_key(|(idx, _)| *idx);
+                    vec.into_iter()
+                        .map(|(_, position)| position)
+                        .collect::<Vec<_>>()
+                })
                 .ok()
         })
     }
 }
 
-fn finish_polygon(
+fn polygon_finishable(points: Query<(), With<PolygonPoint>>) -> bool {
+    points.iter().count() >= 3
+}
+
+fn polygon_point(
+    In(entity): In<Entity>,
     mut cmds: Commands,
-    lines: Query<(Entity, &Line)>,
+    mut id: ResMut<PolygonPointIdSource>,
+) -> Entity {
+    **id += 1;
+    cmds.entity(entity).insert(PolygonPoint(**id)).id()
+}
+
+fn polygon_start(
+    In(entity): In<Entity>,
+    mut cmds: Commands,
+    mut id_source: ResMut<PolygonPointIdSource>,
+) -> Entity {
+    **id_source = 0;
+    cmds.entity(entity)
+        .insert((LastPolyPoint, UnfinishedPolyPoint))
+        .id()
+}
+
+fn polygon_continue(
+    In(entity): In<Entity>,
+    mut cmds: Commands,
+    last_point: Query<Entity, With<LastPolyPoint>>,
+) -> [(Entity, Entity); 1] {
+    let start = cmds
+        .entity(last_point.single())
+        .remove::<LastPolyPoint>()
+        .id();
+    let end = cmds
+        .entity(entity)
+        .insert((LastPolyPoint, UnfinishedPolyPoint))
+        .id();
+    [(start, end); 1]
+}
+
+fn polygon_line(In(lines): In<[(Entity, (Entity, Entity)); 1]>, mut cmds: Commands) -> Entity {
+    let [(entity, _)] = lines;
+    cmds.entity(entity).insert(PolygonLine).id()
+}
+
+fn unfinished_polygon_line(
+    In(lines): In<[(Entity, (Entity, Entity)); 1]>,
+    mut cmds: Commands,
+) -> Entity {
+    let [(entity, _)] = lines;
+    cmds.entity(entity)
+        .insert((PolygonLine, UnfinishedPolyLine))
+        .id()
+}
+
+fn get_sorted_polygon_points(
+    points: Query<(Entity, &PolygonPoint), With<UnfinishedPolyPoint>>,
+) -> Vec<Entity> {
+    points
+        .iter()
+        .sort_by_key::<&PolygonPoint, _>(|PolygonPoint(id)| *id)
+        .map(|(entity, _)| entity)
+        .collect::<Vec<_>>()
+}
+
+fn get_last_line_point(In(points): In<Vec<Entity>>) -> [(Entity, Entity); 1] {
+    let first = points.first().cloned().unwrap();
+    let last = points.last().cloned().unwrap();
+
+    [(last, first)]
+}
+
+fn construct_polygon(
+    In(points): In<Vec<Entity>>,
+    mut cmds: Commands,
     mut id: Local<usize>,
-    polygons: Query<&Polygon2D>,
+) -> Entity {
+    *id += 1;
+    cmds.spawn((
+        Name::new(format!("Polygon {n}", n = *id)),
+        Polygon2D { points },
+    ))
+    .id()
+}
+
+fn cleanup_construction_components(
+    mut cmds: Commands,
+    unfinished_line: Query<Entity, With<UnfinishedPolyLine>>,
+    unfinished_point: Query<Entity, With<UnfinishedPolyPoint>>,
+    last_point: Query<Entity, With<LastPolyPoint>>,
 ) {
-    let mut visited = EntityHashSet::default();
-    let mut circles = vec![];
-    while let Some((entity, start_line)) =
-        lines.iter().find(|(entity, _)| !visited.contains(entity))
-    {
-        visited.insert(entity);
-        let mut stack = vec![vec![(entity, start_line)]];
-        let mut finished = vec![];
-        while let Some(work) = stack.pop() {
-            finished.push(work.clone());
-            if work.len() > 1
-                && work.first().map(|(_, line)| line.start) == work.last().map(|(_, line)| line.end)
-            {
-                continue;
-            }
-            let (_, last_line) = work.last().unwrap();
-            stack.extend(
-                lines
-                    .iter()
-                    .filter(|(_, line)| last_line.end == line.start)
-                    .map(|pair| {
-                        visited.insert(pair.0);
-                        let mut work_clone = work.clone();
-                        work_clone.push(pair);
-                        work_clone
-                    }),
-            );
-        }
-
-        circles.extend(
-            finished
-                .iter()
-                .filter(|lines| lines.len() > 3)
-                .filter(|lines| {
-                    lines.first().map(|(_, line)| line.start)
-                        == lines.last().map(|(_, line)| line.end)
-                })
-                .map(|lines| {
-                    lines
-                        .into_iter()
-                        .map(|(entity, _)| *entity)
-                        .collect::<Vec<_>>()
-                }),
-        )
-    }
-
-    circles
-        .into_iter()
-        .filter(|points| {
-            !polygons
-                .iter()
-                .any(|polygon| polygon.points.iter().all(|point| points.contains(&point)))
-        })
-        .for_each(|points| {
-            *id += 1;
-            cmds.spawn((
-                Name::new(format!("Polygon {n}", n = *id)),
-                Polygon2D { points },
-            ));
-        });
+    unfinished_line.iter().for_each(|entity| {
+        cmds.entity(entity).remove::<UnfinishedPolyLine>();
+    });
+    unfinished_point.iter().for_each(|entity| {
+        cmds.entity(entity).remove::<UnfinishedPolyPoint>();
+    });
+    last_point.iter().for_each(|entity| {
+        cmds.entity(entity).remove::<LastPolyPoint>();
+    });
 }
 
 fn render_polygons(mut gizmos: Gizmos, polygon: PolygonParams) {
@@ -137,5 +240,41 @@ fn render_polygons(mut gizmos: Gizmos, polygon: PolygonParams) {
             .for_each(|(start, end)| {
                 gizmos.line_2d(start, end, palettes::basic::AQUA);
             });
+    });
+}
+
+fn render_polygon_construction(
+    mut gizmos: Gizmos,
+    points: Query<(&GlobalTransform, &PolygonPoint), With<UnfinishedPolyPoint>>,
+    pointer: PointerParams,
+) {
+    let points = points
+        .iter()
+        .sort_by_key::<&PolygonPoint, _>(|PolygonPoint(id)| *id)
+        .map(|(transform, _)| transform.translation().truncate())
+        .collect::<Vec<_>>();
+
+    points
+        .windows(2)
+        .map(|win| (win[0], win[1]))
+        .for_each(|(start, end)| {
+            gizmos.line_2d(start, end, palettes::basic::AQUA);
+        });
+
+    let pointer_pos = pointer.world_position().unwrap_or_default();
+    if let Some(end) = points.last().cloned() {
+        gizmos.line_2d(pointer_pos, end, palettes::basic::AQUA);
+    }
+    if let Some(end) = points.first().cloned() {
+        gizmos.line_2d(pointer_pos, end, palettes::basic::AQUA);
+    }
+}
+
+fn cleanup_unfinished(
+    mut cmds: Commands,
+    unfinished: Query<Entity, Or<(With<UnfinishedPolyLine>, With<UnfinishedPolyPoint>)>>,
+) {
+    unfinished.iter().for_each(|entity| {
+        cmds.entity(entity).despawn_recursive();
     });
 }

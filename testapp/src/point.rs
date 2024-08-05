@@ -5,22 +5,19 @@ use bevy::{
 use bevy_mod_picking::prelude::*;
 use math::Mirror2D;
 
-use crate::{pointer::PointerParams, state::AppState};
+use crate::{drop_system, pointer::PointerParams, state::AppState};
 
 pub struct PointPlugin;
 
 impl Plugin for PointPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<Point>()
+            .register_type::<JustPoint>()
             .add_systems(
                 Update,
-                (
-                    spawn_point.run_if(in_state(AppState::Point)),
-                    (crate::state::unselect_everything, spawn_picked_point)
-                        .chain()
-                        .run_if(in_state(AppState::Line)),
-                )
-                    .run_if(input_just_pressed(MouseButton::Right)),
+                spawn_point.pipe(just_point).pipe(drop_system).run_if(
+                    in_state(AppState::Point).and_then(input_just_pressed(MouseButton::Left)),
+                ),
             )
             .add_systems(
                 OnEnter(AppState::Algorithms),
@@ -30,8 +27,6 @@ impl Plugin for PointPlugin {
                 OnExit(AppState::Algorithms),
                 (remove_drag_observers, remove_pickability),
             )
-            .add_systems(OnEnter(AppState::Line), insert_pickability)
-            .add_systems(OnExit(AppState::Line), remove_pickability)
             .add_systems(OnEnter(AppState::Triangle), insert_pickability)
             .add_systems(OnExit(AppState::Triangle), remove_pickability)
             .add_systems(OnEnter(AppState::Polygon), insert_pickability)
@@ -42,13 +37,16 @@ impl Plugin for PointPlugin {
 #[derive(Debug, Clone, Component, Default, Reflect)]
 pub struct Point;
 
-fn spawn_point(
+#[derive(Debug, Clone, Component, Default, Reflect)]
+pub struct JustPoint;
+
+pub fn spawn_point(
     mut cmds: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     pointer: PointerParams,
     mut id: Local<usize>,
-) {
+) -> Entity {
     *id += 1;
 
     let name = Name::new(format!("Point {n}", n = *id));
@@ -66,38 +64,12 @@ fn spawn_point(
             transform: Transform::from_translation(position.extend(0.0)),
             ..Default::default()
         },
-    ));
+    ))
+    .id()
 }
 
-fn spawn_picked_point(
-    mut cmds: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    pointer: PointerParams,
-    mut id: Local<usize>,
-) {
-    *id += 1;
-
-    let name = Name::new(format!("Point {n}", n = *id));
-    let position = pointer.world_position().unwrap_or_default();
-
-    let mesh = meshes.add(Circle::new(10.0)).into();
-    let material = materials.add(ColorMaterial::from(Color::from(palettes::basic::WHITE)));
-
-    cmds.spawn((
-        Point,
-        name,
-        MaterialMesh2dBundle {
-            mesh,
-            material,
-            transform: Transform::from_translation(position.extend(0.0)),
-            ..Default::default()
-        },
-        PickableBundle {
-            selection: PickSelection { is_selected: true },
-            ..Default::default()
-        },
-    ));
+fn just_point(In(entity): In<Entity>, mut cmds: Commands) -> Entity {
+    cmds.entity(entity).insert(JustPoint).id()
 }
 
 fn insert_drag_observers(mut cmds: Commands, points: Query<Entity, With<Point>>) {
