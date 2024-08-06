@@ -46,7 +46,7 @@ fn render_working_plane_center(mut gizmos: Gizmos, points: Res<WorkingPlanePoint
     let plane = WorkingPlane::from_points(points.iter().copied());
     let normalized_plane = plane.normalize();
 
-    let transform = plane.flattening_transformation().inverse();
+    let transform = plane.xy_injection();
 
     let triangle = [Vec2::X, Vec2::Y, Vec2::ONE].map(|p| p.extend(0.0));
     let triangle_in_plane = triangle.map(|p| transform.transform_point3(p));

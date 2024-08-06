@@ -55,24 +55,26 @@ impl WorkingPlane {
     /// puts the origin at the position with minimum distance to Vec3::ZERO
     pub fn normalize(self) -> Self {
         let projection_scalar = self.origin.dot(self.plane.normal.as_vec3());
-
-        let new_origin = if projection_scalar != 0.0 {
-            self.plane.normal.as_vec3() * projection_scalar
-        } else {
-            // in this case the plane already is running through the origin
-            Vec3::ZERO
-        };
-
+        let new_origin = self.plane.normal.as_vec3() * projection_scalar;
         Self {
             origin: new_origin,
             ..self
         }
     }
 
-    pub fn flattening_transformation(&self) -> Affine3A {
+    pub fn xy_projection(&self) -> Affine3A {
         let rotation = Quat::from_rotation_arc(self.plane.normal.as_vec3(), Vec3::Z);
         let transformed_origin = rotation * self.origin;
         Affine3A::from_translation(-Vec3::Z * transformed_origin.z) * Affine3A::from_quat(rotation)
+    }
+
+    pub fn xy_injection(&self) -> Affine3A {
+        self.xy_projection().inverse()
+    }
+
+    pub fn xy_projection_injection(&self) -> (Affine3A, Affine3A) {
+        let projection = self.xy_projection();
+        (projection, projection.inverse())
     }
 
     pub fn project_point(&self, pos: Vec3) -> Vec3 {
