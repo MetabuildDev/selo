@@ -1,8 +1,7 @@
 use bevy::{color::palettes, input::common_conditions::input_just_pressed, prelude::*};
 use bevy_mod_picking::prelude::*;
-use math::Mirror2D;
 
-use crate::{drop_system, pointer::PointerParams, state::AppState};
+use crate::{camera::CameraParams, drop_system, pointer::PointerParams, state::AppState};
 
 pub struct PointPlugin;
 
@@ -10,6 +9,7 @@ impl Plugin for PointPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<Point>()
             .register_type::<JustPoint>()
+            .register_type::<DraggedPosition>()
             .add_systems(
                 Update,
                 spawn_point.pipe(just_point).pipe(drop_system).run_if(
@@ -27,7 +27,11 @@ impl Plugin for PointPlugin {
             .add_systems(OnEnter(AppState::Triangle), insert_pickability)
             .add_systems(OnExit(AppState::Triangle), remove_pickability)
             .add_systems(OnEnter(AppState::Polygon), insert_pickability)
-            .add_systems(OnExit(AppState::Polygon), remove_pickability);
+            .add_systems(OnExit(AppState::Polygon), remove_pickability)
+            .add_systems(
+                Update,
+                apply_dragged_position.run_if(any_with_component::<DraggedPosition>),
+            );
     }
 }
 
@@ -36,6 +40,11 @@ pub struct Point;
 
 #[derive(Debug, Clone, Component, Default, Reflect)]
 pub struct JustPoint;
+
+#[derive(Debug, Clone, Component, Default, Reflect)]
+pub struct DraggedPosition {
+    position: Vec2,
+}
 
 pub fn spawn_point(
     mut cmds: Commands,
@@ -74,11 +83,11 @@ fn just_point(In(entity): In<Entity>, mut cmds: Commands) -> Entity {
 fn insert_drag_observers(mut cmds: Commands, points: Query<Entity, With<Point>>) {
     points.iter().for_each(|point| {
         cmds.entity(point)
-            .insert(On::<Pointer<Drag>>::target_component_mut::<Transform>(
-                |drag, transform| {
-                    transform.translation += drag.delta.mirror_y().extend(0.0);
-                },
-            ));
+            .insert(On::<Pointer<Drag>>::commands_mut(|drag, cmds| {
+                cmds.entity(drag.target).insert(DraggedPosition {
+                    position: drag.pointer_location.position,
+                });
+            }));
     });
 }
 
@@ -98,4 +107,23 @@ fn remove_pickability(mut cmds: Commands, points: Query<Entity, With<Point>>) {
     points.iter().for_each(|point| {
         cmds.entity(point).remove::<PickableBundle>();
     });
+}
+
+fn apply_dragged_position(
+    mut cmds: Commands,
+    mut dragged: Query<(Entity, &mut Transform, &DraggedPosition)>,
+    camera: CameraParams,
+) {
+    dragged
+        .iter_mut()
+        .filter_map(|(entity, transform, dragged)| {
+            let ray = camera.screen_ray_into_world(dragged.position)?;
+            let dist = ray.intersect_plane(Vec3::ZERO, InfinitePlane3d { normal: Dir3::Z })?;
+            let pos = ray.get_point(dist);
+            Some((entity, transform, pos))
+        })
+        .for_each(|(entity, mut transform, pos3d)| {
+            cmds.entity(entity).remove::<DraggedPosition>();
+            transform.translation = pos3d;
+        });
 }

@@ -29,6 +29,11 @@ fn render_intersection_points(mut gizmos: Gizmos, lines: LineParams) {
         })
         .filter_map(|([a, b], [c, d])| math::intersect_line_2d_point((a, b), (c, d)))
         .for_each(|intersection| {
-            gizmos.circle_2d(intersection, 5.0, palettes::basic::RED);
+            gizmos.circle(
+                intersection.extend(0.0),
+                Dir3::Z,
+                0.025,
+                palettes::basic::RED,
+            );
         });
 }

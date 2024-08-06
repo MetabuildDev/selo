@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{ecs::system::SystemParam, prelude::*};
 use math::Mirror2D;
 
 use crate::{pointer::PointerParams, state::AppState};
@@ -20,6 +20,18 @@ impl Plugin for CameraPlugin {
 
 #[derive(Debug, Clone, Component, Default, Reflect)]
 pub struct MainCamera;
+
+#[derive(SystemParam)]
+pub struct CameraParams<'w, 's> {
+    camera: Query<'w, 's, (&'static Camera, &'static GlobalTransform), With<MainCamera>>,
+}
+
+impl CameraParams<'_, '_> {
+    pub fn screen_ray_into_world(&self, screen_pos: Vec2) -> Option<Ray3d> {
+        let (camera, global) = self.camera.single();
+        camera.viewport_to_world(global, screen_pos)
+    }
+}
 
 #[derive(Debug, Clone, Component, Default, Reflect)]
 struct PointerMoveStart {
