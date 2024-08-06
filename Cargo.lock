@@ -2207,6 +2207,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "geo-buffer"
+version = "0.2.1"
+source = "git+https://github.com/RobWalt/geo-buffer.git?branch=update#536433b4cea70295d356e245e8d000864489418f"
+dependencies = [
+ "geo",
+ "geo-types",
+]
+
+[[package]]
 name = "geo-types"
 version = "0.7.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2851,7 +2860,9 @@ dependencies = [
 name = "math"
 version = "0.1.0"
 dependencies = [
+ "bevy_math",
  "geo",
+ "geo-buffer",
  "glam",
 ]
 

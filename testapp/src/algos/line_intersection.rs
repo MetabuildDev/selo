@@ -1,6 +1,8 @@
 use bevy::{color::palettes, prelude::*};
 
-use crate::{line::LineParams, state::AlgorithmState};
+use crate::line::LineParams;
+
+use super::algostate::AlgorithmState;
 
 pub struct LineIntersectionPlugin;
 

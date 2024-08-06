@@ -1,7 +1,9 @@
 use bevy::{color::palettes, prelude::*};
 use math::triangulate_glam;
 
-use crate::{polygon::PolygonParams, state::AlgorithmState};
+use crate::polygon::PolygonParams;
+
+use super::algostate::AlgorithmState;
 
 pub struct PolygonTriangulationPlugin;
 
@@ -30,7 +32,7 @@ fn render_triangulation(mut gizmos: Gizmos, polygons: PolygonParams) {
                 &Triangle2d::new(a, b, c),
                 Vec2::ZERO,
                 0.0,
-                palettes::basic::TEAL,
+                palettes::basic::RED,
             );
         });
 }

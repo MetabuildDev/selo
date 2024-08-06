@@ -6,3 +6,5 @@ edition = "2021"
 [dependencies]
 geo.workspace = true
 glam.workspace = true
+bevy_math.workspace = true
+geo-buffer.workspace = true

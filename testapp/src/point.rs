@@ -117,9 +117,7 @@ fn apply_dragged_position(
     dragged
         .iter_mut()
         .filter_map(|(entity, transform, dragged)| {
-            let ray = camera.screen_ray_into_world(dragged.position)?;
-            let dist = ray.intersect_plane(Vec3::ZERO, InfinitePlane3d { normal: Dir3::Z })?;
-            let pos = ray.get_point(dist);
+            let pos = camera.screen_ray_onto_xy(dragged.position)?;
             Some((entity, transform, pos))
         })
         .for_each(|(entity, mut transform, pos3d)| {

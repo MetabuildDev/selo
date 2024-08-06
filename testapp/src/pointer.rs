@@ -15,10 +15,6 @@ impl PointerParams<'_, '_> {
 
     pub fn world_position_3d(&self) -> Option<Vec3> {
         self.screen_position()
-            .and_then(|screen_pos| self.camera.screen_ray_into_world(screen_pos))
-            .and_then(|ray| {
-                let dist = ray.intersect_plane(Vec3::ZERO, InfinitePlane3d { normal: Dir3::Z })?;
-                Some(ray.get_point(dist))
-            })
+            .and_then(|screen_pos| self.camera.screen_ray_onto_xy(screen_pos))
     }
 }
