@@ -46,16 +46,58 @@ fn render_working_plane_center(mut gizmos: Gizmos, points: Res<WorkingPlanePoint
     let plane = WorkingPlane::from_points(points.iter().copied());
     let normalized_plane = plane.normalize();
 
-    gizmos.sphere(plane.origin, Quat::default(), 0.025, palettes::basic::RED);
+    let transform = plane.flattening_transformation().inverse();
+
+    let triangle = [Vec2::X, Vec2::Y, Vec2::ONE].map(|p| p.extend(0.0));
+    let triangle_in_plane = triangle.map(|p| transform.transform_point3(p));
+
+    gizmos.sphere(plane.origin, Quat::default(), 0.025, palettes::basic::BLUE);
     gizmos.sphere(
         normalized_plane.origin,
         Quat::default(),
         0.025,
-        palettes::basic::RED,
+        palettes::basic::GREEN,
     );
-    gizmos.arrow(plane.origin, normalized_plane.origin, palettes::basic::RED);
-    gizmos.line(plane.origin, Vec3::ZERO, palettes::basic::RED);
-    gizmos.line(normalized_plane.origin, Vec3::ZERO, palettes::basic::RED);
+
+    triangle
+        .windows(2)
+        .map(|win| [win[0], win[1]])
+        .chain(Some(()).and_then(|_| {
+            let first = triangle.first()?;
+            let last = triangle.last()?;
+            Some([*first, *last])
+        }))
+        .for_each(|[a, b]| {
+            gizmos.line(a, b, palettes::basic::GREEN);
+        });
+
+    triangle_in_plane
+        .windows(2)
+        .map(|win| [win[0], win[1]])
+        .chain(Some(()).and_then(|_| {
+            let first = triangle_in_plane.first()?;
+            let last = triangle_in_plane.last()?;
+            Some([*first, *last])
+        }))
+        .for_each(|[a, b]| {
+            gizmos.line(a, b, palettes::basic::RED);
+        });
+
+    triangle
+        .into_iter()
+        .zip(triangle_in_plane)
+        .for_each(|(a, b)| {
+            gizmos.line(a, b, palettes::basic::AQUA);
+        });
+
+    gizmos.line(
+        plane.origin,
+        normalized_plane.origin,
+        palettes::basic::WHITE,
+    );
+    gizmos.line(plane.origin, Vec3::ZERO, palettes::basic::WHITE);
+    gizmos.line(normalized_plane.origin, Vec3::ZERO, palettes::basic::WHITE);
+
     gizmos
         .primitive_3d(
             &Plane3d {
@@ -64,7 +106,7 @@ fn render_working_plane_center(mut gizmos: Gizmos, points: Res<WorkingPlanePoint
             },
             plane.origin,
             Quat::default(),
-            palettes::basic::RED,
+            palettes::basic::BLUE,
         )
         .segment_count(100)
         .segment_length(0.1);
@@ -76,7 +118,19 @@ fn render_working_plane_center(mut gizmos: Gizmos, points: Res<WorkingPlanePoint
             },
             normalized_plane.origin,
             Quat::default(),
-            palettes::basic::RED,
+            palettes::basic::YELLOW,
+        )
+        .segment_count(100)
+        .segment_length(0.1);
+    gizmos
+        .primitive_3d(
+            &Plane3d {
+                normal: Dir3::Z,
+                half_size: Vec2::new(100.0, 100.0),
+            },
+            Vec3::ZERO,
+            Quat::default(),
+            palettes::basic::GREEN,
         )
         .segment_count(100)
         .segment_length(0.1);

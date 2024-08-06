@@ -1,3 +1,5 @@
+use std::ops::AddAssign;
+
 use bevy_math::*;
 use bevy_reflect::Reflect;
 use primitives::InfinitePlane3d;
@@ -65,5 +67,16 @@ impl WorkingPlane {
             origin: new_origin,
             ..self
         }
+    }
+
+    pub fn flattening_transformation(&self) -> Affine3A {
+        let rotation = Quat::from_rotation_arc(self.plane.normal.as_vec3(), Vec3::Z);
+        let transformed_origin = rotation * self.origin;
+        Affine3A::from_translation(-Vec3::Z * transformed_origin.z) * Affine3A::from_quat(rotation)
+    }
+
+    pub fn project_point(&self, pos: Vec3) -> Vec3 {
+        let dist = self.plane.normal.dot(pos - self.origin);
+        pos - dist * self.plane.normal
     }
 }
