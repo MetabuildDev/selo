@@ -8,6 +8,7 @@ geo = "0.28"
 glam = "0.27"
 bevy_math = "0.14"
 geo-buffer = { git = "https://github.com/RobWalt/geo-buffer.git", branch = "update" }
+bevy_reflect = "0.14"
 
 strum = "0.26"
 

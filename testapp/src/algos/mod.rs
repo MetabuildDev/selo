@@ -3,8 +3,11 @@ mod line_intersection;
 mod polygon_expand;
 mod polygon_triangulate;
 mod straight_skeleton;
+mod working_planes;
 
-use bevy::prelude::*;
+use bevy::{color::palettes, prelude::*};
+
+use crate::state::AppState;
 
 pub struct AlgoPlugin;
 
@@ -16,6 +19,12 @@ impl Plugin for AlgoPlugin {
                 polygon_triangulate::PolygonTriangulationPlugin,
                 polygon_expand::PolygonExpandPlugin,
                 straight_skeleton::PolygonSkeletonPlugin,
-            ));
+                working_planes::WorkingPlanePlugin,
+            ))
+            .add_systems(Update, draw_origin.run_if(in_state(AppState::Algorithms)));
     }
+}
+
+fn draw_origin(mut gizmos: Gizmos) {
+    gizmos.sphere(Vec3::ZERO, Quat::default(), 0.05, palettes::basic::PURPLE);
 }

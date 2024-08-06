@@ -2861,6 +2861,7 @@ name = "math"
 version = "0.1.0"
 dependencies = [
  "bevy_math",
+ "bevy_reflect",
  "geo",
  "geo-buffer",
  "glam",

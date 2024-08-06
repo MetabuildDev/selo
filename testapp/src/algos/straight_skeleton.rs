@@ -63,7 +63,10 @@ fn render_polygon_expansion(
 }
 
 fn ui(mut contexts: Query<&mut EguiContext>, mut val: ResMut<SkeletonOrientation>) {
-    egui::Window::new("Polygon Expansion Factor").show(contexts.single_mut().get_mut(), |ui| {
-        ui.add(egui::Checkbox::new(&mut **val, "Orientation"));
-    });
+    egui::Window::new("Straight Skeleton Orientation").show(
+        contexts.single_mut().get_mut(),
+        |ui| {
+            ui.add(egui::Checkbox::new(&mut **val, "Orientation"));
+        },
+    );
 }

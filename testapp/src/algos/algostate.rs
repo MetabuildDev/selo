@@ -30,6 +30,7 @@ pub enum AlgorithmState {
     PolygonTriangulate,
     StraightSkeleton,
     PolygonExpansion,
+    WorkingPlaneShowcase,
 }
 
 fn next_algo_on_scroll(

@@ -1,41 +1,14 @@
+mod utils;
+mod working_plane;
+
 use geo::*;
 use glam::*;
 use line_intersection::line_intersection;
 
-fn coord_to_vec2(coord: Coord<f32>) -> Vec2 {
-    Vec2::new(coord.x, coord.y)
-}
+use utils::*;
 
-fn vec2_to_coord(vec2: Vec2) -> Coord<f32> {
-    Coord {
-        x: vec2.x,
-        y: vec2.y,
-    }
-}
-
-fn vec2s_to_polygon(polygon: impl IntoIterator<Item = Vec2>) -> geo::Polygon<f32> {
-    Polygon::<f32>::new(
-        LineString::<f32>::new(polygon.into_iter().map(vec2_to_coord).collect::<Vec<_>>()),
-        vec![],
-    )
-}
-
-fn linestring_to_vec2s(ls: &LineString<f32>) -> impl Iterator<Item = Vec2> + '_ {
-    ls.0.iter().copied().map(coord_to_vec2)
-}
-
-fn coord_up_precision(c: Coord<f32>) -> Coord<f64> {
-    Coord {
-        x: c.x as f64,
-        y: c.y as f64,
-    }
-}
-
-fn coord_down_precision(c: Coord<f64>) -> Coord<f32> {
-    Coord {
-        x: c.x as f32,
-        y: c.y as f32,
-    }
+pub mod prelude {
+    pub use super::working_plane::WorkingPlane;
 }
 
 pub fn intersect_line_2d_point(
