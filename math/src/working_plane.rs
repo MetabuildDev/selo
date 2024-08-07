@@ -1,5 +1,3 @@
-use std::ops::AddAssign;
-
 use bevy_math::*;
 use bevy_reflect::Reflect;
 use primitives::InfinitePlane3d;
@@ -18,42 +16,30 @@ impl WorkingPlane {
         }
     }
 
+    /// Create a new `WorkingPlane` based on three points and compute the geometric center
+    /// of those points.
+    ///
+    /// The direction of the plane normal is determined by the winding order
+    /// of the triangular shape formed by the points.
+    ///
+    /// # Panics
+    ///
+    /// Panics if a valid normal can not be computed, for example when the points
+    /// are *collinear* and lie on the same line.
     pub fn from_three_points([a, b, c]: [Vec3; 3]) -> Self {
         let (plane, origin) = InfinitePlane3d::from_points(a, b, c);
         Self { plane, origin }
     }
 
-    pub fn from_points(points: impl IntoIterator<Item = Vec3>) -> Self {
-        let points = points.into_iter().collect::<Vec<_>>();
-
-        if points.len() < 3 {
-            panic!("Need at least three non-colinear points to construct a plane");
-        }
-
-        let count = points.len();
-        let normal = (0..count)
-            .map(|idx| {
-                let prev = (idx - 1 + count) % count;
-                let nxt = (idx + 1) % count;
-                [prev, idx, nxt]
-            })
-            .filter_map(|[a, b, c]| {
-                Some([points.get(a)?, points.get(b)?, points.get(c)?].map(|c| *c))
-            })
-            .map(|[a, b, c]| (b - a).cross(c - a).normalize_or_zero())
-            .sum::<Vec3>()
-            .normalize();
-
-        let center = points.into_iter().sum::<Vec3>() / count as f32;
-
-        Self {
-            plane: InfinitePlane3d::new(normal),
-            origin: center,
-        }
-    }
-
     /// puts the origin at the position with minimum distance to Vec3::ZERO
-    pub fn normalize(self) -> Self {
+    ///
+    /// In theory it would be enough to represent the plane by
+    ///
+    /// - normal
+    /// - distance to Vec3::ZERO
+    ///
+    /// now and we could omit the origin point, as it can be calculated by `normal * distance`
+    pub fn hesse_normal_form(self) -> Self {
         let projection_scalar = self.origin.dot(self.plane.normal.as_vec3());
         let new_origin = self.plane.normal.as_vec3() * projection_scalar;
         Self {

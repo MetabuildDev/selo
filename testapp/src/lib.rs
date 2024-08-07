@@ -1,5 +1,6 @@
 mod algos;
 mod camera;
+mod gizmos;
 mod line;
 mod point;
 mod pointer;
