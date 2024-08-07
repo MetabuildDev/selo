@@ -1,11 +1,32 @@
-use bevy::{ecs::system::SystemParam, prelude::*};
+use bevy::{
+    ecs::system::SystemParam,
+    input::{
+        common_conditions::input_pressed,
+        mouse::{MouseMotion, MouseWheel},
+    },
+    prelude::*,
+};
+
+use crate::{pointer::PointerParams, state::AppState};
 
 pub struct CameraPlugin;
 
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<MainCamera>()
-            .add_systems(Startup, setup_cameras);
+            .add_systems(Startup, setup_cameras)
+            .add_systems(
+                Update,
+                (
+                    (
+                        move_camera.run_if(not(input_pressed(KeyCode::ShiftLeft))),
+                        rotate_camera.run_if(input_pressed(KeyCode::ShiftLeft)),
+                    )
+                        .run_if(input_pressed(KeyCode::Space)),
+                    really_simple_zoom.run_if(not(input_pressed(KeyCode::ControlLeft))),
+                )
+                    .run_if(in_state(AppState::Algorithms)),
+            );
     }
 }
 
@@ -52,4 +73,51 @@ fn setup_cameras(mut cmds: Commands) {
             ..Default::default()
         },
     ));
+}
+
+fn move_camera(
+    camera: CameraParams,
+    pointer: PointerParams,
+    mut mouse: EventReader<MouseMotion>,
+    mut cam: Query<&mut Transform, With<MainCamera>>,
+) {
+    if let Some(pos) = pointer.screen_position() {
+        let delta = mouse
+            .read()
+            .map(|drag| [pos, pos + drag.delta])
+            .filter_map(|[start, end]| {
+                Some([
+                    camera.screen_ray_onto_xy(start)?,
+                    camera.screen_ray_onto_xy(end)?,
+                ])
+            })
+            .map(|[start, end]| end - start)
+            .sum::<Vec3>();
+        cam.iter_mut().for_each(|mut transform| {
+            transform.translation -= delta;
+        });
+    }
+}
+
+fn rotate_camera(
+    mut mouse: EventReader<MouseMotion>,
+    mut cam: Query<&mut Transform, With<MainCamera>>,
+) {
+    let delta = mouse.read().map(|drag| drag.delta).sum::<Vec2>() * 0.0025;
+    cam.iter_mut().for_each(|mut transform| {
+        let x_rot = Quat::from_axis_angle(transform.local_x().as_vec3(), -delta.y);
+        let z_rot = Quat::from_axis_angle(Vec3::Z, -delta.x);
+        transform.rotate(x_rot * z_rot);
+    });
+}
+
+fn really_simple_zoom(
+    mut mouse: EventReader<MouseWheel>,
+    mut cam: Query<&mut Transform, With<MainCamera>>,
+) {
+    let delta = mouse.read().map(|scroll| scroll.y).sum::<f32>();
+    cam.iter_mut().for_each(|mut transform| {
+        let forward = transform.forward().as_vec3();
+        transform.translation += delta * forward;
+    });
 }

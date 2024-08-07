@@ -1,4 +1,7 @@
-use bevy::{input::mouse::MouseWheel, prelude::*};
+use bevy::{
+    input::{common_conditions::input_pressed, mouse::MouseWheel},
+    prelude::*,
+};
 use strum::{EnumIter, IntoEnumIterator};
 
 use crate::state::{state_ui, AppState};
@@ -15,8 +18,11 @@ impl Plugin for AlgorithmStatePlugin {
             )
             .add_systems(
                 Update,
-                next_algo_on_scroll
-                    .run_if(state_exists::<AlgorithmState>.and_then(on_event::<MouseWheel>())),
+                next_algo_on_scroll.run_if(
+                    state_exists::<AlgorithmState>
+                        .and_then(input_pressed(KeyCode::ControlLeft))
+                        .and_then(on_event::<MouseWheel>()),
+                ),
             );
     }
 }

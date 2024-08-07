@@ -1,7 +1,4 @@
-use bevy::{
-    input::common_conditions::{input_just_pressed, input_just_released},
-    prelude::*,
-};
+use bevy::{input::common_conditions::input_just_pressed, prelude::*};
 use bevy_egui::{egui, EguiContext};
 use bevy_inspector_egui::bevy_inspector::ui_for_state;
 use bevy_mod_picking::prelude::*;
@@ -12,8 +9,6 @@ impl Plugin for StatePlugin {
     fn build(&self, app: &mut App) {
         app.init_state::<AppState>()
             .register_type::<AppState>()
-            .register_type::<PreviousState>()
-            .init_resource::<PreviousState>()
             .add_systems(Update, state_ui::<AppState>)
             .add_systems(
                 Update,
@@ -23,7 +18,6 @@ impl Plugin for StatePlugin {
                     change_state(AppState::Triangle).run_if(input_just_pressed(KeyCode::KeyT)),
                     change_state(AppState::Polygon).run_if(input_just_pressed(KeyCode::KeyP)),
                     change_state(AppState::Algorithms).run_if(input_just_pressed(KeyCode::Escape)),
-                    use_prev_state.run_if(input_just_released(KeyCode::Space)),
                 ),
             )
             .add_systems(
@@ -32,9 +26,6 @@ impl Plugin for StatePlugin {
             );
     }
 }
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Deref, DerefMut, Default, Reflect, Resource)]
-pub struct PreviousState(AppState);
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, States, Reflect)]
 pub enum AppState {
@@ -46,12 +37,9 @@ pub enum AppState {
     Polygon,
 }
 
-fn change_state(
-    state: AppState,
-) -> impl Fn(ResMut<NextState<AppState>>, Res<State<AppState>>, ResMut<PreviousState>) {
-    move |mut next, now, mut prev| {
+fn change_state(state: AppState) -> impl Fn(ResMut<NextState<AppState>>) {
+    move |mut next| {
         next.set(state);
-        **prev = *now.get();
     }
 }
 
@@ -75,8 +63,4 @@ pub fn unselect_everything(mut selected: Query<&mut PickSelection>) {
     selected.iter_mut().for_each(|mut selection| {
         selection.is_selected = false;
     });
-}
-
-fn use_prev_state(prev: Res<PreviousState>, mut next: ResMut<NextState<AppState>>) {
-    next.set(**prev);
 }
