@@ -85,7 +85,10 @@ fn setup_cameras(mut cmds: Commands) {
 fn align_camera_with_active_working_plane(
     working_plane: Query<
         &StoredWorkingPlane,
-        (With<ActiveWorkingPlane>, Changed<StoredWorkingPlane>),
+        (
+            With<ActiveWorkingPlane>,
+            Or<(Changed<StoredWorkingPlane>, Added<ActiveWorkingPlane>)>,
+        ),
     >,
     mut cam: Query<&mut Transform, With<MainCamera>>,
 ) {

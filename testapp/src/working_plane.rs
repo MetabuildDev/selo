@@ -1,4 +1,8 @@
-use bevy::{color::palettes, ecs::system::SystemParam, prelude::*};
+use bevy::{
+    color::palettes,
+    ecs::system::{RunSystemOnce, SystemParam},
+    prelude::*,
+};
 use bevy_egui::{egui, EguiContext};
 use bevy_inspector_egui::bevy_inspector::ui_for_value;
 use math::prelude::WorkingPlane;
@@ -13,7 +17,12 @@ impl Plugin for WorkingPlanePlugin {
             .register_type::<StoredWorkingPlane>()
             .register_type::<AttachedWorkingPlane>()
             .add_systems(Startup, spawn_initial_working_plane)
-            .add_systems(Update, ui.run_if(in_state(AppState::WorkingPlane)))
+            .add_systems(
+                Update,
+                (ui_active, ui_inactive)
+                    .chain()
+                    .run_if(in_state(AppState::WorkingPlane)),
+            )
             .add_systems(Update, render_working_plane)
             .observe(add_working_plane::<Point>)
             .observe(add_working_plane::<Line>)
@@ -106,7 +115,7 @@ fn render_working_plane(mut gizmos: Gizmos, working_plane: WorkingPlaneParams) {
         .axis_count(8);
 }
 
-fn ui(world: &mut World) {
+fn ui_active(world: &mut World) {
     let mut q = world.query::<&mut EguiContext>();
     let ctx = q.single_mut(world).get_mut().clone();
     let mut q = world.query_filtered::<&StoredWorkingPlane, With<ActiveWorkingPlane>>();
@@ -118,5 +127,48 @@ fn ui(world: &mut World) {
         let mut current = q.single_mut(world);
         current.origin = wp.origin;
         current.plane.normal = Dir3::new_unchecked(wp.plane.normal.normalize());
+    }
+}
+
+fn ui_inactive(world: &mut World) {
+    enum Outcome {
+        New,
+        NewActive(Entity),
+    }
+    let mut q = world.query::<&mut EguiContext>();
+    let ctx = q.single_mut(world).get_mut().clone();
+    let mut q = world
+        .query_filtered::<(Entity, &Name), (With<StoredWorkingPlane>, Without<ActiveWorkingPlane>)>(
+        );
+    let wp = q
+        .iter(world)
+        .map(|(entity, name)| (entity, name.to_string()))
+        .collect::<Vec<_>>();
+    let resp = egui::Window::new("New Working Planes")
+        .show(&ctx, |ui| {
+            for (e, name) in wp {
+                if ui.button(name).clicked() {
+                    return Some(Outcome::NewActive(e));
+                }
+            }
+            if ui.button("+").clicked() {
+                return Some(Outcome::New);
+            }
+            None
+        })
+        .map(|resp| resp.inner)
+        .flatten()
+        .flatten();
+
+    match resp {
+        Some(o) => match o {
+            Outcome::New => {
+                world.run_system_once(spawn_initial_working_plane);
+            }
+            Outcome::NewActive(e) => {
+                world.commands().entity(e).insert(ActiveWorkingPlane);
+            }
+        },
+        None => {}
     }
 }
