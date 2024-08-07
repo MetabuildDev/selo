@@ -2,6 +2,7 @@ use bevy::{
     color::palettes, ecs::system::SystemParam, input::common_conditions::input_just_pressed,
     prelude::*,
 };
+use math::prelude::WorkingPlane;
 
 use crate::{
     drop_system,
@@ -9,6 +10,9 @@ use crate::{
     point::{spawn_point, Point},
     pointer::PointerParams,
     state::AppState,
+    working_plane::{
+        lines_with_working_plane, with_working_plane, AttachedWorkingPlane, WorkingPlaneParams,
+    },
 };
 
 pub struct TrianglePlugin;
@@ -24,11 +28,13 @@ impl Plugin for TrianglePlugin {
                 (
                     spawn_point
                         .pipe(triangle_point)
+                        .pipe(with_working_plane)
                         .pipe(triangle_start)
                         .pipe(drop_system)
                         .run_if(not(any_with_component::<TriangleStart>)),
                     spawn_point
                         .pipe(triangle_point)
+                        .pipe(with_working_plane)
                         .pipe(triangle_mid)
                         .pipe(drop_system)
                         .run_if(
@@ -39,7 +45,9 @@ impl Plugin for TrianglePlugin {
                         .pipe(triangle_point)
                         .pipe(triangle_end)
                         .pipe(construct_lines)
+                        .pipe(lines_with_working_plane)
                         .pipe(construct_triangle)
+                        .pipe(with_working_plane)
                         .pipe(drop_system)
                         .run_if(any_with_component::<TriangleMid>),
                 )
@@ -82,17 +90,23 @@ pub struct TriangleLine;
 
 #[derive(SystemParam)]
 pub struct TriangleParams<'w, 's> {
-    triangles: Query<'w, 's, &'static Triangle>,
+    triangles: Query<'w, 's, (&'static Triangle, &'static AttachedWorkingPlane)>,
     points: Query<'w, 's, &'static GlobalTransform, With<Point>>,
 }
 
 impl TriangleParams<'_, '_> {
-    pub fn iter_triangles(&self) -> impl Iterator<Item = [Vec3; 3]> + '_ {
-        self.triangles.iter().filter_map(|triangle| {
-            self.points
+    pub fn iter_just_triangles(&self) -> impl Iterator<Item = [Vec3; 3]> + '_ {
+        self.iter_triangles().map(|(triangle, _)| triangle)
+    }
+
+    pub fn iter_triangles(&self) -> impl Iterator<Item = ([Vec3; 3], WorkingPlane)> + '_ {
+        self.triangles.iter().filter_map(|(triangle, wp)| {
+            let points = self
+                .points
                 .get_many([triangle.a, triangle.b, triangle.c])
                 .map(|poss| poss.map(|pos| pos.translation()))
-                .ok()
+                .ok()?;
+            Some((points, **wp))
         })
     }
 }
@@ -145,8 +159,11 @@ fn render_triangle_construction(
     start: Query<&GlobalTransform, With<TriangleStart>>,
     mid: Query<&GlobalTransform, With<TriangleMid>>,
     pointer: PointerParams,
+    working_plane: WorkingPlaneParams,
 ) {
-    let pointer_pos = pointer.world_position_3d().unwrap_or_default();
+    let pointer_pos = pointer
+        .world_position_3d(working_plane.current())
+        .unwrap_or_default();
     let start = start.single().translation();
     let mid = mid.get_single().map(|p| p.translation());
 
@@ -163,7 +180,7 @@ fn render_triangle_construction(
 }
 
 fn render_triangles(mut gizmos: Gizmos, triangles: TriangleParams) {
-    triangles.iter_triangles().for_each(|[a, b, c]| {
+    triangles.iter_just_triangles().for_each(|[a, b, c]| {
         gizmos.primitive_3d(
             &Triangle3d::new(a, b, c),
             Vec3::ZERO,

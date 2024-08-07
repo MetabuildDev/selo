@@ -7,6 +7,7 @@ mod pointer;
 mod polygon;
 mod state;
 mod triangle;
+mod working_plane;
 
 use bevy::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
@@ -29,6 +30,7 @@ pub fn run() {
         triangle::TrianglePlugin,
         polygon::PolygonPlugin,
         algos::AlgoPlugin,
+        working_plane::WorkingPlanePlugin,
     ));
 
     app.run();

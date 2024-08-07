@@ -110,18 +110,6 @@ fn render_working_plane_normalization(mut gizmos: AnimatedGizmos, points: Res<Wo
         )
         .segment_count(100)
         .segment_length(0.1);
-    gizmos
-        .primitive_3d(
-            &Plane3d {
-                normal: Dir3::Z,
-                half_size: Vec2::new(100.0, 100.0),
-            },
-            Vec3::ZERO,
-            Quat::default(),
-            palettes::basic::GREEN,
-        )
-        .segment_count(100)
-        .segment_length(0.1);
 }
 
 fn render_working_plane_transform(mut gizmos: AnimatedGizmos, points: Res<WorkingPlanePoints>) {
@@ -180,18 +168,6 @@ fn render_working_plane_transform(mut gizmos: AnimatedGizmos, points: Res<Workin
             normalized_plane.origin,
             Quat::default(),
             palettes::basic::YELLOW,
-        )
-        .segment_count(100)
-        .segment_length(0.1);
-    gizmos
-        .primitive_3d(
-            &Plane3d {
-                normal: Dir3::Z,
-                half_size: Vec2::new(100.0, 100.0),
-            },
-            Vec3::ZERO,
-            Quat::default(),
-            palettes::basic::GREEN,
         )
         .segment_count(100)
         .segment_length(0.1);

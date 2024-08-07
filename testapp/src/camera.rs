@@ -6,8 +6,13 @@ use bevy::{
     },
     prelude::*,
 };
+use math::prelude::WorkingPlane;
 
-use crate::{pointer::PointerParams, state::AppState};
+use crate::{
+    pointer::PointerParams,
+    state::AppState,
+    working_plane::{ActiveWorkingPlane, StoredWorkingPlane, WorkingPlaneParams},
+};
 
 pub struct CameraPlugin;
 
@@ -26,7 +31,8 @@ impl Plugin for CameraPlugin {
                     really_simple_zoom.run_if(not(input_pressed(KeyCode::ControlLeft))),
                 )
                     .run_if(in_state(AppState::Algorithms)),
-            );
+            )
+            .add_systems(Update, align_camera_with_active_working_plane);
     }
 }
 
@@ -44,9 +50,13 @@ impl CameraParams<'_, '_> {
         camera.viewport_to_world(global, screen_pos)
     }
 
-    pub fn screen_ray_onto_xy(&self, screen_pos: Vec2) -> Option<Vec3> {
+    pub fn screen_ray_onto_plane(
+        &self,
+        screen_pos: Vec2,
+        working_plane: WorkingPlane,
+    ) -> Option<Vec3> {
         self.screen_ray_into_world(screen_pos).and_then(|ray| {
-            let dist = ray.intersect_plane(Vec3::ZERO, InfinitePlane3d { normal: Dir3::Z })?;
+            let dist = ray.intersect_plane(working_plane.origin, working_plane.plane)?;
             Some(ray.get_point(dist))
         })
     }
@@ -75,11 +85,31 @@ fn setup_cameras(mut cmds: Commands) {
     ));
 }
 
+fn align_camera_with_active_working_plane(
+    working_plane: Query<
+        &StoredWorkingPlane,
+        (With<ActiveWorkingPlane>, Changed<StoredWorkingPlane>),
+    >,
+    mut cam: Query<&mut Transform, With<MainCamera>>,
+) {
+    if let Ok(working_plane) = working_plane.get_single() {
+        cam.iter_mut().for_each(|mut transform| {
+            let up = transform.up();
+            let normal = working_plane.normal();
+            let rotation = Quat::from_rotation_arc(up.as_vec3(), normal.as_vec3());
+            *transform = transform
+                .with_rotation(rotation)
+                .looking_at(working_plane.origin, normal);
+        })
+    }
+}
+
 fn move_camera(
     camera: CameraParams,
     pointer: PointerParams,
     mut mouse: EventReader<MouseMotion>,
     mut cam: Query<&mut Transform, With<MainCamera>>,
+    working_plane: WorkingPlaneParams,
 ) {
     if let Some(pos) = pointer.screen_position() {
         let delta = mouse
@@ -87,8 +117,8 @@ fn move_camera(
             .map(|drag| [pos, pos + drag.delta])
             .filter_map(|[start, end]| {
                 Some([
-                    camera.screen_ray_onto_xy(start)?,
-                    camera.screen_ray_onto_xy(end)?,
+                    camera.screen_ray_onto_plane(start, working_plane.current())?,
+                    camera.screen_ray_onto_plane(end, working_plane.current())?,
                 ])
             })
             .map(|[start, end]| end - start)
@@ -102,11 +132,12 @@ fn move_camera(
 fn rotate_camera(
     mut mouse: EventReader<MouseMotion>,
     mut cam: Query<&mut Transform, With<MainCamera>>,
+    working_plane: WorkingPlaneParams,
 ) {
     let delta = mouse.read().map(|drag| drag.delta).sum::<Vec2>() * 0.0025;
     cam.iter_mut().for_each(|mut transform| {
         let x_rot = Quat::from_axis_angle(transform.local_x().as_vec3(), -delta.y);
-        let z_rot = Quat::from_axis_angle(Vec3::Z, -delta.x);
+        let z_rot = Quat::from_axis_angle(working_plane.current().normal().as_vec3(), -delta.x);
         transform.rotate(x_rot * z_rot);
     });
 }

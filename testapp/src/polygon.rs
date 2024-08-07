@@ -2,6 +2,7 @@ use bevy::{
     color::palettes, ecs::system::SystemParam, input::common_conditions::input_just_pressed,
     prelude::*,
 };
+use math::prelude::WorkingPlane;
 
 use crate::{
     drop_system,
@@ -9,6 +10,9 @@ use crate::{
     point::{spawn_point, Point},
     pointer::PointerParams,
     state::AppState,
+    working_plane::{
+        lines_with_working_plane, with_working_plane, AttachedWorkingPlane, WorkingPlaneParams,
+    },
 };
 
 pub struct PolygonPlugin;
@@ -30,12 +34,15 @@ impl Plugin for PolygonPlugin {
                         spawn_point
                             .pipe(polygon_start)
                             .pipe(polygon_point)
+                            .pipe(with_working_plane)
                             .pipe(drop_system)
                             .run_if(not(any_with_component::<LastPolyPoint>)),
                         spawn_point
                             .pipe(polygon_point)
+                            .pipe(with_working_plane)
                             .pipe(polygon_continue)
                             .pipe(construct_lines)
+                            .pipe(lines_with_working_plane)
                             .pipe(unfinished_polygon_line)
                             .pipe(drop_system)
                             .run_if(any_with_component::<LastPolyPoint>),
@@ -48,10 +55,12 @@ impl Plugin for PolygonPlugin {
                         get_sorted_polygon_points
                             .pipe(get_last_line_point)
                             .pipe(construct_lines)
+                            .pipe(lines_with_working_plane)
                             .pipe(polygon_line)
                             .pipe(drop_system),
                         get_sorted_polygon_points
                             .pipe(construct_polygon)
+                            .pipe(with_working_plane)
                             .pipe(drop_system),
                         cleanup_construction_components,
                     )
@@ -98,14 +107,17 @@ pub struct Polygon2D {
 
 #[derive(SystemParam)]
 pub struct PolygonParams<'w, 's> {
-    polygon: Query<'w, 's, &'static Polygon2D>,
+    polygon: Query<'w, 's, (&'static Polygon2D, &'static AttachedWorkingPlane)>,
     points: Query<'w, 's, (&'static GlobalTransform, &'static PolygonPoint), With<Point>>,
 }
 
 impl PolygonParams<'_, '_> {
-    pub fn iter_polygons(&self) -> impl Iterator<Item = Vec<Vec3>> + '_ {
-        self.polygon.iter().filter_map(|polygon| {
-            polygon
+    pub fn iter_just_polygons(&self) -> impl Iterator<Item = Vec<Vec3>> + '_ {
+        self.iter_polygons().map(|(polygon, _)| polygon)
+    }
+    pub fn iter_polygons(&self) -> impl Iterator<Item = (Vec<Vec3>, WorkingPlane)> + '_ {
+        self.polygon.iter().filter_map(|(polygon, wp)| {
+            let points = polygon
                 .points
                 .iter()
                 .map(|entity| {
@@ -120,7 +132,8 @@ impl PolygonParams<'_, '_> {
                         .map(|(_, position)| position)
                         .collect::<Vec<_>>()
                 })
-                .ok()
+                .ok()?;
+            Some((points, **wp))
         })
     }
 }
@@ -228,7 +241,7 @@ fn cleanup_construction_components(
 }
 
 fn render_polygons(mut gizmos: Gizmos, polygon: PolygonParams) {
-    polygon.iter_polygons().for_each(|mut points| {
+    polygon.iter_just_polygons().for_each(|mut points| {
         if points.first() != points.last() {
             points.extend(points.first().cloned());
         }
@@ -245,6 +258,7 @@ fn render_polygon_construction(
     mut gizmos: Gizmos,
     points: Query<(&GlobalTransform, &PolygonPoint), With<UnfinishedPolyPoint>>,
     pointer: PointerParams,
+    working_plane: WorkingPlaneParams,
 ) {
     let points = points
         .iter()
@@ -259,7 +273,9 @@ fn render_polygon_construction(
             gizmos.line(start, end, palettes::basic::AQUA);
         });
 
-    let pointer_pos = pointer.world_position_3d().unwrap_or_default();
+    let pointer_pos = pointer
+        .world_position_3d(working_plane.current())
+        .unwrap_or_default();
     if let Some(end) = points.last().cloned() {
         gizmos.line(pointer_pos, end, palettes::basic::AQUA);
     }

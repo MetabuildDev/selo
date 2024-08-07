@@ -4,12 +4,14 @@ use bevy::{
     input::common_conditions::input_just_pressed,
     prelude::*,
 };
+use math::prelude::WorkingPlane;
 
 use crate::{
     drop_system,
     point::{spawn_point, Point},
     pointer::PointerParams,
     state::AppState,
+    working_plane::{with_working_plane, AttachedWorkingPlane, WorkingPlaneParams},
 };
 
 pub struct LinePlugin;
@@ -26,14 +28,17 @@ impl Plugin for LinePlugin {
                 (
                     spawn_point
                         .pipe(line_point)
+                        .pipe(with_working_plane)
                         .pipe(line_start)
                         .pipe(drop_system)
                         .run_if(not(any_with_component::<UnfinishedLine>)),
                     spawn_point
                         .pipe(line_point)
+                        .pipe(with_working_plane)
                         .pipe(line_end)
                         .pipe(construct_lines)
                         .pipe(just_line)
+                        .pipe(with_working_plane)
                         .pipe(drop_system)
                         .run_if(any_with_component::<UnfinishedLine>),
                 )
@@ -69,17 +74,23 @@ pub struct Line {
 
 #[derive(SystemParam)]
 pub struct LineParams<'w, 's, F: QueryFilter + 'static = ()> {
-    lines: Query<'w, 's, &'static Line, F>,
+    lines: Query<'w, 's, (&'static Line, &'static AttachedWorkingPlane), F>,
     points: Query<'w, 's, &'static GlobalTransform, With<Point>>,
 }
 
 impl<F: QueryFilter + 'static> LineParams<'_, '_, F> {
-    pub fn iter_lines(&self) -> impl Iterator<Item = [Vec3; 2]> + '_ {
-        self.lines.iter().filter_map(|line| {
-            self.points
+    pub fn iter_just_lines(&self) -> impl Iterator<Item = [Vec3; 2]> + '_ {
+        self.iter_lines().map(|(line, _)| line)
+    }
+
+    pub fn iter_lines(&self) -> impl Iterator<Item = ([Vec3; 2], WorkingPlane)> + '_ {
+        self.lines.iter().filter_map(|(line, wp)| {
+            let points = self
+                .points
                 .get_many([line.start, line.end])
                 .map(|poss| poss.map(|pos| pos.translation()))
-                .ok()
+                .ok()?;
+            Some((points, **wp))
         })
     }
 }
@@ -168,8 +179,11 @@ pub fn render_drawing_line(
     mut gizmos: Gizmos,
     pointer: PointerParams,
     points: Query<&GlobalTransform, (With<Point>, With<UnfinishedLine>)>,
+    working_plane: WorkingPlaneParams,
 ) {
-    let pointer_pos = pointer.world_position_3d().unwrap_or_default();
+    let pointer_pos = pointer
+        .world_position_3d(working_plane.current())
+        .unwrap_or_default();
     points
         .iter()
         .map(|transform| transform.translation())
@@ -180,7 +194,7 @@ pub fn render_drawing_line(
 
 fn render_lines(mut gizmos: Gizmos, lines: LineParams<With<JustLine>>) {
     let color = palettes::basic::GREEN;
-    lines.iter_lines().for_each(|[start, end]| {
+    lines.iter_just_lines().for_each(|[start, end]| {
         let difference = end - start;
         gizmos.line(start, end, color);
         gizmos.arrow(

@@ -7,8 +7,6 @@ mod working_planes;
 
 use bevy::{color::palettes, prelude::*};
 
-use crate::state::AppState;
-
 pub struct AlgoPlugin;
 
 impl Plugin for AlgoPlugin {
@@ -21,7 +19,7 @@ impl Plugin for AlgoPlugin {
                 straight_skeleton::PolygonSkeletonPlugin,
                 working_planes::WorkingPlanePlugin,
             ))
-            .add_systems(Update, draw_origin.run_if(in_state(AppState::Algorithms)));
+            .add_systems(Update, draw_origin);
     }
 }
 

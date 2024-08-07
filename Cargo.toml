@@ -11,6 +11,7 @@ geo-buffer = { git = "https://github.com/RobWalt/geo-buffer.git", branch = "upda
 bevy_reflect = "0.14"
 
 strum = "0.26"
+itertools = "0.13"
 
 bevy = "0.14"
 bevy-inspector-egui = "0.25"

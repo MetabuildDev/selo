@@ -1,4 +1,5 @@
 use bevy::{color::palettes, prelude::*};
+use itertools::Itertools;
 use math::triangulate_glam;
 
 use crate::polygon::PolygonParams;
@@ -19,20 +20,28 @@ impl Plugin for PolygonTriangulationPlugin {
 fn render_triangulation(mut gizmos: Gizmos, polygons: PolygonParams) {
     polygons
         .iter_polygons()
-        // don't do that anymore and instead rotate to plane
-        .map(|polygon| {
-            polygon
+        .chunk_by(|(_, wp)| *wp)
+        .into_iter()
+        .for_each(|(wp, group)| {
+            let (proj, inj) = wp.xy_projection_injection();
+            group
                 .into_iter()
-                .map(|p| p.truncate())
-                .collect::<Vec<_>>()
-        })
-        .flat_map(|polygon| triangulate_glam(polygon))
-        .for_each(|[a, b, c]| {
-            gizmos.primitive_2d(
-                &Triangle2d::new(a, b, c),
-                Vec2::ZERO,
-                0.0,
-                palettes::basic::RED,
-            );
+                .map(|(poly, _)| poly)
+                .map(|polygon| {
+                    polygon
+                        .into_iter()
+                        .map(|p| proj.transform_point(p).truncate())
+                        .collect::<Vec<_>>()
+                })
+                .flat_map(|polygon| triangulate_glam(polygon))
+                .map(|points| points.map(|p| inj.transform_point(p.extend(0.0))))
+                .for_each(|[a, b, c]| {
+                    gizmos.primitive_3d(
+                        &Triangle3d::new(a, b, c),
+                        Vec3::ZERO,
+                        Quat::default(),
+                        palettes::basic::RED,
+                    );
+                });
         });
 }

@@ -1,5 +1,6 @@
 use bevy::{color::palettes, prelude::*};
 use bevy_egui::{egui, EguiContext};
+use itertools::Itertools;
 use math::buffer_polygon_glam;
 
 use crate::polygon::PolygonParams;
@@ -44,27 +45,40 @@ fn render_polygon_expansion(
 ) {
     polygons
         .iter_polygons()
-        // don't do that anymore and instead rotate to plane
-        .map(|polygon| {
-            polygon
+        .chunk_by(|(_, wp)| *wp)
+        .into_iter()
+        .for_each(|(wp, group)| {
+            let (proj, inj) = wp.xy_projection_injection();
+            group
                 .into_iter()
-                .map(|p| p.truncate())
-                .collect::<Vec<_>>()
-        })
-        .flat_map(|polygon| buffer_polygon_glam(polygon, **expansion_factor))
-        .for_each(|polygon| {
-            polygon
-                .windows(2)
-                .map(|win| (win[0], win[1]))
-                .chain(Some(()).and_then(|_| {
-                    let first = polygon.first()?;
-                    let last = polygon.last()?;
-                    (first != last).then_some((*first, *last))
-                }))
-                .for_each(|(start, end)| {
-                    gizmos.line(start.extend(0.0), end.extend(0.0), palettes::basic::RED);
+                .map(|(poly, _)| poly)
+                .map(|polygon| {
+                    polygon
+                        .into_iter()
+                        .map(|p| proj.transform_point(p).truncate())
+                        .collect::<Vec<_>>()
+                })
+                .flat_map(|polygon| buffer_polygon_glam(polygon, **expansion_factor))
+                .for_each(|polygon| {
+                    polygon
+                        .windows(2)
+                        .map(|win| (win[0], win[1]))
+                        .chain(Some(()).and_then(|_| {
+                            let first = polygon.first()?;
+                            let last = polygon.last()?;
+                            (first != last).then_some((*first, *last))
+                        }))
+                        .map(|(start, end)| {
+                            (
+                                inj.transform_point(start.extend(0.0)),
+                                inj.transform_point(end.extend(0.0)),
+                            )
+                        })
+                        .for_each(|(start, end)| {
+                            gizmos.line(start, end, palettes::basic::RED);
+                        });
                 });
-        });
+        })
 }
 
 fn ui(mut contexts: Query<&mut EguiContext>, mut val: ResMut<PolygonExpansion>) {

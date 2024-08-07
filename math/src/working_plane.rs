@@ -48,6 +48,14 @@ impl WorkingPlane {
         }
     }
 
+    pub fn origin(&self) -> Vec3 {
+        self.origin
+    }
+
+    pub fn normal(&self) -> Dir3 {
+        self.plane.normal
+    }
+
     pub fn xy_projection(&self) -> Affine3A {
         let rotation = Quat::from_rotation_arc(self.plane.normal.as_vec3(), Vec3::Z);
         let transformed_origin = rotation * self.origin;

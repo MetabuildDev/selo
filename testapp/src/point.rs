@@ -1,7 +1,13 @@
 use bevy::{color::palettes, input::common_conditions::input_just_pressed, prelude::*};
 use bevy_mod_picking::prelude::*;
 
-use crate::{camera::CameraParams, drop_system, pointer::PointerParams, state::AppState};
+use crate::{
+    camera::CameraParams,
+    drop_system,
+    pointer::PointerParams,
+    state::AppState,
+    working_plane::{with_working_plane, WorkingPlaneParams},
+};
 
 pub struct PointPlugin;
 
@@ -12,9 +18,13 @@ impl Plugin for PointPlugin {
             .register_type::<DraggedPosition>()
             .add_systems(
                 Update,
-                spawn_point.pipe(just_point).pipe(drop_system).run_if(
-                    in_state(AppState::Point).and_then(input_just_pressed(MouseButton::Left)),
-                ),
+                spawn_point
+                    .pipe(just_point)
+                    .pipe(with_working_plane)
+                    .pipe(drop_system)
+                    .run_if(
+                        in_state(AppState::Point).and_then(input_just_pressed(MouseButton::Left)),
+                    ),
             )
             .add_systems(
                 OnEnter(AppState::Algorithms),
@@ -52,11 +62,14 @@ pub fn spawn_point(
     mut materials: ResMut<Assets<StandardMaterial>>,
     pointer: PointerParams,
     mut id: Local<usize>,
+    working_plane: WorkingPlaneParams,
 ) -> Entity {
     *id += 1;
 
     let name = Name::new(format!("Point {n}", n = *id));
-    let position = pointer.world_position_3d().unwrap_or_default();
+    let position = pointer
+        .world_position_3d(working_plane.current())
+        .unwrap_or_default();
 
     let mesh = meshes.add(Circle::new(0.025));
     let material = materials.add(StandardMaterial::from_color(Color::from(
@@ -113,11 +126,12 @@ fn apply_dragged_position(
     mut cmds: Commands,
     mut dragged: Query<(Entity, &mut Transform, &DraggedPosition)>,
     camera: CameraParams,
+    working_plane: WorkingPlaneParams,
 ) {
     dragged
         .iter_mut()
         .filter_map(|(entity, transform, dragged)| {
-            let pos = camera.screen_ray_onto_xy(dragged.position)?;
+            let pos = camera.screen_ray_onto_plane(dragged.position, working_plane.current())?;
             Some((entity, transform, pos))
         })
         .for_each(|(entity, mut transform, pos3d)| {
