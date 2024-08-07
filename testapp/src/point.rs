@@ -2,11 +2,8 @@ use bevy::{color::palettes, input::common_conditions::input_just_pressed, prelud
 use bevy_mod_picking::prelude::*;
 
 use crate::{
-    camera::CameraParams,
-    drop_system,
-    pointer::PointerParams,
-    state::AppState,
-    working_plane::{with_working_plane, WorkingPlaneParams},
+    camera::CameraParams, drop_system, pointer::PointerParams, state::AppState,
+    working_plane::WorkingPlaneParams,
 };
 
 pub struct PointPlugin;
@@ -18,13 +15,9 @@ impl Plugin for PointPlugin {
             .register_type::<DraggedPosition>()
             .add_systems(
                 Update,
-                spawn_point
-                    .pipe(just_point)
-                    .pipe(with_working_plane)
-                    .pipe(drop_system)
-                    .run_if(
-                        in_state(AppState::Point).and_then(input_just_pressed(MouseButton::Left)),
-                    ),
+                spawn_point.pipe(just_point).pipe(drop_system).run_if(
+                    in_state(AppState::Point).and_then(input_just_pressed(MouseButton::Left)),
+                ),
             )
             .add_systems(
                 OnEnter(AppState::Algorithms),

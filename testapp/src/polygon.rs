@@ -10,9 +10,7 @@ use crate::{
     point::{spawn_point, Point},
     pointer::PointerParams,
     state::AppState,
-    working_plane::{
-        lines_with_working_plane, with_working_plane, AttachedWorkingPlane, WorkingPlaneParams,
-    },
+    working_plane::{AttachedWorkingPlane, WorkingPlaneParams},
 };
 
 pub struct PolygonPlugin;
@@ -34,15 +32,12 @@ impl Plugin for PolygonPlugin {
                         spawn_point
                             .pipe(polygon_start)
                             .pipe(polygon_point)
-                            .pipe(with_working_plane)
                             .pipe(drop_system)
                             .run_if(not(any_with_component::<LastPolyPoint>)),
                         spawn_point
                             .pipe(polygon_point)
-                            .pipe(with_working_plane)
                             .pipe(polygon_continue)
                             .pipe(construct_lines)
-                            .pipe(lines_with_working_plane)
                             .pipe(unfinished_polygon_line)
                             .pipe(drop_system)
                             .run_if(any_with_component::<LastPolyPoint>),
@@ -55,12 +50,10 @@ impl Plugin for PolygonPlugin {
                         get_sorted_polygon_points
                             .pipe(get_last_line_point)
                             .pipe(construct_lines)
-                            .pipe(lines_with_working_plane)
                             .pipe(polygon_line)
                             .pipe(drop_system),
                         get_sorted_polygon_points
                             .pipe(construct_polygon)
-                            .pipe(with_working_plane)
                             .pipe(drop_system),
                         cleanup_construction_components,
                     )

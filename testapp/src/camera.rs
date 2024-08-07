@@ -23,11 +23,8 @@ impl Plugin for CameraPlugin {
             .add_systems(
                 Update,
                 (
-                    (
-                        move_camera.run_if(not(input_pressed(KeyCode::ShiftLeft))),
-                        rotate_camera.run_if(input_pressed(KeyCode::ShiftLeft)),
-                    )
-                        .run_if(input_pressed(KeyCode::Space)),
+                    move_camera.run_if(input_pressed(KeyCode::Space)),
+                    rotate_camera.run_if(input_pressed(MouseButton::Middle)),
                     really_simple_zoom.run_if(not(input_pressed(KeyCode::ControlLeft))),
                 )
                     .run_if(in_state(AppState::Algorithms)),
@@ -138,7 +135,7 @@ fn rotate_camera(
     cam.iter_mut().for_each(|mut transform| {
         let x_rot = Quat::from_axis_angle(transform.local_x().as_vec3(), -delta.y);
         let z_rot = Quat::from_axis_angle(working_plane.current().normal().as_vec3(), -delta.x);
-        transform.rotate(x_rot * z_rot);
+        transform.rotate_around(Vec3::ZERO, x_rot * z_rot);
     });
 }
 

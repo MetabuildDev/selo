@@ -11,7 +11,7 @@ use crate::{
     point::{spawn_point, Point},
     pointer::PointerParams,
     state::AppState,
-    working_plane::{with_working_plane, AttachedWorkingPlane, WorkingPlaneParams},
+    working_plane::{AttachedWorkingPlane, WorkingPlaneParams},
 };
 
 pub struct LinePlugin;
@@ -28,17 +28,14 @@ impl Plugin for LinePlugin {
                 (
                     spawn_point
                         .pipe(line_point)
-                        .pipe(with_working_plane)
                         .pipe(line_start)
                         .pipe(drop_system)
                         .run_if(not(any_with_component::<UnfinishedLine>)),
                     spawn_point
                         .pipe(line_point)
-                        .pipe(with_working_plane)
                         .pipe(line_end)
                         .pipe(construct_lines)
                         .pipe(just_line)
-                        .pipe(with_working_plane)
                         .pipe(drop_system)
                         .run_if(any_with_component::<UnfinishedLine>),
                 )

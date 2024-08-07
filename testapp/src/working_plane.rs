@@ -3,7 +3,7 @@ use bevy_egui::{egui, EguiContext};
 use bevy_inspector_egui::bevy_inspector::ui_for_value;
 use math::prelude::WorkingPlane;
 
-use crate::state::AppState;
+use crate::{line::Line, point::Point, polygon::Polygon2D, state::AppState, triangle::Triangle};
 
 pub struct WorkingPlanePlugin;
 
@@ -14,7 +14,12 @@ impl Plugin for WorkingPlanePlugin {
             .register_type::<AttachedWorkingPlane>()
             .add_systems(Startup, spawn_initial_working_plane)
             .add_systems(Update, ui.run_if(in_state(AppState::WorkingPlane)))
-            .add_systems(Update, render_working_plane);
+            .add_systems(Update, render_working_plane)
+            .observe(add_working_plane::<Point>)
+            .observe(add_working_plane::<Line>)
+            .observe(add_working_plane::<Triangle>)
+            .observe(add_working_plane::<Polygon2D>)
+            .observe(keep_active_working_plane_unique);
     }
 }
 
@@ -38,26 +43,26 @@ impl WorkingPlaneParams<'_, '_> {
     }
 }
 
-pub fn with_working_plane(
-    In(entity): In<Entity>,
+fn add_working_plane<C: Component>(
+    trigger: Trigger<OnAdd, C>,
     mut cmds: Commands,
     working_plane: WorkingPlaneParams,
-) -> Entity {
-    cmds.entity(entity)
-        .insert(AttachedWorkingPlane(working_plane.current()))
-        .id()
+) {
+    cmds.entity(trigger.entity())
+        .insert(AttachedWorkingPlane(working_plane.current()));
 }
 
-pub fn lines_with_working_plane<const N: usize>(
-    In(entities): In<[(Entity, (Entity, Entity)); N]>,
+fn keep_active_working_plane_unique(
+    trigger: Trigger<OnAdd, ActiveWorkingPlane>,
     mut cmds: Commands,
-    working_plane: WorkingPlaneParams,
-) -> [(Entity, (Entity, Entity)); N] {
-    entities.map(|inp @ (entity, _)| {
-        cmds.entity(entity)
-            .insert(AttachedWorkingPlane(working_plane.current()));
-        inp
-    })
+    other: Query<Entity, With<ActiveWorkingPlane>>,
+) {
+    other
+        .iter()
+        .filter(|&e| e != trigger.entity())
+        .for_each(|entity| {
+            cmds.entity(entity).remove::<ActiveWorkingPlane>();
+        });
 }
 
 fn spawn_initial_working_plane(mut cmds: Commands) {

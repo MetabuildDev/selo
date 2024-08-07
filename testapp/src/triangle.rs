@@ -10,9 +10,7 @@ use crate::{
     point::{spawn_point, Point},
     pointer::PointerParams,
     state::AppState,
-    working_plane::{
-        lines_with_working_plane, with_working_plane, AttachedWorkingPlane, WorkingPlaneParams,
-    },
+    working_plane::{AttachedWorkingPlane, WorkingPlaneParams},
 };
 
 pub struct TrianglePlugin;
@@ -28,13 +26,11 @@ impl Plugin for TrianglePlugin {
                 (
                     spawn_point
                         .pipe(triangle_point)
-                        .pipe(with_working_plane)
                         .pipe(triangle_start)
                         .pipe(drop_system)
                         .run_if(not(any_with_component::<TriangleStart>)),
                     spawn_point
                         .pipe(triangle_point)
-                        .pipe(with_working_plane)
                         .pipe(triangle_mid)
                         .pipe(drop_system)
                         .run_if(
@@ -45,9 +41,7 @@ impl Plugin for TrianglePlugin {
                         .pipe(triangle_point)
                         .pipe(triangle_end)
                         .pipe(construct_lines)
-                        .pipe(lines_with_working_plane)
                         .pipe(construct_triangle)
-                        .pipe(with_working_plane)
                         .pipe(drop_system)
                         .run_if(any_with_component::<TriangleMid>),
                 )
