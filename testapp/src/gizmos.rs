@@ -1,5 +1,22 @@
 use bevy::{ecs::system::SystemParam, prelude::*};
 
+pub trait GizmosExt {
+    fn plane_3d(&mut self, origin: Vec3, normal: Dir3, color: impl Into<Color>);
+}
+
+impl<Config, Clear> GizmosExt for Gizmos<'_, '_, Config, Clear>
+where
+    Config: GizmoConfigGroup,
+    Clear: 'static + Send + Sync,
+{
+    fn plane_3d(&mut self, origin: Vec3, normal: Dir3, color: impl Into<Color>) {
+        let color = color.into();
+        self.arrow(origin, origin + normal.as_vec3(), color);
+        let rotation = Quat::from_rotation_arc(Vec3::Z, normal.as_vec3());
+        self.grid(origin, rotation, UVec2::splat(100), Vec2::splat(1.0), color);
+    }
+}
+
 #[derive(SystemParam, Deref, DerefMut)]
 pub struct AnimatedGizmos<'w, 's> {
     #[deref]

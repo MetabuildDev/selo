@@ -7,7 +7,10 @@ use bevy_egui::{egui, EguiContext};
 use bevy_inspector_egui::bevy_inspector::ui_for_value;
 use math::prelude::WorkingPlane;
 
-use crate::{line::Line, point::Point, polygon::Polygon2D, state::AppState, triangle::Triangle};
+use crate::{
+    gizmos::GizmosExt, line::Line, point::Point, polygon::Polygon2D, state::AppState,
+    triangle::Triangle,
+};
 
 pub struct WorkingPlanePlugin;
 
@@ -86,33 +89,12 @@ fn spawn_initial_working_plane(mut cmds: Commands) {
 
 fn render_working_plane(mut gizmos: Gizmos, working_plane: WorkingPlaneParams) {
     let working_plane = working_plane.current();
-    gizmos
-        .primitive_3d(
-            &Plane3d {
-                normal: working_plane.normal(),
-                half_size: Vec2::splat(1000.0),
-            },
-            working_plane.origin(),
-            Quat::default(),
-            palettes::basic::SILVER,
-        )
-        .segment_count(100)
-        .segment_length(0.1)
-        .axis_count(8);
-
-    gizmos
-        .primitive_3d(
-            &Plane3d {
-                normal: Dir3::Z,
-                half_size: Vec2::splat(1000.0),
-            },
-            Vec3::ZERO,
-            Quat::default(),
-            palettes::basic::GREEN,
-        )
-        .segment_count(100)
-        .segment_length(0.1)
-        .axis_count(8);
+    gizmos.plane_3d(
+        working_plane.origin(),
+        working_plane.normal(),
+        palettes::basic::SILVER,
+    );
+    gizmos.plane_3d(Vec3::ZERO, Dir3::Z, palettes::basic::GREEN);
 }
 
 fn ui_active(world: &mut World) {

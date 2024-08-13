@@ -138,7 +138,7 @@ fn rotate_camera(
     cam.iter_mut().for_each(|mut transform| {
         let x_rot = Quat::from_axis_angle(transform.local_x().as_vec3(), -delta.y);
         let z_rot = Quat::from_axis_angle(working_plane.current().normal().as_vec3(), -delta.x);
-        transform.rotate_around(Vec3::ZERO, x_rot * z_rot);
+        transform.rotate_around(working_plane.current().origin(), x_rot * z_rot);
     });
 }
 

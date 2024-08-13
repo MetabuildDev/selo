@@ -1,3 +1,4 @@
+use crate::gizmos::GizmosExt;
 use bevy::{color::palettes, prelude::*};
 use bevy_egui::{egui, EguiContext};
 use bevy_inspector_egui::bevy_inspector::ui_for_resource;
@@ -86,30 +87,12 @@ fn render_working_plane_normalization(mut gizmos: AnimatedGizmos, points: Res<Wo
         gizmos.animated_line(start, end, palettes::basic::WHITE, 0.2, 10);
     });
 
-    gizmos
-        .primitive_3d(
-            &Plane3d {
-                normal: plane.plane.normal,
-                half_size: Vec2::new(1000.0, 1000.0),
-            },
-            plane.origin,
-            Quat::default(),
-            palettes::basic::BLUE,
-        )
-        .segment_count(100)
-        .segment_length(0.1);
-    gizmos
-        .primitive_3d(
-            &Plane3d {
-                normal: normalized_plane.plane.normal,
-                half_size: Vec2::new(100.0, 100.0),
-            },
-            normalized_plane.origin,
-            Quat::default(),
-            palettes::basic::YELLOW,
-        )
-        .segment_count(100)
-        .segment_length(0.1);
+    gizmos.plane_3d(plane.origin, plane.normal(), palettes::basic::BLUE);
+    gizmos.plane_3d(
+        normalized_plane.origin,
+        normalized_plane.normal(),
+        palettes::basic::YELLOW,
+    );
 }
 
 fn render_working_plane_transform(mut gizmos: AnimatedGizmos, points: Res<WorkingPlanePoints>) {
@@ -159,18 +142,11 @@ fn render_working_plane_transform(mut gizmos: AnimatedGizmos, points: Res<Workin
             gizmos.animated_line(a, b, palettes::basic::AQUA, 0.1, 10);
         });
 
-    gizmos
-        .primitive_3d(
-            &Plane3d {
-                normal: normalized_plane.plane.normal,
-                half_size: Vec2::new(100.0, 100.0),
-            },
-            normalized_plane.origin,
-            Quat::default(),
-            palettes::basic::YELLOW,
-        )
-        .segment_count(100)
-        .segment_length(0.1);
+    gizmos.plane_3d(
+        normalized_plane.origin,
+        normalized_plane.normal(),
+        palettes::basic::YELLOW,
+    );
 }
 
 fn ui(world: &mut World) {
