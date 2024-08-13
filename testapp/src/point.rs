@@ -90,9 +90,11 @@ fn insert_drag_observers(mut cmds: Commands, points: Query<Entity, With<Point>>)
     points.iter().for_each(|point| {
         cmds.entity(point)
             .insert(On::<Pointer<Drag>>::commands_mut(|drag, cmds| {
-                cmds.entity(drag.target).insert(DraggedPosition {
-                    position: drag.pointer_location.position,
-                });
+                let position = drag.pointer_location.position;
+                let position = (position / 5.0).round() * 5.0;
+                info!("{position:?}");
+                cmds.entity(drag.target)
+                    .insert(DraggedPosition { position });
             }));
     });
 }

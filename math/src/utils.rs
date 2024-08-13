@@ -19,6 +19,16 @@ pub(crate) fn vec2s_to_polygon(polygon: impl IntoIterator<Item = Vec2>) -> geo::
     )
 }
 
+pub(crate) fn vec2s_to_triangles(
+    polygon: impl IntoIterator<Item = [Vec2; 3]>,
+) -> Vec<geo::Triangle<f32>> {
+    polygon
+        .into_iter()
+        .map(|points| points.map(vec2_to_coord))
+        .map(geo::Triangle::from)
+        .collect::<Vec<_>>()
+}
+
 pub(crate) fn linestring_to_vec2s(ls: &LineString<f32>) -> impl Iterator<Item = Vec2> + '_ {
     ls.0.iter().copied().map(coord_to_vec2)
 }

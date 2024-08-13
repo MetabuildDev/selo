@@ -42,6 +42,20 @@ pub fn triangulate_glam(polygon: impl IntoIterator<Item = Vec2>) -> Vec<[Vec2; 3
         .collect::<Vec<_>>()
 }
 
+pub fn stitch_triangles_glam(triangles: impl IntoIterator<Item = [Vec2; 3]>) -> Vec<Vec<Vec2>> {
+    let geo_triangles = vec2s_to_triangles(triangles);
+
+    let polys = geo_triangles
+        .stitch_triangulation()
+        .map(|mp| mp.0)
+        .unwrap_or_default();
+
+    polys
+        .into_iter()
+        .map(|poly| linestring_to_vec2s(poly.exterior()).collect::<Vec<_>>())
+        .collect::<Vec<_>>()
+}
+
 pub fn buffer_polygon_glam(
     polygon: impl IntoIterator<Item = Vec2>,
     expand_by: f64,
