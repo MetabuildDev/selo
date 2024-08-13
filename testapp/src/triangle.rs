@@ -65,9 +65,9 @@ impl Plugin for TrianglePlugin {
 
 #[derive(Debug, Clone, Component, Reflect)]
 pub struct Triangle {
-    a: Entity,
-    b: Entity,
-    c: Entity,
+    pub a: Entity,
+    pub b: Entity,
+    pub c: Entity,
 }
 
 #[derive(Debug, Clone, Component, Default, Reflect)]

@@ -135,36 +135,41 @@ fn line_constructor(
     attached_lines: &mut Query<&mut AttachedLines>,
     id: &mut usize,
 ) -> Entity {
-    let mut add_or_attach_line =
-        |cmds: &mut Commands, point: Entity, line: Entity, is_start: bool| {
-            if let Ok(mut lines) = attached_lines.get_mut(point) {
-                if is_start {
-                    lines.outgoing.insert(line);
-                } else {
-                    lines.incomming.insert(line);
+    fn add_or_attach_line(
+        cmds: &mut Commands,
+        attached_lines: &mut Query<&mut AttachedLines, ()>,
+        point: Entity,
+        line: Entity,
+        is_start: bool,
+    ) {
+        if let Ok(mut lines) = attached_lines.get_mut(point) {
+            if is_start {
+                lines.outgoing.insert(line);
+            } else {
+                lines.incomming.insert(line);
+            }
+        } else {
+            let attached_lines = if is_start {
+                AttachedLines {
+                    outgoing: EntityHashSet::from_iter(std::iter::once(point)),
+                    incomming: Default::default(),
                 }
             } else {
-                let attached_lines = if is_start {
-                    AttachedLines {
-                        outgoing: EntityHashSet::from_iter(std::iter::once(point)),
-                        incomming: Default::default(),
-                    }
-                } else {
-                    AttachedLines {
-                        incomming: EntityHashSet::from_iter(std::iter::once(point)),
-                        outgoing: Default::default(),
-                    }
-                };
-                cmds.entity(point).insert(attached_lines);
-            }
-        };
+                AttachedLines {
+                    incomming: EntityHashSet::from_iter(std::iter::once(point)),
+                    outgoing: Default::default(),
+                }
+            };
+            cmds.entity(point).insert(attached_lines);
+        }
+    }
 
     *id += 1;
     let line = cmds
         .spawn((Name::new(format!("Line {n}", n = *id)), Line { start, end }))
         .id();
-    add_or_attach_line(cmds, start, line, true);
-    add_or_attach_line(cmds, end, line, false);
+    add_or_attach_line(cmds, attached_lines, start, line, true);
+    add_or_attach_line(cmds, attached_lines, end, line, false);
     line
 }
 

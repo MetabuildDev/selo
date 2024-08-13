@@ -5,6 +5,7 @@ mod line;
 mod point;
 mod pointer;
 mod polygon;
+mod spawner;
 mod state;
 mod triangle;
 mod working_plane;
@@ -31,6 +32,7 @@ pub fn run() {
         polygon::PolygonPlugin,
         algos::AlgoPlugin,
         working_plane::WorkingPlanePlugin,
+        spawner::SpawnerPlugin,
     ));
 
     app.run();
