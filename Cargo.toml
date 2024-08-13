@@ -1,6 +1,5 @@
 [workspace]
 resolver = "2"
-member = [ ]
 members = ["math", "testapp"]
 
 [workspace.dependencies]
