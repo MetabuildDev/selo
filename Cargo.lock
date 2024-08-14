@@ -2890,6 +2890,7 @@ dependencies = [
  "geo 0.28.0 (git+https://github.com/RobWalt/geo.git?branch=expose-stitch-trait)",
  "geo-buffer",
  "glam",
+ "itertools 0.13.0",
 ]
 
 [[package]]

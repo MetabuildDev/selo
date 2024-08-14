@@ -1,6 +1,7 @@
 use std::{fmt::Debug, iter::once};
 
 use bevy_math::Vec2;
+use itertools::Itertools as _;
 #[cfg(feature = "bevy")]
 use {bevy_ecs::prelude::Component, bevy_reflect::Reflect};
 
@@ -30,6 +31,10 @@ impl LineString {
     /// If this is a closed linestring, this will give the
     pub fn inside(&self) -> Option<Ring> {
         (self.0.last() == self.0.first()).then(|| Ring::new(self.0.clone()))
+    }
+
+    pub fn lines(&self) -> impl Iterator<Item = Line> + '_ {
+        self.0.windows(2).map(|s| Line([s[0], s[1]]))
     }
 }
 
@@ -63,11 +68,19 @@ impl Ring {
     pub fn to_polygon(&self) -> Polygon {
         Polygon(self.clone(), Default::default())
     }
+
+    pub fn lines(&self) -> impl Iterator<Item = Line> + '_ {
+        self.0
+            .iter()
+            .circular_tuple_windows()
+            .map(|(a, b)| Line([*a, *b]))
+    }
 }
 
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "bevy", derive(Reflect))]
 pub struct MultiRing(pub Vec<Ring>);
+
 impl Default for MultiRing {
     fn default() -> Self {
         Self(vec![])
@@ -89,11 +102,18 @@ impl Polygon {
     pub fn interior(&self) -> &MultiRing {
         &self.1
     }
+
+    pub fn lines(&self) -> impl Iterator<Item = Line> + '_ {
+        self.0
+            .lines()
+            .chain(self.1 .0.iter().flat_map(|ring| ring.lines()))
+    }
 }
 
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "bevy", derive(Reflect))]
 pub struct MultiPolygon(pub Vec<Polygon>);
+
 impl Default for MultiPolygon {
     fn default() -> Self {
         Self(vec![])

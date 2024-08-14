@@ -1,6 +1,6 @@
 use bevy::{color::palettes, input::common_conditions::input_just_pressed, prelude::*};
 use itertools::Itertools;
-use math::triangulate_glam;
+use math::{primitives::Ring, triangulate_glam};
 
 use crate::{line::Line, polygon::PolygonParams, spawner::SpawnTriangle};
 
@@ -32,13 +32,15 @@ fn render_triangulation(mut gizmos: Gizmos, polygons: PolygonParams) {
                 .into_iter()
                 .map(|(poly, _)| poly)
                 .map(|polygon| {
-                    polygon
-                        .into_iter()
-                        .map(|p| proj.transform_point(p).truncate())
-                        .collect::<Vec<_>>()
+                    Ring::new(
+                        polygon
+                            .into_iter()
+                            .map(|p| proj.transform_point(p).truncate())
+                            .collect::<Vec<_>>(),
+                    )
                 })
-                .flat_map(|polygon| triangulate_glam(polygon))
-                .map(|points| points.map(|p| inj.transform_point(p.extend(0.0))))
+                .flat_map(|ring| triangulate_glam(ring.to_polygon()))
+                .map(|tri| tri.0.map(|p| inj.transform_point(p.extend(0.0))))
                 .for_each(|[a, b, c]| {
                     gizmos.primitive_3d(
                         &Triangle3d::new(a, b, c),
@@ -67,13 +69,15 @@ fn do_triangulation(
                     .into_iter()
                     .map(|(poly, _)| poly)
                     .map(move |polygon| {
-                        polygon
-                            .into_iter()
-                            .map(|p| proj.transform_point(p).truncate())
-                            .collect::<Vec<_>>()
+                        Ring::new(
+                            polygon
+                                .into_iter()
+                                .map(|p| proj.transform_point(p).truncate())
+                                .collect::<Vec<_>>(),
+                        )
                     })
-                    .flat_map(|polygon| triangulate_glam(polygon))
-                    .map(move |points| points.map(|p| inj.transform_point(p.extend(0.0))))
+                    .flat_map(|ring| triangulate_glam(ring.to_polygon()))
+                    .map(move |tri| tri.0.map(|p| inj.transform_point(p.extend(0.0))))
                     .map(|[a, b, c]| SpawnTriangle { a, b, c })
             }),
     );

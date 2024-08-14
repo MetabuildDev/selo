@@ -57,7 +57,7 @@ pub fn stitch_triangles_glam(triangles: impl IntoIterator<Item = Triangle>) -> V
         .collect::<Vec<_>>()
 }
 
-pub fn buffer_polygon_glam(polygon: Polygon, expand_by: f64) -> Vec<Ring> {
+pub fn buffer_polygon_glam(polygon: Polygon, expand_by: f64) -> MultiPolygon {
     let geo_polygon = geo::Polygon::from(&polygon);
     let polygon_f64 = geo_polygon.map_coords(coord_up_precision);
 
@@ -65,10 +65,7 @@ pub fn buffer_polygon_glam(polygon: Polygon, expand_by: f64) -> Vec<Ring> {
 
     let buffered_f32 = buffered.map_coords(coord_down_precision);
 
-    buffered_f32
-        .into_iter()
-        .map(|poly| Ring::try_from(poly.exterior()).unwrap())
-        .collect::<Vec<_>>()
+    (&buffered_f32).into()
 }
 
 pub fn skeleton_lines_glam(polygon: Polygon, orientation: bool) -> Vec<LineString> {

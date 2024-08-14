@@ -1,6 +1,6 @@
 use bevy::{color::palettes, prelude::*};
 use itertools::Itertools;
-use math::stitch_triangles_glam;
+use math::{primitives::Triangle, stitch_triangles_glam};
 
 use crate::triangle::TriangleParams;
 
@@ -27,27 +27,16 @@ fn render_polygon_expansion(mut gizmos: Gizmos, triangles: TriangleParams) {
             let triangles_projected = group
                 .into_iter()
                 .map(|(triangle, _)| triangle)
-                .map(|triangle| triangle.map(|p| proj.transform_point(p).truncate()))
+                .map(|triangle| Triangle(triangle.map(|p| proj.transform_point(p).truncate())))
                 .collect::<Vec<_>>();
             stitch_triangles_glam(triangles_projected)
                 .into_iter()
                 .for_each(|polygon| {
                     polygon
-                        .windows(2)
-                        .map(|win| (win[0], win[1]))
-                        .chain(Some(()).and_then(|_| {
-                            let first = polygon.first()?;
-                            let last = polygon.last()?;
-                            (first != last).then_some((*first, *last))
-                        }))
-                        .map(|(start, end)| {
-                            (
-                                inj.transform_point(start.extend(0.0)),
-                                inj.transform_point(end.extend(0.0)),
-                            )
-                        })
-                        .for_each(|(start, end)| {
-                            gizmos.line(start, end, palettes::basic::RED);
+                        .lines()
+                        .map(|line| line.0.map(|p| inj.transform_point(p.extend(0.0))))
+                        .for_each(|line| {
+                            gizmos.line(line[0], line[1], palettes::basic::RED);
                         });
                 });
         })

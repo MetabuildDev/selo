@@ -127,3 +127,9 @@ impl From<&Ring> for geo::LineString<f32> {
         )
     }
 }
+
+impl From<&geo::MultiPolygon<f32>> for MultiPolygon {
+    fn from(value: &geo::MultiPolygon<f32>) -> Self {
+        MultiPolygon(value.iter().map(|poly| poly.into()).collect())
+    }
+}

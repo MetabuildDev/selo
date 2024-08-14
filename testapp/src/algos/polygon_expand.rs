@@ -1,7 +1,7 @@
 use bevy::{color::palettes, prelude::*};
 use bevy_egui::{egui, EguiContext};
 use itertools::Itertools;
-use math::buffer_polygon_glam;
+use math::{buffer_polygon_glam, primitives::Ring};
 
 use crate::polygon::PolygonParams;
 
@@ -53,29 +53,20 @@ fn render_polygon_expansion(
                 .into_iter()
                 .map(|(poly, _)| poly)
                 .map(|polygon| {
-                    polygon
-                        .into_iter()
-                        .map(|p| proj.transform_point(p).truncate())
-                        .collect::<Vec<_>>()
+                    Ring::new(
+                        polygon
+                            .into_iter()
+                            .map(|p| proj.transform_point(p).truncate())
+                            .collect::<Vec<_>>(),
+                    )
                 })
-                .flat_map(|polygon| buffer_polygon_glam(polygon, **expansion_factor))
+                .flat_map(|ring| buffer_polygon_glam(ring.to_polygon(), **expansion_factor).0)
                 .for_each(|polygon| {
                     polygon
-                        .windows(2)
-                        .map(|win| (win[0], win[1]))
-                        .chain(Some(()).and_then(|_| {
-                            let first = polygon.first()?;
-                            let last = polygon.last()?;
-                            (first != last).then_some((*first, *last))
-                        }))
-                        .map(|(start, end)| {
-                            (
-                                inj.transform_point(start.extend(0.0)),
-                                inj.transform_point(end.extend(0.0)),
-                            )
-                        })
-                        .for_each(|(start, end)| {
-                            gizmos.line(start, end, palettes::basic::RED);
+                        .lines()
+                        .map(|line| line.0.map(|p| inj.transform_point(p.extend(0.0))))
+                        .for_each(|line| {
+                            gizmos.line(line[0], line[1], palettes::basic::RED);
                         });
                 });
         })

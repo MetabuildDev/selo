@@ -1,7 +1,7 @@
 use bevy::{color::palettes, prelude::*};
 use bevy_egui::{egui, EguiContext};
 use itertools::Itertools;
-use math::skeleton_lines_glam;
+use math::{primitives::Ring, skeleton_lines_glam};
 
 use crate::polygon::PolygonParams;
 
@@ -53,24 +53,20 @@ fn render_polygon_expansion(
                 .into_iter()
                 .map(|(poly, _)| poly)
                 .map(|polygon| {
-                    polygon
-                        .into_iter()
-                        .map(|p| proj.transform_point(p).truncate())
-                        .collect::<Vec<_>>()
+                    Ring::new(
+                        polygon
+                            .into_iter()
+                            .map(|p| proj.transform_point(p).truncate())
+                            .collect::<Vec<_>>(),
+                    )
                 })
-                .flat_map(|polygon| skeleton_lines_glam(polygon, !**orientation))
+                .flat_map(|ring| skeleton_lines_glam(ring.to_polygon(), !**orientation))
                 .for_each(|polygon| {
                     polygon
-                        .windows(2)
-                        .map(|win| (win[0], win[1]))
-                        .map(|(start, end)| {
-                            (
-                                inj.transform_point(start.extend(0.0)),
-                                inj.transform_point(end.extend(0.0)),
-                            )
-                        })
-                        .for_each(|(start, end)| {
-                            gizmos.line(start, end, palettes::basic::RED);
+                        .lines()
+                        .map(|line| line.0.map(|p| inj.transform_point(p.extend(0.0))))
+                        .for_each(|line| {
+                            gizmos.line(line[0], line[1], palettes::basic::RED);
                         });
                 });
         });
