@@ -2209,7 +2209,7 @@ dependencies = [
 [[package]]
 name = "geo"
 version = "0.28.0"
-source = "git+https://github.com/RobWalt/geo.git?branch=expose-stitch-trait#5525afe68db49f09d9a294cb9f9a2305c2b8746a"
+source = "git+https://github.com/RobWalt/geo.git?branch=feat/spade-boolops#a50681e1784f13f028d35cc93321512805af53a4"
 dependencies = [
  "earcutr",
  "float_next_after",
@@ -2601,9 +2601,9 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "2.3.0"
+version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de3fc2e30ba82dd1b3911c8de1ffc143c74a914a14e99514d7637e3099df5ea0"
+checksum = "93ead53efc7ea8ed3cfb0c79fc8023fbb782a5432b52830b6518941cebe6505c"
 dependencies = [
  "equivalent",
  "hashbrown",
@@ -2887,7 +2887,7 @@ version = "0.1.0"
 dependencies = [
  "bevy_math",
  "bevy_reflect",
- "geo 0.28.0 (git+https://github.com/RobWalt/geo.git?branch=expose-stitch-trait)",
+ "geo 0.28.0 (git+https://github.com/RobWalt/geo.git?branch=feat/spade-boolops)",
  "geo-buffer",
  "glam",
  "itertools 0.13.0",
@@ -3931,9 +3931,9 @@ dependencies = [
 
 [[package]]
 name = "spade"
-version = "2.11.0"
+version = "2.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "766195f983f4098dc3bf37fb66bd609f6e6258c4b8db684d05252b2c694cdbcd"
+checksum = "9bd14cf9e23b5241e1b1289ed3b9afc7746c95ead8df52d9254f5ed2d40c561b"
 dependencies = [
  "hashbrown",
  "num-traits",

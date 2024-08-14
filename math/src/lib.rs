@@ -2,8 +2,8 @@ pub mod primitives;
 mod utils;
 mod working_plane;
 
-use geo::{MapCoords as _, StitchTriangles as _, TriangulateSpade as _};
-use primitives::*;
+use geo::{MapCoords as _, SpadeBoolops, StitchTriangles as _, TriangulateSpade as _};
+pub use primitives::*;
 
 use glam::*;
 
@@ -51,6 +51,23 @@ pub fn stitch_triangles_glam(triangles: impl IntoIterator<Item = Triangle>) -> V
         .into_iter()
         .map(|poly| Ring::try_from(poly.exterior()).unwrap())
         .collect::<Vec<_>>()
+}
+
+pub fn boolops_union_glam(rings: impl IntoIterator<Item = Ring>) -> MultiPolygon {
+    let rings = rings.into_iter().collect::<Vec<_>>();
+
+    rings
+        .clone()
+        .into_iter()
+        .map(|ring| MultiPolygon(vec![ring.to_polygon()]))
+        .map(|multi_poly| geo::MultiPolygon::from(&multi_poly))
+        .try_fold(empty_multipolygon(), |multi_poly, other| {
+            SpadeBoolops::union(&multi_poly, &other)
+        })
+        .map(|multi_poly| MultiPolygon::from(&multi_poly))
+        .unwrap_or(MultiPolygon(
+            rings.into_iter().map(|ring| ring.to_polygon()).collect(),
+        ))
 }
 
 pub fn buffer_polygon_glam(polygon: Polygon, expand_by: f64) -> MultiPolygon {

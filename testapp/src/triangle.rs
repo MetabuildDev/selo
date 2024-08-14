@@ -84,17 +84,23 @@ pub struct TriangleLine;
 
 #[derive(SystemParam)]
 pub struct TriangleParams<'w, 's> {
-    triangles: Query<'w, 's, (&'static Triangle, &'static AttachedWorkingPlane)>,
+    triangles: Query<'w, 's, (Entity, &'static Triangle, &'static AttachedWorkingPlane)>,
     points: Query<'w, 's, &'static GlobalTransform, With<Point>>,
 }
 
 impl TriangleParams<'_, '_> {
+    pub fn iter_entities(&self) -> impl Iterator<Item = (Entity, [Entity; 3])> + '_ {
+        self.triangles
+            .iter()
+            .map(|(entity, triangle, _)| (entity, [triangle.a, triangle.b, triangle.c]))
+    }
+
     pub fn iter_just_triangles(&self) -> impl Iterator<Item = [Vec3; 3]> + '_ {
         self.iter_triangles().map(|(triangle, _)| triangle)
     }
 
     pub fn iter_triangles(&self) -> impl Iterator<Item = ([Vec3; 3], WorkingPlane)> + '_ {
-        self.triangles.iter().filter_map(|(triangle, wp)| {
+        self.triangles.iter().filter_map(|(_, triangle, wp)| {
             let points = self
                 .points
                 .get_many([triangle.a, triangle.b, triangle.c])

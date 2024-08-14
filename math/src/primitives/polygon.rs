@@ -64,3 +64,9 @@ impl From<&geo::MultiPolygon<f32>> for MultiPolygon {
         MultiPolygon(value.iter().map(|poly| poly.into()).collect())
     }
 }
+
+impl From<&MultiPolygon> for geo::MultiPolygon<f32> {
+    fn from(value: &MultiPolygon) -> Self {
+        geo::MultiPolygon::new(value.0.iter().map(|poly| poly.into()).collect())
+    }
+}

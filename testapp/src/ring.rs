@@ -79,7 +79,7 @@ impl Plugin for RingPlugin {
 pub struct RingPointIdSource(usize);
 
 #[derive(Debug, Clone, Component, Default, Reflect)]
-pub struct RingPoint(usize);
+pub struct RingPoint(pub usize);
 
 #[derive(Debug, Clone, Component, Default, Reflect)]
 pub struct RingLine;
@@ -95,28 +95,22 @@ pub struct UnfinishedRingLine;
 
 #[derive(Debug, Clone, Component, Reflect)]
 pub struct Ring2D {
-    points: Vec<Entity>,
+    pub points: Vec<Entity>,
 }
 
 #[derive(SystemParam)]
 pub struct RingParams<'w, 's> {
-    ring: Query<'w, 's, (Entity, &'static Ring2D, &'static AttachedWorkingPlane)>,
+    ring: Query<'w, 's, (&'static Ring2D, &'static AttachedWorkingPlane)>,
     points: Query<'w, 's, (&'static GlobalTransform, &'static RingPoint), With<Point>>,
 }
 
 impl RingParams<'_, '_> {
-    pub fn iter_entities(&self) -> impl Iterator<Item = (Entity, Vec<Entity>)> + '_ {
-        self.ring
-            .iter()
-            .map(|(entity, ring, _)| (entity, ring.points.clone()))
-    }
-
     pub fn iter_just_rings(&self) -> impl Iterator<Item = Vec<Vec3>> + '_ {
         self.iter_rings().map(|(ring, _)| ring)
     }
 
     pub fn iter_rings(&self) -> impl Iterator<Item = (Vec<Vec3>, WorkingPlane)> + '_ {
-        self.ring.iter().filter_map(|(_, ring, wp)| {
+        self.ring.iter().filter_map(|(ring, wp)| {
             let points = ring
                 .points
                 .iter()
@@ -138,7 +132,7 @@ impl RingParams<'_, '_> {
     }
 }
 
-fn ring_finishable(points: Query<(), With<RingPoint>>) -> bool {
+fn ring_finishable(points: Query<(), With<UnfinishedRingPoint>>) -> bool {
     points.iter().count() >= 3
 }
 
@@ -234,17 +228,35 @@ fn cleanup_construction_components(
 }
 
 fn render_rings(mut gizmos: Gizmos, ring: RingParams) {
-    ring.iter_just_rings().for_each(|mut points| {
-        if points.first() != points.last() {
-            points.extend(points.first().cloned());
-        }
-        points
-            .windows(2)
-            .map(|win| (win[0], win[1]))
-            .for_each(|(start, end)| {
-                gizmos.line(start, end, palettes::basic::AQUA);
-            });
-    });
+    let colors = {
+        use palettes::basic::*;
+        [
+            AQUA, BLUE, FUCHSIA, GREEN, LIME, MAROON, NAVY, OLIVE, PURPLE, SILVER, TEAL, YELLOW,
+        ]
+        .map(|c| c.mix(&WHITE, 0.5))
+        // .windows(2)
+        // .flat_map(|win| {
+        //     let first = win[0];
+        //     let second = win[1];
+        //     (0..=2)
+        //         .map(|n| n as f32 / 2.0)
+        //         .map(move |percent| first.mix(&second, percent))
+        // })
+        // .collect::<Vec<_>>()
+    };
+    ring.iter_just_rings()
+        .zip(colors.into_iter().cycle())
+        .for_each(|(mut points, color)| {
+            if points.first() != points.last() {
+                points.extend(points.first().cloned());
+            }
+            points
+                .windows(2)
+                .map(|win| (win[0], win[1]))
+                .for_each(|(start, end)| {
+                    gizmos.line(start, end, color);
+                });
+        });
 }
 
 fn render_ring_construction(
