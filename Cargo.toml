@@ -4,7 +4,7 @@ member = [ ]
 members = ["math", "testapp"]
 
 [workspace.dependencies]
-geo = { git = "https://github.com/RobWalt/geo.git", branch = "expose-stitch-trait" }
+geo = { git = "https://github.com/RobWalt/geo.git", branch = "feat/spade-boolops" }
 glam = "0.27"
 bevy_math = "0.14"
 geo-buffer = { git = "https://github.com/RobWalt/geo-buffer.git", branch = "update" }
