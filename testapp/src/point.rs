@@ -91,10 +91,10 @@ fn insert_drag_observers(mut cmds: Commands, points: Query<Entity, With<Point>>)
         cmds.entity(point)
             .insert(On::<Pointer<Drag>>::commands_mut(|drag, cmds| {
                 let position = drag.pointer_location.position;
-                let position = (position / 5.0).round() * 5.0;
-                info!("{position:?}");
-                cmds.entity(drag.target)
-                    .insert(DraggedPosition { position });
+                let rounded_position = (position / 5.0).round() * 5.0;
+                cmds.entity(drag.target).insert(DraggedPosition {
+                    position: rounded_position,
+                });
             }));
     });
 }
