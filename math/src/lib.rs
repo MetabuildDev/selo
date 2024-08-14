@@ -56,7 +56,9 @@ pub fn stitch_triangles_glam(triangles: impl IntoIterator<Item = [Vec2; 3]>) -> 
         .collect::<Vec<_>>()
 }
 
-pub fn boolops_union_glam(polygons: impl IntoIterator<Item = Vec<Vec2>>) -> Vec<Vec<Vec2>> {
+pub fn boolops_union_glam(
+    polygons: impl IntoIterator<Item = Vec<Vec2>>,
+) -> Vec<(Vec<Vec2>, Vec<Vec<Vec2>>)> {
     let inputs = polygons.into_iter().collect::<Vec<_>>();
 
     inputs
@@ -70,10 +72,24 @@ pub fn boolops_union_glam(polygons: impl IntoIterator<Item = Vec<Vec2>>) -> Vec<
         .map(|multi_poly| {
             multi_poly
                 .into_iter()
-                .map(|poly| linestring_to_vec2s(poly.exterior()).collect::<Vec<_>>())
+                .map(|poly| {
+                    let exterior = linestring_to_vec2s(poly.exterior()).collect::<Vec<_>>();
+                    let interiors = poly
+                        .interiors()
+                        .into_iter()
+                        .map(linestring_to_vec2s)
+                        .map(|iter| iter.collect::<Vec<_>>())
+                        .collect::<Vec<_>>();
+                    (exterior, interiors)
+                })
                 .collect::<Vec<_>>()
         })
-        .unwrap_or(inputs)
+        .unwrap_or(
+            inputs
+                .into_iter()
+                .map(|inp| (inp, vec![]))
+                .collect::<Vec<_>>(),
+        )
 }
 
 pub fn buffer_polygon_glam(

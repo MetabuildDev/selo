@@ -21,6 +21,7 @@ impl Plugin for AlgoPlugin {
                 straight_skeleton::PolygonSkeletonPlugin,
                 working_planes::WorkingPlanePlugin,
                 stitch_polygons::StitchTrianglesPlugin,
+                polygon_boolops::PolygonBoolopsPlugin,
             ))
             .add_systems(Update, draw_origin);
     }

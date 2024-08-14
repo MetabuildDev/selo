@@ -57,7 +57,7 @@ fn render_polygon_stitch(mut gizmos: Gizmos, triangles: TriangleParams) {
                             gizmos.line(start, end, palettes::basic::RED);
                         });
                 });
-        })
+        });
 }
 
 fn do_stitching(

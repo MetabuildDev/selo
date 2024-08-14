@@ -132,7 +132,7 @@ impl PolygonParams<'_, '_> {
     }
 }
 
-fn polygon_finishable(points: Query<(), With<PolygonPoint>>) -> bool {
+fn polygon_finishable(points: Query<(), With<UnfinishedPolyPoint>>) -> bool {
     points.iter().count() >= 3
 }
 
@@ -235,17 +235,36 @@ fn cleanup_construction_components(
 }
 
 fn render_polygons(mut gizmos: Gizmos, polygon: PolygonParams) {
-    polygon.iter_just_polygons().for_each(|mut points| {
-        if points.first() != points.last() {
-            points.extend(points.first().cloned());
-        }
-        points
-            .windows(2)
-            .map(|win| (win[0], win[1]))
-            .for_each(|(start, end)| {
-                gizmos.line(start, end, palettes::basic::AQUA);
-            });
-    });
+    let colors = {
+        use palettes::basic::*;
+        [
+            AQUA, BLUE, FUCHSIA, GREEN, LIME, MAROON, NAVY, OLIVE, PURPLE, SILVER, TEAL, YELLOW,
+        ]
+        .map(|c| c.mix(&WHITE, 0.5))
+        // .windows(2)
+        // .flat_map(|win| {
+        //     let first = win[0];
+        //     let second = win[1];
+        //     (0..=2)
+        //         .map(|n| n as f32 / 2.0)
+        //         .map(move |percent| first.mix(&second, percent))
+        // })
+        // .collect::<Vec<_>>()
+    };
+    polygon
+        .iter_just_polygons()
+        .zip(colors.into_iter().cycle())
+        .for_each(|(mut points, color)| {
+            if points.first() != points.last() {
+                points.extend(points.first().cloned());
+            }
+            points
+                .windows(2)
+                .map(|win| (win[0], win[1]))
+                .for_each(|(start, end)| {
+                    gizmos.line(start, end, color);
+                });
+        });
 }
 
 fn render_polygon_construction(
