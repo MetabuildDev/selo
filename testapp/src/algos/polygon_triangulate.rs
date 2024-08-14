@@ -2,7 +2,10 @@ use bevy::{color::palettes, input::common_conditions::input_just_pressed, prelud
 use itertools::Itertools;
 use math::triangulate_glam;
 
-use crate::{line::Line, polygon::PolygonParams, spawner::SpawnTriangle};
+use crate::{
+    polygon::{Polygon2D, PolygonLine, PolygonParams, PolygonPoint},
+    spawner::SpawnTriangle,
+};
 
 use super::algostate::AlgorithmState;
 
@@ -54,7 +57,7 @@ fn do_triangulation(
     mut cmds: Commands,
     mut spawn_triangles: EventWriter<SpawnTriangle>,
     polygons: PolygonParams,
-    lines: Query<&Line>,
+    entities: Query<Entity, Or<(With<Polygon2D>, With<PolygonLine>, With<PolygonPoint>)>>,
 ) {
     spawn_triangles.send_batch(
         polygons
@@ -78,14 +81,7 @@ fn do_triangulation(
             }),
     );
 
-    polygons.iter_entities().for_each(|(poly, lines_vec)| {
-        cmds.entity(poly).despawn_recursive();
-        lines_vec.iter().for_each(|line| {
-            cmds.entity(*line).despawn_recursive();
-            if let Ok(Line { start, end }) = lines.get(*line) {
-                cmds.entity(*start).despawn_recursive();
-                cmds.entity(*end).despawn_recursive();
-            }
-        });
+    entities.iter().for_each(|entity| {
+        cmds.entity(entity).despawn_recursive();
     });
 }

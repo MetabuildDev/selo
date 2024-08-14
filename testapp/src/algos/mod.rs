@@ -1,5 +1,6 @@
 mod algostate;
 mod line_intersection;
+mod polygon_boolops;
 mod polygon_expand;
 mod polygon_triangulate;
 mod stitch_polygons;

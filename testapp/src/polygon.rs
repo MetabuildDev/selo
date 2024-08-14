@@ -79,7 +79,7 @@ impl Plugin for PolygonPlugin {
 pub struct PolygonPointIdSource(usize);
 
 #[derive(Debug, Clone, Component, Default, Reflect)]
-pub struct PolygonPoint(usize);
+pub struct PolygonPoint(pub usize);
 
 #[derive(Debug, Clone, Component, Default, Reflect)]
 pub struct PolygonLine;
@@ -95,28 +95,22 @@ pub struct UnfinishedPolyLine;
 
 #[derive(Debug, Clone, Component, Reflect)]
 pub struct Polygon2D {
-    points: Vec<Entity>,
+    pub points: Vec<Entity>,
 }
 
 #[derive(SystemParam)]
 pub struct PolygonParams<'w, 's> {
-    polygon: Query<'w, 's, (Entity, &'static Polygon2D, &'static AttachedWorkingPlane)>,
+    polygon: Query<'w, 's, (&'static Polygon2D, &'static AttachedWorkingPlane)>,
     points: Query<'w, 's, (&'static GlobalTransform, &'static PolygonPoint), With<Point>>,
 }
 
 impl PolygonParams<'_, '_> {
-    pub fn iter_entities(&self) -> impl Iterator<Item = (Entity, Vec<Entity>)> + '_ {
-        self.polygon
-            .iter()
-            .map(|(entity, poly, _)| (entity, poly.points.clone()))
-    }
-
     pub fn iter_just_polygons(&self) -> impl Iterator<Item = Vec<Vec3>> + '_ {
         self.iter_polygons().map(|(polygon, _)| polygon)
     }
 
     pub fn iter_polygons(&self) -> impl Iterator<Item = (Vec<Vec3>, WorkingPlane)> + '_ {
-        self.polygon.iter().filter_map(|(_, polygon, wp)| {
+        self.polygon.iter().filter_map(|(polygon, wp)| {
             let points = polygon
                 .points
                 .iter()

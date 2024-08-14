@@ -39,6 +39,7 @@ pub enum AlgorithmState {
     WorkingPlaneNormalization,
     WorkingPlaneTransform,
     StitchTriangles,
+    PolygonBoolops,
 }
 
 fn next_algo_on_scroll(
