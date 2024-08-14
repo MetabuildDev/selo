@@ -3,7 +3,7 @@ use bevy_egui::{egui, EguiContext};
 use itertools::Itertools;
 use math::{buffer_polygon_glam, primitives::Ring};
 
-use crate::polygon::PolygonParams;
+use crate::ring::RingParams;
 
 use super::algostate::AlgorithmState;
 
@@ -40,22 +40,20 @@ struct PolygonExpansion(f64);
 
 fn render_polygon_expansion(
     mut gizmos: Gizmos,
-    polygons: PolygonParams,
+    rings: RingParams,
     expansion_factor: Res<PolygonExpansion>,
 ) {
-    polygons
-        .iter_polygons()
+    rings
+        .iter_rings()
         .chunk_by(|(_, wp)| *wp)
         .into_iter()
         .for_each(|(wp, group)| {
             let (proj, inj) = wp.xy_projection_injection();
             group
                 .into_iter()
-                .map(|(poly, _)| poly)
-                .map(|polygon| {
+                .map(|(ring, _)| {
                     Ring::new(
-                        polygon
-                            .into_iter()
+                        ring.into_iter()
                             .map(|p| proj.transform_point(p).truncate())
                             .collect::<Vec<_>>(),
                     )

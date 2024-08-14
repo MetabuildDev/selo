@@ -16,7 +16,7 @@ impl Plugin for StatePlugin {
                     change_state(AppState::Point).run_if(input_just_pressed(KeyCode::KeyC)),
                     change_state(AppState::Line).run_if(input_just_pressed(KeyCode::KeyL)),
                     change_state(AppState::Triangle).run_if(input_just_pressed(KeyCode::KeyT)),
-                    change_state(AppState::Polygon).run_if(input_just_pressed(KeyCode::KeyP)),
+                    change_state(AppState::Ring).run_if(input_just_pressed(KeyCode::KeyP)),
                     change_state(AppState::Algorithms).run_if(input_just_pressed(KeyCode::Escape)),
                     change_state(AppState::WorkingPlane).run_if(input_just_pressed(KeyCode::KeyW)),
                 ),
@@ -35,7 +35,7 @@ pub enum AppState {
     Point,
     Line,
     Triangle,
-    Polygon,
+    Ring,
     WorkingPlane,
 }
 

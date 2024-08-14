@@ -29,8 +29,8 @@ impl Plugin for PointPlugin {
             )
             .add_systems(OnEnter(AppState::Triangle), insert_pickability)
             .add_systems(OnExit(AppState::Triangle), remove_pickability)
-            .add_systems(OnEnter(AppState::Polygon), insert_pickability)
-            .add_systems(OnExit(AppState::Polygon), remove_pickability)
+            .add_systems(OnEnter(AppState::Ring), insert_pickability)
+            .add_systems(OnExit(AppState::Ring), remove_pickability)
             .add_systems(
                 Update,
                 apply_dragged_position.run_if(any_with_component::<DraggedPosition>),

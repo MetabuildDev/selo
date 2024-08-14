@@ -13,117 +13,117 @@ use crate::{
     working_plane::{AttachedWorkingPlane, WorkingPlaneParams},
 };
 
-pub struct PolygonPlugin;
+pub struct RingPlugin;
 
-impl Plugin for PolygonPlugin {
+impl Plugin for RingPlugin {
     fn build(&self, app: &mut App) {
-        app.register_type::<Polygon2D>()
-            .register_type::<PolygonPoint>()
-            .register_type::<PolygonLine>()
-            .register_type::<LastPolyPoint>()
-            .register_type::<UnfinishedPolyPoint>()
-            .register_type::<UnfinishedPolyLine>()
-            .register_type::<PolygonPointIdSource>()
-            .init_resource::<PolygonPointIdSource>()
+        app.register_type::<Ring2D>()
+            .register_type::<RingPoint>()
+            .register_type::<RingLine>()
+            .register_type::<LastRingPoint>()
+            .register_type::<UnfinishedRingPoint>()
+            .register_type::<UnfinishedRingLine>()
+            .register_type::<RingPointIdSource>()
+            .init_resource::<RingPointIdSource>()
             .add_systems(
                 Update,
                 (
                     (
                         spawn_point
-                            .pipe(polygon_start)
-                            .pipe(polygon_point)
+                            .pipe(ring_start)
+                            .pipe(ring_point)
                             .pipe(drop_system)
-                            .run_if(not(any_with_component::<LastPolyPoint>)),
+                            .run_if(not(any_with_component::<LastRingPoint>)),
                         spawn_point
-                            .pipe(polygon_point)
-                            .pipe(polygon_continue)
+                            .pipe(ring_point)
+                            .pipe(ring_continue)
                             .pipe(construct_lines)
-                            .pipe(unfinished_polygon_line)
+                            .pipe(unfinished_ring_line)
                             .pipe(drop_system)
-                            .run_if(any_with_component::<LastPolyPoint>),
+                            .run_if(any_with_component::<LastRingPoint>),
                     )
                         .run_if(
-                            in_state(AppState::Polygon)
+                            in_state(AppState::Ring)
                                 .and_then(input_just_pressed(MouseButton::Left)),
                         ),
                     (
-                        get_sorted_polygon_points
+                        get_sorted_ring_points
                             .pipe(get_last_line_point)
                             .pipe(construct_lines)
-                            .pipe(polygon_line)
+                            .pipe(ring_line)
                             .pipe(drop_system),
-                        get_sorted_polygon_points
-                            .pipe(construct_polygon)
+                        get_sorted_ring_points
+                            .pipe(construct_ring)
                             .pipe(drop_system),
                         cleanup_construction_components,
                     )
                         .run_if(
-                            in_state(AppState::Polygon)
+                            in_state(AppState::Ring)
                                 .and_then(input_just_pressed(MouseButton::Right))
-                                .and_then(polygon_finishable),
+                                .and_then(ring_finishable),
                         ),
                 ),
             )
             .add_systems(
                 Update,
                 (
-                    render_polygons.run_if(any_with_component::<Polygon2D>),
-                    render_polygon_construction.run_if(any_with_component::<PolygonPoint>),
+                    render_rings.run_if(any_with_component::<Ring2D>),
+                    render_ring_construction.run_if(any_with_component::<RingPoint>),
                 ),
             )
-            .add_systems(OnExit(AppState::Polygon), cleanup_unfinished);
+            .add_systems(OnExit(AppState::Ring), cleanup_unfinished);
     }
 }
 
 #[derive(Debug, Clone, Resource, Default, Reflect, Deref, DerefMut)]
-pub struct PolygonPointIdSource(usize);
+pub struct RingPointIdSource(usize);
 
 #[derive(Debug, Clone, Component, Default, Reflect)]
-pub struct PolygonPoint(usize);
+pub struct RingPoint(usize);
 
 #[derive(Debug, Clone, Component, Default, Reflect)]
-pub struct PolygonLine;
+pub struct RingLine;
 
 #[derive(Debug, Clone, Component, Default, Reflect)]
-pub struct LastPolyPoint;
+pub struct LastRingPoint;
 
 #[derive(Debug, Clone, Component, Default, Reflect)]
-pub struct UnfinishedPolyPoint;
+pub struct UnfinishedRingPoint;
 
 #[derive(Debug, Clone, Component, Default, Reflect)]
-pub struct UnfinishedPolyLine;
+pub struct UnfinishedRingLine;
 
 #[derive(Debug, Clone, Component, Reflect)]
-pub struct Polygon2D {
+pub struct Ring2D {
     points: Vec<Entity>,
 }
 
 #[derive(SystemParam)]
-pub struct PolygonParams<'w, 's> {
-    polygon: Query<'w, 's, (Entity, &'static Polygon2D, &'static AttachedWorkingPlane)>,
-    points: Query<'w, 's, (&'static GlobalTransform, &'static PolygonPoint), With<Point>>,
+pub struct RingParams<'w, 's> {
+    ring: Query<'w, 's, (Entity, &'static Ring2D, &'static AttachedWorkingPlane)>,
+    points: Query<'w, 's, (&'static GlobalTransform, &'static RingPoint), With<Point>>,
 }
 
-impl PolygonParams<'_, '_> {
+impl RingParams<'_, '_> {
     pub fn iter_entities(&self) -> impl Iterator<Item = (Entity, Vec<Entity>)> + '_ {
-        self.polygon
+        self.ring
             .iter()
-            .map(|(entity, poly, _)| (entity, poly.points.clone()))
+            .map(|(entity, ring, _)| (entity, ring.points.clone()))
     }
 
-    pub fn iter_just_polygons(&self) -> impl Iterator<Item = Vec<Vec3>> + '_ {
-        self.iter_polygons().map(|(polygon, _)| polygon)
+    pub fn iter_just_rings(&self) -> impl Iterator<Item = Vec<Vec3>> + '_ {
+        self.iter_rings().map(|(ring, _)| ring)
     }
 
-    pub fn iter_polygons(&self) -> impl Iterator<Item = (Vec<Vec3>, WorkingPlane)> + '_ {
-        self.polygon.iter().filter_map(|(_, polygon, wp)| {
-            let points = polygon
+    pub fn iter_rings(&self) -> impl Iterator<Item = (Vec<Vec3>, WorkingPlane)> + '_ {
+        self.ring.iter().filter_map(|(_, ring, wp)| {
+            let points = ring
                 .points
                 .iter()
                 .map(|entity| {
                     self.points
                         .get(*entity)
-                        .map(|(position, PolygonPoint(idx))| (idx, position.translation()))
+                        .map(|(position, RingPoint(idx))| (idx, position.translation()))
                 })
                 .collect::<Result<Vec<_>, _>>()
                 .map(|mut vec| {
@@ -138,67 +138,67 @@ impl PolygonParams<'_, '_> {
     }
 }
 
-fn polygon_finishable(points: Query<(), With<PolygonPoint>>) -> bool {
+fn ring_finishable(points: Query<(), With<RingPoint>>) -> bool {
     points.iter().count() >= 3
 }
 
-fn polygon_point(
+fn ring_point(
     In(entity): In<Entity>,
     mut cmds: Commands,
-    mut id: ResMut<PolygonPointIdSource>,
+    mut id: ResMut<RingPointIdSource>,
 ) -> Entity {
     **id += 1;
-    cmds.entity(entity).insert(PolygonPoint(**id)).id()
+    cmds.entity(entity).insert(RingPoint(**id)).id()
 }
 
-fn polygon_start(
+fn ring_start(
     In(entity): In<Entity>,
     mut cmds: Commands,
-    mut id_source: ResMut<PolygonPointIdSource>,
+    mut id_source: ResMut<RingPointIdSource>,
 ) -> Entity {
     **id_source = 0;
     cmds.entity(entity)
-        .insert((LastPolyPoint, UnfinishedPolyPoint))
+        .insert((LastRingPoint, UnfinishedRingPoint))
         .id()
 }
 
-fn polygon_continue(
+fn ring_continue(
     In(entity): In<Entity>,
     mut cmds: Commands,
-    last_point: Query<Entity, With<LastPolyPoint>>,
+    last_point: Query<Entity, With<LastRingPoint>>,
 ) -> [(Entity, Entity); 1] {
     let start = cmds
         .entity(last_point.single())
-        .remove::<LastPolyPoint>()
+        .remove::<LastRingPoint>()
         .id();
     let end = cmds
         .entity(entity)
-        .insert((LastPolyPoint, UnfinishedPolyPoint))
+        .insert((LastRingPoint, UnfinishedRingPoint))
         .id();
     [(start, end); 1]
 }
 
-fn polygon_line(In(lines): In<[(Entity, (Entity, Entity)); 1]>, mut cmds: Commands) -> Entity {
+fn ring_line(In(lines): In<[(Entity, (Entity, Entity)); 1]>, mut cmds: Commands) -> Entity {
     let [(entity, _)] = lines;
-    cmds.entity(entity).insert(PolygonLine).id()
+    cmds.entity(entity).insert(RingLine).id()
 }
 
-fn unfinished_polygon_line(
+fn unfinished_ring_line(
     In(lines): In<[(Entity, (Entity, Entity)); 1]>,
     mut cmds: Commands,
 ) -> Entity {
     let [(entity, _)] = lines;
     cmds.entity(entity)
-        .insert((PolygonLine, UnfinishedPolyLine))
+        .insert((RingLine, UnfinishedRingLine))
         .id()
 }
 
-fn get_sorted_polygon_points(
-    points: Query<(Entity, &PolygonPoint), With<UnfinishedPolyPoint>>,
+fn get_sorted_ring_points(
+    points: Query<(Entity, &RingPoint), With<UnfinishedRingPoint>>,
 ) -> Vec<Entity> {
     points
         .iter()
-        .sort_by_key::<&PolygonPoint, _>(|PolygonPoint(id)| *id)
+        .sort_by_key::<&RingPoint, _>(|RingPoint(id)| *id)
         .map(|(entity, _)| entity)
         .collect::<Vec<_>>()
 }
@@ -210,38 +210,31 @@ fn get_last_line_point(In(points): In<Vec<Entity>>) -> [(Entity, Entity); 1] {
     [(last, first)]
 }
 
-fn construct_polygon(
-    In(points): In<Vec<Entity>>,
-    mut cmds: Commands,
-    mut id: Local<usize>,
-) -> Entity {
+fn construct_ring(In(points): In<Vec<Entity>>, mut cmds: Commands, mut id: Local<usize>) -> Entity {
     *id += 1;
-    cmds.spawn((
-        Name::new(format!("Polygon {n}", n = *id)),
-        Polygon2D { points },
-    ))
-    .id()
+    cmds.spawn((Name::new(format!("Ring {n}", n = *id)), Ring2D { points }))
+        .id()
 }
 
 fn cleanup_construction_components(
     mut cmds: Commands,
-    unfinished_line: Query<Entity, With<UnfinishedPolyLine>>,
-    unfinished_point: Query<Entity, With<UnfinishedPolyPoint>>,
-    last_point: Query<Entity, With<LastPolyPoint>>,
+    unfinished_line: Query<Entity, With<UnfinishedRingLine>>,
+    unfinished_point: Query<Entity, With<UnfinishedRingPoint>>,
+    last_point: Query<Entity, With<LastRingPoint>>,
 ) {
     unfinished_line.iter().for_each(|entity| {
-        cmds.entity(entity).remove::<UnfinishedPolyLine>();
+        cmds.entity(entity).remove::<UnfinishedRingLine>();
     });
     unfinished_point.iter().for_each(|entity| {
-        cmds.entity(entity).remove::<UnfinishedPolyPoint>();
+        cmds.entity(entity).remove::<UnfinishedRingPoint>();
     });
     last_point.iter().for_each(|entity| {
-        cmds.entity(entity).remove::<LastPolyPoint>();
+        cmds.entity(entity).remove::<LastRingPoint>();
     });
 }
 
-fn render_polygons(mut gizmos: Gizmos, polygon: PolygonParams) {
-    polygon.iter_just_polygons().for_each(|mut points| {
+fn render_rings(mut gizmos: Gizmos, ring: RingParams) {
+    ring.iter_just_rings().for_each(|mut points| {
         if points.first() != points.last() {
             points.extend(points.first().cloned());
         }
@@ -254,15 +247,15 @@ fn render_polygons(mut gizmos: Gizmos, polygon: PolygonParams) {
     });
 }
 
-fn render_polygon_construction(
+fn render_ring_construction(
     mut gizmos: Gizmos,
-    points: Query<(&GlobalTransform, &PolygonPoint), With<UnfinishedPolyPoint>>,
+    points: Query<(&GlobalTransform, &RingPoint), With<UnfinishedRingPoint>>,
     pointer: PointerParams,
     working_plane: WorkingPlaneParams,
 ) {
     let points = points
         .iter()
-        .sort_by_key::<&PolygonPoint, _>(|PolygonPoint(id)| *id)
+        .sort_by_key::<&RingPoint, _>(|RingPoint(id)| *id)
         .map(|(transform, _)| transform.translation())
         .collect::<Vec<_>>();
 
@@ -286,7 +279,7 @@ fn render_polygon_construction(
 
 fn cleanup_unfinished(
     mut cmds: Commands,
-    unfinished: Query<Entity, Or<(With<UnfinishedPolyLine>, With<UnfinishedPolyPoint>)>>,
+    unfinished: Query<Entity, Or<(With<UnfinishedRingLine>, With<UnfinishedRingPoint>)>>,
 ) {
     unfinished.iter().for_each(|entity| {
         cmds.entity(entity).despawn_recursive();

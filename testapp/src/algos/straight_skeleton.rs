@@ -3,7 +3,7 @@ use bevy_egui::{egui, EguiContext};
 use itertools::Itertools;
 use math::{primitives::Ring, skeleton_lines_glam};
 
-use crate::polygon::PolygonParams;
+use crate::ring::RingParams;
 
 use super::algostate::AlgorithmState;
 
@@ -27,7 +27,7 @@ impl Plugin for PolygonSkeletonPlugin {
             .add_systems(
                 Update,
                 (
-                    render_polygon_expansion,
+                    render_straight_skeleton,
                     ui.run_if(resource_exists::<SkeletonOrientation>),
                 )
                     .run_if(in_state(AlgorithmState::StraightSkeleton)),
@@ -38,24 +38,22 @@ impl Plugin for PolygonSkeletonPlugin {
 #[derive(Debug, Clone, Resource, Deref, DerefMut, Reflect, Default)]
 struct SkeletonOrientation(bool);
 
-fn render_polygon_expansion(
+fn render_straight_skeleton(
     mut gizmos: Gizmos,
-    polygons: PolygonParams,
+    rings: RingParams,
     orientation: Res<SkeletonOrientation>,
 ) {
-    polygons
-        .iter_polygons()
+    rings
+        .iter_rings()
         .chunk_by(|(_, wp)| *wp)
         .into_iter()
         .for_each(|(wp, group)| {
             let (proj, inj) = wp.xy_projection_injection();
             group
                 .into_iter()
-                .map(|(poly, _)| poly)
-                .map(|polygon| {
+                .map(|(ring, _)| {
                     Ring::new(
-                        polygon
-                            .into_iter()
+                        ring.into_iter()
                             .map(|p| proj.transform_point(p).truncate())
                             .collect::<Vec<_>>(),
                     )

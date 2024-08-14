@@ -12,12 +12,12 @@ impl Plugin for StitchTrianglesPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (render_polygon_expansion,).run_if(in_state(AlgorithmState::StitchTriangles)),
+            render_triangle_stitching.run_if(in_state(AlgorithmState::StitchTriangles)),
         );
     }
 }
 
-fn render_polygon_expansion(mut gizmos: Gizmos, triangles: TriangleParams) {
+fn render_triangle_stitching(mut gizmos: Gizmos, triangles: TriangleParams) {
     triangles
         .iter_triangles()
         .chunk_by(|(_, wp)| *wp)
@@ -31,9 +31,8 @@ fn render_polygon_expansion(mut gizmos: Gizmos, triangles: TriangleParams) {
                 .collect::<Vec<_>>();
             stitch_triangles_glam(triangles_projected)
                 .into_iter()
-                .for_each(|polygon| {
-                    polygon
-                        .lines()
+                .for_each(|ring| {
+                    ring.lines()
                         .map(|line| line.0.map(|p| inj.transform_point(p.extend(0.0))))
                         .for_each(|line| {
                             gizmos.line(line[0], line[1], palettes::basic::RED);
