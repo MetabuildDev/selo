@@ -56,6 +56,26 @@ pub fn stitch_triangles_glam(triangles: impl IntoIterator<Item = [Vec2; 3]>) -> 
         .collect::<Vec<_>>()
 }
 
+pub fn boolops_union_glam(polygons: impl IntoIterator<Item = Vec<Vec2>>) -> Vec<Vec<Vec2>> {
+    let inputs = polygons.into_iter().collect::<Vec<_>>();
+
+    inputs
+        .clone()
+        .into_iter()
+        .map(vec2s_to_polygon)
+        .map(|poly| MultiPolygon::new(vec![poly]))
+        .try_fold(empty_multipolygon(), |poly, other| {
+            SpadeBoolops::union(&poly, &other)
+        })
+        .map(|multi_poly| {
+            multi_poly
+                .into_iter()
+                .map(|poly| linestring_to_vec2s(poly.exterior()).collect::<Vec<_>>())
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or(inputs)
+}
+
 pub fn buffer_polygon_glam(
     polygon: impl IntoIterator<Item = Vec2>,
     expand_by: f64,

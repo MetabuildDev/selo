@@ -46,3 +46,7 @@ pub(crate) fn coord_down_precision(c: Coord<f64>) -> Coord<f32> {
         y: c.y as f32,
     }
 }
+
+pub(crate) fn empty_multipolygon() -> MultiPolygon<f32> {
+    MultiPolygon::new(vec![])
+}

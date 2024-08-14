@@ -2209,7 +2209,7 @@ dependencies = [
 [[package]]
 name = "geo"
 version = "0.28.0"
-source = "git+https://github.com/RobWalt/geo.git?branch=feat/spade-boolops#4f643a8a154905129ba7bcdfea1b71cc8cb953ba"
+source = "git+https://github.com/RobWalt/geo.git?branch=feat/spade-boolops#a50681e1784f13f028d35cc93321512805af53a4"
 dependencies = [
  "earcutr",
  "float_next_after",
