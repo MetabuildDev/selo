@@ -14,13 +14,18 @@ impl Default for LineString {
 }
 
 impl LineString {
-    pub fn close(self) -> Ring {
-        Ring::new(self.0)
+    pub fn closed(&self) -> bool {
+        self.0.last() == self.0.first()
     }
 
-    /// If this is a closed linestring, this will give the
-    pub fn inside(&self) -> Option<Ring> {
-        (self.0.last() == self.0.first()).then(|| Ring::new(self.0.clone()))
+    /// If this is a linestring is closed, turn it into a ring
+    pub fn to_ring(&self) -> Option<Ring> {
+        self.closed().then(|| Ring::new(self.0.clone()))
+    }
+
+    /// Turn this linestring into a ring, adding a closing line if the it was open
+    pub fn close(self) -> Ring {
+        Ring::new(self.0)
     }
 
     pub fn points(&self) -> impl Iterator<Item = Vec2> + '_ {

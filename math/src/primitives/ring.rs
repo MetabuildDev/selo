@@ -81,7 +81,7 @@ impl TryFrom<&geo::LineString<f32>> for Ring {
     type Error = ();
 
     fn try_from(ls: &geo::LineString<f32>) -> Result<Self, Self::Error> {
-        LineString::from(ls).inside().ok_or(())
+        LineString::from(ls).to_ring().ok_or(())
     }
 }
 
