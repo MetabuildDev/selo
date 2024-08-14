@@ -1,9 +1,7 @@
-mod conversions;
 pub mod primitives;
 mod utils;
 mod working_plane;
 
-use conversions::coord_to_vec2;
 use geo::{MapCoords as _, StitchTriangles as _, TriangulateSpade as _};
 use primitives::*;
 
@@ -15,6 +13,15 @@ use utils::*;
 
 pub mod prelude {
     pub use super::working_plane::WorkingPlane;
+}
+
+pub fn test_() {
+    let ring = Ring::new(vec![Vec2::ZERO, Vec2::ZERO, Vec2::ZERO]);
+
+    // let a = ring.to_linestring().points();
+    let a = ring.to_linestring().0.into_iter();
+
+    println!("{:?}", a.collect::<Vec<_>>());
 }
 
 pub fn intersect_line_2d_point(a: Line, b: Line) -> Option<Vec2> {

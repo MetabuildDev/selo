@@ -14,3 +14,14 @@ pub(crate) fn coord_down_precision(c: Coord<f64>) -> Coord<f32> {
         y: c.y as f32,
     }
 }
+
+pub(crate) fn coord_to_vec2(coord: geo::Coord<f32>) -> Vec2 {
+    Vec2::new(coord.x, coord.y)
+}
+
+pub(crate) fn vec2_to_coord(vec2: Vec2) -> geo::Coord<f32> {
+    geo::Coord {
+        x: vec2.x,
+        y: vec2.y,
+    }
+}
