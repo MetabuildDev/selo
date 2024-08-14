@@ -1,9 +1,9 @@
 use bevy::{color::palettes, prelude::*};
 use bevy_egui::{egui, EguiContext};
 use itertools::Itertools;
-use math::skeleton_lines_glam;
+use math::{skeleton_lines_glam, Ring};
 
-use crate::polygon::PolygonParams;
+use crate::ring::RingParams;
 
 use super::algostate::AlgorithmState;
 
@@ -27,7 +27,7 @@ impl Plugin for PolygonSkeletonPlugin {
             .add_systems(
                 Update,
                 (
-                    render_polygon_expansion,
+                    render_straight_skeleton,
                     ui.run_if(resource_exists::<SkeletonOrientation>),
                 )
                     .run_if(in_state(AlgorithmState::StraightSkeleton)),
@@ -38,39 +38,33 @@ impl Plugin for PolygonSkeletonPlugin {
 #[derive(Debug, Clone, Resource, Deref, DerefMut, Reflect, Default)]
 struct SkeletonOrientation(bool);
 
-fn render_polygon_expansion(
+fn render_straight_skeleton(
     mut gizmos: Gizmos,
-    polygons: PolygonParams,
+    rings: RingParams,
     orientation: Res<SkeletonOrientation>,
 ) {
-    polygons
-        .iter_polygons()
+    rings
+        .iter_rings()
         .chunk_by(|(_, wp)| *wp)
         .into_iter()
         .for_each(|(wp, group)| {
             let (proj, inj) = wp.xy_projection_injection();
             group
                 .into_iter()
-                .map(|(poly, _)| poly)
-                .map(|polygon| {
-                    polygon
-                        .into_iter()
-                        .map(|p| proj.transform_point(p).truncate())
-                        .collect::<Vec<_>>()
+                .map(|(ring, _)| {
+                    Ring::new(
+                        ring.into_iter()
+                            .map(|p| proj.transform_point(p).truncate())
+                            .collect::<Vec<_>>(),
+                    )
                 })
-                .flat_map(|polygon| skeleton_lines_glam(polygon, !**orientation))
+                .flat_map(|ring| skeleton_lines_glam(ring.to_polygon(), !**orientation))
                 .for_each(|polygon| {
                     polygon
-                        .windows(2)
-                        .map(|win| (win[0], win[1]))
-                        .map(|(start, end)| {
-                            (
-                                inj.transform_point(start.extend(0.0)),
-                                inj.transform_point(end.extend(0.0)),
-                            )
-                        })
-                        .for_each(|(start, end)| {
-                            gizmos.line(start, end, palettes::basic::RED);
+                        .lines()
+                        .map(|line| line.0.map(|p| inj.transform_point(p.extend(0.0))))
+                        .for_each(|line| {
+                            gizmos.line(line[0], line[1], palettes::basic::RED);
                         });
                 });
         });

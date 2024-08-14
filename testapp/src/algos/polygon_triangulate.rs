@@ -1,9 +1,9 @@
 use bevy::{color::palettes, input::common_conditions::input_just_pressed, prelude::*};
 use itertools::Itertools;
-use math::triangulate_glam;
+use math::{triangulate_glam, Ring};
 
 use crate::{
-    polygon::{Polygon2D, PolygonLine, PolygonParams, PolygonPoint},
+    ring::{Ring2D, RingLine, RingParams, RingPoint},
     spawner::SpawnTriangle,
 };
 
@@ -24,24 +24,24 @@ impl Plugin for PolygonTriangulationPlugin {
     }
 }
 
-fn render_triangulation(mut gizmos: Gizmos, polygons: PolygonParams) {
-    polygons
-        .iter_polygons()
+fn render_triangulation(mut gizmos: Gizmos, rings: RingParams) {
+    rings
+        .iter_rings()
         .chunk_by(|(_, wp)| *wp)
         .into_iter()
         .for_each(|(wp, group)| {
             let (proj, inj) = wp.xy_projection_injection();
             group
                 .into_iter()
-                .map(|(poly, _)| poly)
-                .map(|polygon| {
-                    polygon
-                        .into_iter()
-                        .map(|p| proj.transform_point(p).truncate())
-                        .collect::<Vec<_>>()
+                .map(|(ring, _)| {
+                    Ring::new(
+                        ring.into_iter()
+                            .map(|p| proj.transform_point(p).truncate())
+                            .collect::<Vec<_>>(),
+                    )
                 })
-                .flat_map(|polygon| triangulate_glam(polygon))
-                .map(|points| points.map(|p| inj.transform_point(p.extend(0.0))))
+                .flat_map(|ring| triangulate_glam(ring.to_polygon()))
+                .map(|tri| tri.0.map(|p| inj.transform_point(p.extend(0.0))))
                 .for_each(|[a, b, c]| {
                     gizmos.primitive_3d(
                         &Triangle3d::new(a, b, c),
@@ -56,27 +56,27 @@ fn render_triangulation(mut gizmos: Gizmos, polygons: PolygonParams) {
 fn do_triangulation(
     mut cmds: Commands,
     mut spawn_triangles: EventWriter<SpawnTriangle>,
-    polygons: PolygonParams,
-    entities: Query<Entity, Or<(With<Polygon2D>, With<PolygonLine>, With<PolygonPoint>)>>,
+    rings: RingParams,
+    entities: Query<Entity, Or<(With<Ring2D>, With<RingLine>, With<RingPoint>)>>,
 ) {
     spawn_triangles.send_batch(
-        polygons
-            .iter_polygons()
+        rings
+            .iter_rings()
             .chunk_by(|(_, wp)| *wp)
             .into_iter()
             .flat_map(|(wp, group)| {
                 let (proj, inj) = wp.xy_projection_injection();
                 group
                     .into_iter()
-                    .map(|(poly, _)| poly)
-                    .map(move |polygon| {
-                        polygon
-                            .into_iter()
-                            .map(|p| proj.transform_point(p).truncate())
-                            .collect::<Vec<_>>()
+                    .map(move |(ring, _)| {
+                        Ring::new(
+                            ring.into_iter()
+                                .map(|p| proj.transform_point(p).truncate())
+                                .collect::<Vec<_>>(),
+                        )
                     })
-                    .flat_map(|polygon| triangulate_glam(polygon))
-                    .map(move |points| points.map(|p| inj.transform_point(p.extend(0.0))))
+                    .flat_map(|ring| triangulate_glam(ring.to_polygon()))
+                    .map(move |tri| tri.0.map(|p| inj.transform_point(p.extend(0.0))))
                     .map(|[a, b, c]| SpawnTriangle { a, b, c })
             }),
     );

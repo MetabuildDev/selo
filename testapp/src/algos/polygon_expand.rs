@@ -1,9 +1,9 @@
 use bevy::{color::palettes, prelude::*};
 use bevy_egui::{egui, EguiContext};
 use itertools::Itertools;
-use math::buffer_polygon_glam;
+use math::{buffer_polygon_glam, Ring};
 
-use crate::polygon::PolygonParams;
+use crate::ring::RingParams;
 
 use super::algostate::AlgorithmState;
 
@@ -40,42 +40,31 @@ struct PolygonExpansion(f64);
 
 fn render_polygon_expansion(
     mut gizmos: Gizmos,
-    polygons: PolygonParams,
+    rings: RingParams,
     expansion_factor: Res<PolygonExpansion>,
 ) {
-    polygons
-        .iter_polygons()
+    rings
+        .iter_rings()
         .chunk_by(|(_, wp)| *wp)
         .into_iter()
         .for_each(|(wp, group)| {
             let (proj, inj) = wp.xy_projection_injection();
             group
                 .into_iter()
-                .map(|(poly, _)| poly)
-                .map(|polygon| {
-                    polygon
-                        .into_iter()
-                        .map(|p| proj.transform_point(p).truncate())
-                        .collect::<Vec<_>>()
+                .map(|(ring, _)| {
+                    Ring::new(
+                        ring.into_iter()
+                            .map(|p| proj.transform_point(p).truncate())
+                            .collect::<Vec<_>>(),
+                    )
                 })
-                .flat_map(|polygon| buffer_polygon_glam(polygon, **expansion_factor))
+                .flat_map(|ring| buffer_polygon_glam(ring.to_polygon(), **expansion_factor).0)
                 .for_each(|polygon| {
                     polygon
-                        .windows(2)
-                        .map(|win| (win[0], win[1]))
-                        .chain(Some(()).and_then(|_| {
-                            let first = polygon.first()?;
-                            let last = polygon.last()?;
-                            (first != last).then_some((*first, *last))
-                        }))
-                        .map(|(start, end)| {
-                            (
-                                inj.transform_point(start.extend(0.0)),
-                                inj.transform_point(end.extend(0.0)),
-                            )
-                        })
-                        .for_each(|(start, end)| {
-                            gizmos.line(start, end, palettes::basic::RED);
+                        .lines()
+                        .map(|line| line.0.map(|p| inj.transform_point(p.extend(0.0))))
+                        .for_each(|line| {
+                            gizmos.line(line[0], line[1], palettes::basic::RED);
                         });
                 });
         })

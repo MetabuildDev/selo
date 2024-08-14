@@ -3,7 +3,7 @@ use bevy::{color::palettes, ecs::entity::EntityHashSet, prelude::*};
 use crate::{
     line::{AttachedLines, Line},
     point::Point,
-    polygon::{Polygon2D, PolygonLine, PolygonPoint},
+    ring::{Ring2D, RingLine, RingPoint},
     triangle::{Triangle, TriangleLine, TrianglePoint},
 };
 
@@ -12,12 +12,12 @@ pub struct SpawnerPlugin;
 impl Plugin for SpawnerPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<SpawnTriangle>()
-            .add_event::<SpawnPolygon>()
+            .add_event::<SpawnRing>()
             .add_systems(
                 Update,
                 (
                     spawn_triangle.run_if(on_event::<SpawnTriangle>()),
-                    spawn_polygon.run_if(on_event::<SpawnPolygon>()),
+                    spawn_ring.run_if(on_event::<SpawnRing>()),
                 ),
             );
     }
@@ -74,12 +74,12 @@ fn spawn_triangle(
 }
 
 #[derive(Debug, Clone, Event)]
-pub struct SpawnPolygon {
+pub struct SpawnRing {
     pub points: Vec<Vec3>,
 }
 
-fn spawn_polygon(
-    mut spawn_events: EventReader<SpawnPolygon>,
+fn spawn_ring(
+    mut spawn_events: EventReader<SpawnRing>,
 
     mut cmds: Commands,
 
@@ -90,7 +90,7 @@ fn spawn_polygon(
 
     mut attached_lines: Query<&mut AttachedLines, ()>,
 ) {
-    spawn_events.read().for_each(|SpawnPolygon { points }| {
+    spawn_events.read().for_each(|SpawnRing { points }| {
         let points = points
             .into_iter()
             .map(|position| {
@@ -100,7 +100,7 @@ fn spawn_polygon(
                     &mut meshes,
                     &mut materials,
                     &mut ids.0,
-                    |id| PolygonPoint(id),
+                    |id| RingPoint(id),
                 )
             })
             .collect::<Vec<_>>();
@@ -116,17 +116,14 @@ fn spawn_polygon(
                     &mut cmds,
                     &mut attached_lines,
                     &mut ids.2,
-                    |_| PolygonLine,
+                    |_| RingLine,
                 )
             })
             .collect::<Vec<_>>();
 
         ids.2 += 1;
 
-        cmds.spawn((
-            Name::new(format!("Polygon {n}", n = ids.2)),
-            Polygon2D { points },
-        ));
+        cmds.spawn((Name::new(format!("Ring {n}", n = ids.2)), Ring2D { points }));
     });
 }
 

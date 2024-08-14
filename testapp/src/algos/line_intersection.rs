@@ -1,5 +1,6 @@
 use bevy::{color::palettes, prelude::*};
 use itertools::Itertools;
+use math::primitives::*;
 
 use crate::line::LineParams;
 
@@ -26,16 +27,16 @@ fn render_intersection_points(mut gizmos: Gizmos, lines: LineParams) {
             let group = group.map(|(line, _)| line).collect::<Vec<_>>();
             group
                 .iter()
-                .map(|line| line.map(|p| proj.transform_point(p).truncate()))
+                .map(|line| Line(line.map(|p| proj.transform_point(p).truncate())))
                 .enumerate()
                 .flat_map(|(i, line_a)| {
                     group
                         .iter()
-                        .map(|line| line.map(|p| proj.transform_point(p).truncate()))
+                        .map(|line| Line(line.map(|p| proj.transform_point(p).truncate())))
                         .skip(i + 1)
                         .map(move |line_b| (line_a, line_b))
                 })
-                .filter_map(|([a, b], [c, d])| math::intersect_line_2d_point((a, b), (c, d)))
+                .filter_map(|(a, b)| math::intersect_line_2d_point(a, b))
                 .for_each(|intersection| {
                     gizmos.sphere(
                         inj.transform_point(intersection.extend(0.0)),

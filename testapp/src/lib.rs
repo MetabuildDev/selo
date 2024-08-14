@@ -4,7 +4,7 @@ mod gizmos;
 mod line;
 mod point;
 mod pointer;
-mod polygon;
+mod ring;
 mod spawner;
 mod state;
 mod triangle;
@@ -29,7 +29,7 @@ pub fn run() {
         point::PointPlugin,
         line::LinePlugin,
         triangle::TrianglePlugin,
-        polygon::PolygonPlugin,
+        ring::RingPlugin,
         algos::AlgoPlugin,
         working_plane::WorkingPlanePlugin,
         spawner::SpawnerPlugin,

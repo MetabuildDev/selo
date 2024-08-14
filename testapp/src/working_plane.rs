@@ -8,8 +8,7 @@ use bevy_inspector_egui::bevy_inspector::ui_for_value;
 use math::prelude::WorkingPlane;
 
 use crate::{
-    gizmos::GizmosExt, line::Line, point::Point, polygon::Polygon2D, state::AppState,
-    triangle::Triangle,
+    gizmos::GizmosExt, line::Line, point::Point, ring::Ring2D, state::AppState, triangle::Triangle,
 };
 
 pub struct WorkingPlanePlugin;
@@ -30,7 +29,7 @@ impl Plugin for WorkingPlanePlugin {
             .observe(add_working_plane::<Point>)
             .observe(add_working_plane::<Line>)
             .observe(add_working_plane::<Triangle>)
-            .observe(add_working_plane::<Polygon2D>)
+            .observe(add_working_plane::<Ring2D>)
             .observe(keep_active_working_plane_unique);
     }
 }

@@ -3,7 +3,7 @@ use itertools::Itertools;
 use math::stitch_triangles_glam;
 
 use crate::{
-    spawner::SpawnPolygon,
+    spawner::SpawnRing,
     triangle::{Triangle, TriangleLine, TriangleParams, TrianglePoint},
 };
 
@@ -34,27 +34,17 @@ fn render_polygon_stitch(mut gizmos: Gizmos, triangles: TriangleParams) {
             let triangles_projected = group
                 .into_iter()
                 .map(|(triangle, _)| triangle)
-                .map(|triangle| triangle.map(|p| proj.transform_point(p).truncate()))
+                .map(|triangle| {
+                    math::Triangle(triangle.map(|p| proj.transform_point(p).truncate()))
+                })
                 .collect::<Vec<_>>();
             stitch_triangles_glam(triangles_projected)
                 .into_iter()
-                .for_each(|polygon| {
-                    polygon
-                        .windows(2)
-                        .map(|win| (win[0], win[1]))
-                        .chain(Some(()).and_then(|_| {
-                            let first = polygon.first()?;
-                            let last = polygon.last()?;
-                            (first != last).then_some((*first, *last))
-                        }))
-                        .map(|(start, end)| {
-                            (
-                                inj.transform_point(start.extend(0.0)),
-                                inj.transform_point(end.extend(0.0)),
-                            )
-                        })
-                        .for_each(|(start, end)| {
-                            gizmos.line(start, end, palettes::basic::RED);
+                .for_each(|ring| {
+                    ring.lines()
+                        .map(|line| line.0.map(|p| inj.transform_point(p.extend(0.0))))
+                        .for_each(|line| {
+                            gizmos.line(line[0], line[1], palettes::basic::RED);
                         });
                 });
         });
@@ -62,11 +52,11 @@ fn render_polygon_stitch(mut gizmos: Gizmos, triangles: TriangleParams) {
 
 fn do_stitching(
     mut cmds: Commands,
-    mut spawn_polygons: EventWriter<SpawnPolygon>,
+    mut spawn_rings: EventWriter<SpawnRing>,
     triangles: TriangleParams,
     entities: Query<Entity, Or<(With<Triangle>, With<TriangleLine>, With<TrianglePoint>)>>,
 ) {
-    spawn_polygons.send_batch(
+    spawn_rings.send_batch(
         triangles
             .iter_triangles()
             .chunk_by(|(_, wp)| *wp)
@@ -76,16 +66,18 @@ fn do_stitching(
                 let triangles_projected = group
                     .into_iter()
                     .map(|(triangle, _)| triangle)
-                    .map(|triangle| triangle.map(|p| proj.transform_point(p).truncate()))
+                    .map(|triangle| {
+                        math::Triangle(triangle.map(|p| proj.transform_point(p).truncate()))
+                    })
                     .collect::<Vec<_>>();
                 stitch_triangles_glam(triangles_projected)
                     .into_iter()
-                    .map(move |polygon| {
-                        let points = polygon
-                            .into_iter()
+                    .map(move |ring| {
+                        let points = ring
+                            .iter_points_open()
                             .map(|start| inj.transform_point(start.extend(0.0)))
                             .collect::<Vec<_>>();
-                        SpawnPolygon { points }
+                        SpawnRing { points }
                     })
             }),
     );

@@ -1,10 +1,10 @@
 use bevy::{color::palettes, input::common_conditions::input_just_pressed, prelude::*};
 use itertools::Itertools;
-use math::boolops_union_glam;
+use math::{boolops_union_glam, Ring};
 
 use crate::{
-    polygon::{Polygon2D, PolygonLine, PolygonParams, PolygonPoint},
-    spawner::SpawnPolygon,
+    ring::{Ring2D, RingLine, RingParams, RingPoint},
+    spawner::SpawnRing,
 };
 
 use super::algostate::AlgorithmState;
@@ -24,85 +24,72 @@ impl Plugin for PolygonBoolopsPlugin {
     }
 }
 
-fn render_polygon_union(mut gizmos: Gizmos, polygons: PolygonParams) {
-    polygons
-        .iter_polygons()
+fn render_polygon_union(mut gizmos: Gizmos, rings: RingParams) {
+    rings
+        .iter_rings()
         .chunk_by(|(_, wp)| *wp)
         .into_iter()
         .for_each(|(wp, group)| {
             let (proj, inj) = wp.xy_projection_injection();
-            let polygons_projected = group
+            let rings_projected = group
                 .into_iter()
-                .map(|(poly, _)| poly)
-                .map(|polygon| {
-                    polygon
-                        .into_iter()
-                        .map(|p| proj.transform_point(p).truncate())
-                        .collect::<Vec<_>>()
+                .map(|(ring, _)| {
+                    Ring::new(
+                        ring.into_iter()
+                            .map(|p| proj.transform_point(p).truncate())
+                            .collect::<Vec<_>>(),
+                    )
                 })
                 .collect::<Vec<_>>();
-            boolops_union_glam(polygons_projected)
+            boolops_union_glam(rings_projected)
+                .0
                 .into_iter()
-                .for_each(|(exterior, interiors)| {
-                    let mut render = |linestring: &[Vec2]| {
-                        linestring
-                            .windows(2)
-                            .map(|win| (win[0], win[1]))
-                            .chain(Some(()).and_then(|_| {
-                                let first = linestring.first()?;
-                                let last = linestring.last()?;
-                                (first != last).then_some((*first, *last))
-                            }))
-                            .map(|(start, end)| {
-                                (
-                                    inj.transform_point(start.extend(0.0)),
-                                    inj.transform_point(end.extend(0.0)),
-                                )
-                            })
-                            .for_each(|(start, end)| {
-                                gizmos.line(start, end, palettes::basic::RED);
-                            });
-                    };
-                    render(&exterior);
-                    interiors.iter().for_each(|interior| {
-                        render(&interior);
-                    });
+                .for_each(|polygon| {
+                    polygon
+                        .lines()
+                        .map(|line| line.0.map(|p| inj.transform_point(p.extend(0.0))))
+                        .for_each(|line| {
+                            gizmos.line(line[0], line[1], palettes::basic::RED);
+                        });
                 });
         });
 }
 
 fn do_unioning(
     mut cmds: Commands,
-    mut spawn_polygons: EventWriter<SpawnPolygon>,
-    polygons: PolygonParams,
-    entities: Query<Entity, Or<(With<Polygon2D>, With<PolygonLine>, With<PolygonPoint>)>>,
+    mut spawn_rings: EventWriter<SpawnRing>,
+    rings: RingParams,
+    entities: Query<Entity, Or<(With<Ring2D>, With<RingLine>, With<RingPoint>)>>,
 ) {
-    spawn_polygons.send_batch(
-        polygons
-            .iter_polygons()
+    spawn_rings.send_batch(
+        rings
+            .iter_rings()
             .chunk_by(|(_, wp)| *wp)
             .into_iter()
             .flat_map(|(wp, group)| {
                 let (proj, inj) = wp.xy_projection_injection();
                 let polygons_projected = group
                     .into_iter()
-                    .map(|(polygon, _)| polygon)
-                    .map(|polygon| {
-                        polygon
-                            .into_iter()
-                            .map(|p| proj.transform_point(p).truncate())
-                            .collect::<Vec<_>>()
+                    .map(|(ring, _)| {
+                        Ring::new(
+                            ring.into_iter()
+                                .map(|p| proj.transform_point(p).truncate())
+                                .collect::<Vec<_>>(),
+                        )
                     })
                     .collect::<Vec<_>>();
-                boolops_union_glam(polygons_projected).into_iter().map(
-                    move |(exterior, _interiors)| {
-                        let points = exterior
-                            .into_iter()
+                boolops_union_glam(polygons_projected)
+                    .0
+                    .into_iter()
+                    .map(move |polygon| {
+                        let points = polygon
+                            .exterior()
+                            .points_open()
+                            .iter()
                             .map(|start| inj.transform_point(start.extend(0.0)))
                             .collect::<Vec<_>>();
-                        SpawnPolygon { points }
-                    },
-                )
+                        SpawnRing { points }
+                    })
             }),
     );
 
