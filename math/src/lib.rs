@@ -11,7 +11,7 @@ use glam::*;
 use utils::*;
 
 pub mod prelude {
-    pub use super::embedded_primitive::EmbeddedPrimitive;
+    pub use super::embedded_primitive::FlatPrimitive;
     pub use super::primitives::*;
     pub use super::working_plane::WorkingPlane;
 }

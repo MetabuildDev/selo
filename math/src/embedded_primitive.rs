@@ -2,13 +2,14 @@ use crate::prelude::WorkingPlane;
 
 /// A trait to classify 2D geometric types that can be created from points on a 3D working plane and
 /// the plane itself
-pub trait Embeddable {
-    /// Representation of the embeddable type in 3D
+pub trait Flattenable {
+    /// Representation of the flat geometry in 3D coordinates
     type Type3D;
 
-    /// method to transform the geometry from the 3D plane to the XY plane into 2D coordinates
-    fn embed(from: Self::Type3D, working_plane: WorkingPlane) -> Self;
-    /// method to transform the geometry from the XY plane with 2D coordinates back to the 3D plane
+    /// method to transform the geometry from a 3D plane to the XY plane into 2D coordinates
+    fn embed(repr_3d: Self::Type3D, working_plane: WorkingPlane) -> Self;
+
+    /// method to transform the geometry from the XY plane with 2D coordinates back to a 3D plane
     fn unembed(self, working_plane: WorkingPlane) -> Self::Type3D;
 }
 
@@ -25,13 +26,13 @@ pub trait Embeddable {
 /// let triangle_2d = EmbeddedPrimitive::<Triangle>::new([a,b,c], plane);
 /// ```
 #[derive(Debug, Clone)]
-pub struct EmbeddedPrimitive<P: Embeddable> {
+pub struct FlatPrimitive<P: Flattenable> {
     primitive: P,
     working_plane: WorkingPlane,
 }
 
-impl<A: Embeddable> EmbeddedPrimitive<A> {
-    /// Embedds a given 3D representation of a type that is embeddable into 2D space
+impl<A: Flattenable> FlatPrimitive<A> {
+    /// Transforms a given 3D geometry that is flat with respect to some [`WorkingPlane`] into 2D space
     ///
     /// ```
     /// # use math::prelude::*;
@@ -49,7 +50,7 @@ impl<A: Embeddable> EmbeddedPrimitive<A> {
         }
     }
 
-    /// Apply transformations to the embedded 2D geometry
+    /// Apply transformations to the flattened 2D geometry
     ///
     /// ```
     /// # use math::prelude::*;
@@ -69,14 +70,14 @@ impl<A: Embeddable> EmbeddedPrimitive<A> {
     ///
     /// let flipped_triangle = triangle_2d.map_geometry(flip_triangle);
     /// ```
-    pub fn map_geometry<B: Embeddable>(self, f: impl Fn(A) -> B) -> EmbeddedPrimitive<B> {
-        EmbeddedPrimitive {
+    pub fn map_geometry<B: Flattenable>(self, f: impl Fn(A) -> B) -> FlatPrimitive<B> {
+        FlatPrimitive {
             primitive: f(self.primitive),
             working_plane: self.working_plane,
         }
     }
 
-    /// Unembed the 2D geometry back into 3D space onto the working plane where it came from.
+    /// Transform the 2D geometry back into 3D space onto the [`WorkingPlane`] where it came from.
     ///
     /// ```
     /// # use math::prelude::*;
@@ -107,17 +108,18 @@ impl<A: Embeddable> EmbeddedPrimitive<A> {
 }
 
 mod private_impls {
-    use super::Embeddable;
+    use super::Flattenable;
     use crate::primitives::*;
     use glam::*;
 
-    impl Embeddable for Line {
+    impl Flattenable for Line {
         type Type3D = [Vec3; 2];
         #[inline]
-        fn embed(from: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
+        fn embed(repr_3d: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
             let proj = working_plane.xy_projection();
             Line(
-                from.map(|vec3| proj.transform_point3(vec3))
+                repr_3d
+                    .map(|vec3| proj.transform_point3(vec3))
                     .map(|vec2| vec2.truncate()),
             )
         }
@@ -129,13 +131,14 @@ mod private_impls {
                 .map(|vec3| inj.transform_point3(vec3))
         }
     }
-    impl Embeddable for Triangle {
+    impl Flattenable for Triangle {
         type Type3D = [Vec3; 3];
         #[inline]
-        fn embed(from: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
+        fn embed(repr_3d: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
             let proj = working_plane.xy_projection();
             Triangle(
-                from.map(|vec3| proj.transform_point3(vec3))
+                repr_3d
+                    .map(|vec3| proj.transform_point3(vec3))
                     .map(|vec2| vec2.truncate()),
             )
         }
@@ -147,12 +150,13 @@ mod private_impls {
                 .map(|vec3| inj.transform_point3(vec3))
         }
     }
-    impl Embeddable for MultiTriangle {
+    impl Flattenable for MultiTriangle {
         type Type3D = Vec<[Vec3; 3]>;
         #[inline]
-        fn embed(from: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
+        fn embed(repr_3d: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
             MultiTriangle(
-                from.into_iter()
+                repr_3d
+                    .into_iter()
                     .map(|triangle| Triangle::embed(triangle, working_plane))
                     .collect::<Vec<_>>(),
             )
@@ -165,13 +169,14 @@ mod private_impls {
                 .collect::<Vec<_>>()
         }
     }
-    impl Embeddable for LineString {
+    impl Flattenable for LineString {
         type Type3D = Vec<Vec3>;
         #[inline]
-        fn embed(from: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
+        fn embed(repr_3d: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
             let proj = working_plane.xy_projection();
             LineString(
-                from.into_iter()
+                repr_3d
+                    .into_iter()
                     .map(|p| proj.transform_point3(p))
                     .map(|p| p.truncate())
                     .collect::<Vec<_>>(),
@@ -186,12 +191,13 @@ mod private_impls {
                 .collect::<Vec<_>>()
         }
     }
-    impl Embeddable for MultiLineString {
+    impl Flattenable for MultiLineString {
         type Type3D = Vec<Vec<Vec3>>;
         #[inline]
-        fn embed(from: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
+        fn embed(repr_3d: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
             MultiLineString(
-                from.into_iter()
+                repr_3d
+                    .into_iter()
                     .map(|linestring| LineString::embed(linestring, working_plane))
                     .collect::<Vec<_>>(),
             )
@@ -204,13 +210,14 @@ mod private_impls {
                 .collect::<Vec<_>>()
         }
     }
-    impl Embeddable for Ring {
+    impl Flattenable for Ring {
         type Type3D = Vec<Vec3>;
         #[inline]
-        fn embed(from: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
+        fn embed(repr_3d: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
             let proj = working_plane.xy_projection();
             Ring::new(
-                from.into_iter()
+                repr_3d
+                    .into_iter()
                     .map(|vec3| proj.transform_point3(vec3))
                     .map(|vec2| vec2.truncate())
                     .collect::<Vec<_>>(),
@@ -226,12 +233,13 @@ mod private_impls {
                 .collect::<Vec<_>>()
         }
     }
-    impl Embeddable for MultiRing {
+    impl Flattenable for MultiRing {
         type Type3D = Vec<Vec<Vec3>>;
         #[inline]
-        fn embed(from: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
+        fn embed(repr_3d: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
             MultiRing(
-                from.into_iter()
+                repr_3d
+                    .into_iter()
                     .map(|ring| Ring::embed(ring, working_plane))
                     .collect::<Vec<_>>(),
             )
@@ -244,13 +252,13 @@ mod private_impls {
                 .collect::<Vec<_>>()
         }
     }
-    impl Embeddable for Polygon {
+    impl Flattenable for Polygon {
         type Type3D = (Vec<Vec3>, Vec<Vec<Vec3>>);
         #[inline]
-        fn embed(from: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
+        fn embed(repr_3d: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
             let (ring, multiring) = (
-                Ring::embed(from.0, working_plane),
-                MultiRing::embed(from.1, working_plane),
+                Ring::embed(repr_3d.0, working_plane),
+                MultiRing::embed(repr_3d.1, working_plane),
             );
             Polygon::new(ring, multiring)
         }
@@ -263,12 +271,13 @@ mod private_impls {
             )
         }
     }
-    impl Embeddable for MultiPolygon {
+    impl Flattenable for MultiPolygon {
         type Type3D = Vec<(Vec<Vec3>, Vec<Vec<Vec3>>)>;
         #[inline]
-        fn embed(from: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
+        fn embed(repr_3d: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
             MultiPolygon(
-                from.into_iter()
+                repr_3d
+                    .into_iter()
                     .map(|polygon| Polygon::embed(polygon, working_plane))
                     .collect::<Vec<_>>(),
             )
