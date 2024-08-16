@@ -1,3 +1,4 @@
+mod embedded_primitive;
 pub mod primitives;
 mod utils;
 mod working_plane;
@@ -10,6 +11,8 @@ use glam::*;
 use utils::*;
 
 pub mod prelude {
+    pub use super::embedded_primitive::EmbeddedPrimitive;
+    pub use super::primitives::*;
     pub use super::working_plane::WorkingPlane;
 }
 
