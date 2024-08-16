@@ -18,7 +18,7 @@ use super::{Line, LineString, Polygon};
 /// let ring = Ring::new(vec![Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]);
 /// ```
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "bevy", derive(Reflect))]
+#[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
 pub struct Ring(Vec<Vec2>);
 
 impl Default for Ring {
@@ -187,7 +187,7 @@ impl Ring {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "bevy", derive(Reflect))]
+#[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
 pub struct MultiRing(pub Vec<Ring>);
 
 impl Default for MultiRing {

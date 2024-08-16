@@ -15,7 +15,7 @@ use super::{Line, Ring};
 /// let line = LineString(vec![Vec2::X, Vec2::Y, Vec2::ONE, Vec2::ONE * 2.0]);
 /// ```
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "bevy", derive(Reflect))]
+#[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
 pub struct LineString(pub Vec<Vec2>);
 
 impl Default for LineString {
@@ -167,7 +167,7 @@ impl LineString {
 }
 
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "bevy", derive(Reflect))]
+#[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
 pub struct MultiLineString(pub Vec<LineString>);
 
 impl Default for MultiLineString {

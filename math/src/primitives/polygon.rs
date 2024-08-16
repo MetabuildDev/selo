@@ -18,7 +18,7 @@ use super::{Line, MultiRing, Ring};
 /// let polygon = Polygon::new(exterior, interiors);
 /// ```
 #[derive(Debug, Clone, Default, PartialEq)]
-#[cfg_attr(feature = "bevy", derive(Reflect))]
+#[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
 pub struct Polygon(pub Ring, pub MultiRing);
 
 impl Polygon {
@@ -140,7 +140,7 @@ impl Polygon {
 }
 
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "bevy", derive(Reflect))]
+#[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
 pub struct MultiPolygon(pub Vec<Polygon>);
 
 impl Default for MultiPolygon {

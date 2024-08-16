@@ -1,8 +1,8 @@
 use bevy_math::*;
-use bevy_reflect::Reflect;
 use primitives::InfinitePlane3d;
 
-#[derive(Debug, Clone, Copy, PartialEq, Reflect)]
+#[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
 pub struct WorkingPlane {
     pub plane: InfinitePlane3d,
     pub origin: Vec3,

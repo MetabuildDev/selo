@@ -13,7 +13,7 @@ use crate::utils::{coord_to_vec2, vec2_to_coord};
 /// let line = Line([Vec2::X, Vec2::Y]);
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq)]
-#[cfg_attr(feature = "bevy", derive(Reflect))]
+#[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
 pub struct Line(pub [Vec2; 2]);
 
 // Conversions

@@ -13,11 +13,11 @@ use crate::utils::{coord_to_vec2, vec2_to_coord};
 /// let triangle = Triangle([Vec2::ZERO, Vec2::X, Vec2::Y]);
 /// ```
 #[derive(Debug, Clone, Copy)]
-#[cfg_attr(feature = "bevy", derive(Reflect))]
+#[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
 pub struct Triangle(pub [Vec2; 3]);
 
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "bevy", derive(Reflect))]
+#[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
 pub struct MultiTriangle(pub Vec<Triangle>);
 
 impl Default for MultiTriangle {
