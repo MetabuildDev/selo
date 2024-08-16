@@ -37,6 +37,16 @@ impl LineString {
     }
 }
 
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "bevy", derive(Reflect))]
+pub struct MultiLineString(pub Vec<LineString>);
+
+impl Default for MultiLineString {
+    fn default() -> Self {
+        Self(vec![])
+    }
+}
+
 // Conversions
 
 impl From<&Ring> for LineString {
@@ -58,5 +68,27 @@ impl From<&geo::LineString<f32>> for LineString {
 impl From<&LineString> for geo::LineString<f32> {
     fn from(r: &LineString) -> Self {
         Self(r.0.iter().map(|p| geo::Coord { x: p.x, y: p.y }).collect())
+    }
+}
+
+impl<TS: AsRef<[geo::LineString<f32>]>> From<&TS> for MultiLineString {
+    fn from(value: &TS) -> Self {
+        MultiLineString(
+            value
+                .as_ref()
+                .iter()
+                .map(|linestring| linestring.into())
+                .collect(),
+        )
+    }
+}
+
+impl From<&MultiLineString> for Vec<geo::LineString<f32>> {
+    fn from(value: &MultiLineString) -> Self {
+        value
+            .0
+            .iter()
+            .map(|linestring| linestring.into())
+            .collect::<Vec<_>>()
     }
 }
