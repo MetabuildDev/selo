@@ -2,6 +2,16 @@ use glam::Vec2;
 
 use crate::utils::{coord_to_vec2, vec2_to_coord};
 
+/// A 2D Triangle
+///
+/// # Example
+///
+/// ```
+/// # use math::Triangle;
+/// # use glam::Vec2;
+///
+/// let triangle = Triangle([Vec2::ZERO, Vec2::X, Vec2::Y]);
+/// ```
 #[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "bevy", derive(Reflect))]
 pub struct Triangle(pub [Vec2; 3]);

@@ -2,7 +2,17 @@ use glam::Vec2;
 
 use crate::utils::{coord_to_vec2, vec2_to_coord};
 
-#[derive(Debug, Clone, Copy)]
+/// A 2D Line
+///
+/// # Example
+///
+/// ```
+/// # use math::Line;
+/// # use glam::Vec2;
+///
+/// let line = Line([Vec2::X, Vec2::Y]);
+/// ```
+#[derive(Debug, Clone, Copy, PartialEq)]
 #[cfg_attr(feature = "bevy", derive(Reflect))]
 pub struct Line(pub [Vec2; 2]);
 
