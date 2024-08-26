@@ -3,7 +3,9 @@ use std::iter::once;
 use glam::Vec2;
 use itertools::Itertools as _;
 
-use super::{Line, LineString, Polygon};
+use crate::coord_to_vec2;
+
+use super::{Line, LineString, Point, Point2, Polygon};
 
 /// Represents the inside area of a closed [`LineString`].
 ///
@@ -19,15 +21,15 @@ use super::{Line, LineString, Polygon};
 /// ```
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
-pub struct Ring(Vec<Vec2>);
+pub struct Ring<P: Point>(Vec<P>);
 
-impl Default for Ring {
+impl<P: Point> Default for Ring<P> {
     fn default() -> Self {
         Self::new(vec![])
     }
 }
 
-impl Ring {
+impl<P: Point> Ring<P> {
     /// Creates a new [`Ring`] enforcing its invariants if necessary. This means that the
     /// constructor accepts both open and closed lists of [`Vec2`](glam::Vec2).
     ///
@@ -51,7 +53,7 @@ impl Ring {
     /// assert_eq!(ring_from_closed.points_open(), &expected);
     /// assert_eq!(ring_extremely_deduped.points_open(), &expected);
     /// ```
-    pub fn new(mut points: Vec<Vec2>) -> Self {
+    pub fn new(mut points: Vec<P>) -> Self {
         points.dedup();
         if points.last() == points.first() {
             points.pop();
@@ -71,7 +73,7 @@ impl Ring {
     ///
     /// assert_eq!(ring.points_open(), &[Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]);
     /// ```
-    pub fn points_open(&self) -> &[Vec2] {
+    pub fn points_open(&self) -> &[P] {
         &self.0
     }
 
@@ -93,7 +95,7 @@ impl Ring {
     /// assert_eq!(iter.next(), Some(Vec2::Y));
     /// assert_eq!(iter.next(), None);
     /// ```
-    pub fn iter_points_open(&self) -> impl Iterator<Item = Vec2> + '_ {
+    pub fn iter_points_open(&self) -> impl Iterator<Item = P> + '_ {
         self.0.iter().copied()
     }
 
@@ -116,7 +118,7 @@ impl Ring {
     /// assert_eq!(iter.next(), Some(Vec2::ZERO));
     /// assert_eq!(iter.next(), None);
     /// ```
-    pub fn iter_points_closed(&self) -> impl Iterator<Item = Vec2> + '_ {
+    pub fn iter_points_closed(&self) -> impl Iterator<Item = P> + '_ {
         self.0.iter().chain(self.0.first()).copied()
     }
 
@@ -135,7 +137,7 @@ impl Ring {
     ///
     /// assert_eq!(linestring, LineString::new(vec![Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y, Vec2::ZERO]));
     /// ```
-    pub fn to_linestring(&self) -> LineString {
+    pub fn to_linestring(&self) -> LineString<P> {
         LineString::new(self.0.iter().cloned().chain(once(self.0[0])).collect())
     }
 
@@ -155,7 +157,7 @@ impl Ring {
     ///
     /// assert_eq!(polygon, Polygon::new(Ring::new(vec![Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]), MultiRing::empty()));
     /// ```
-    pub fn to_polygon(&self) -> Polygon {
+    pub fn to_polygon(&self) -> Polygon<P> {
         Polygon(self.clone(), Default::default())
     }
 
@@ -178,7 +180,7 @@ impl Ring {
     /// assert_eq!(iter.next(), Some(Line([Vec2::Y, Vec2::ZERO])));
     /// assert_eq!(iter.next(), None);
     /// ```
-    pub fn lines(&self) -> impl Iterator<Item = Line> + '_ {
+    pub fn lines(&self) -> impl Iterator<Item = Line<P>> + '_ {
         self.0
             .iter()
             .circular_tuple_windows()
@@ -188,15 +190,15 @@ impl Ring {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
-pub struct MultiRing(pub Vec<Ring>);
+pub struct MultiRing<P: Point>(pub Vec<Ring<P>>);
 
-impl Default for MultiRing {
+impl<P: Point> Default for MultiRing<P> {
     fn default() -> Self {
         Self(vec![])
     }
 }
 
-impl MultiRing {
+impl<P: Point> MultiRing<P> {
     /// constructs an empty [`MultiRing`]
     ///
     /// # Example
@@ -215,27 +217,22 @@ impl MultiRing {
 
 // Conversions
 
-impl From<geo::Triangle<f32>> for Ring {
-    fn from(value: geo::Triangle<f32>) -> Self {
-        Self::new(
-            value
-                .to_array()
-                .map(|c| Vec2::new(c.x as f32, c.y as f32))
-                .to_vec(),
-        )
+impl<P: Point2> From<geo::Triangle<P::Float>> for Ring<P> {
+    fn from(value: geo::Triangle<P::Float>) -> Self {
+        Self::new(value.to_array().map(|c| coord_to_vec2(c)).to_vec())
     }
 }
 
-impl TryFrom<&geo::LineString<f32>> for Ring {
+impl<P: Point2> TryFrom<&geo::LineString<P::Float>> for Ring<P> {
     type Error = ();
 
-    fn try_from(ls: &geo::LineString<f32>) -> Result<Self, Self::Error> {
+    fn try_from(ls: &geo::LineString<P::Float>) -> Result<Self, Self::Error> {
         LineString::from(ls).to_ring().ok_or(())
     }
 }
 
-impl From<&Ring> for geo::LineString<f32> {
-    fn from(value: &Ring) -> Self {
+impl<P: Point2> From<&Ring<P>> for geo::LineString<P::Float> {
+    fn from(value: &Ring<P>) -> Self {
         (&value.to_linestring()).into()
     }
 }

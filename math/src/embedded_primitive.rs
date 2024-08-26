@@ -112,7 +112,7 @@ mod private_impls {
     use crate::primitives::*;
     use glam::*;
 
-    impl Flattenable for Line {
+    impl Flattenable for Line<Vec2> {
         type Type3D = [Vec3; 2];
         #[inline]
         fn embed(repr_3d: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
@@ -131,7 +131,7 @@ mod private_impls {
                 .map(|vec3| inj.transform_point3(vec3))
         }
     }
-    impl Flattenable for Triangle {
+    impl Flattenable for Triangle<Vec2> {
         type Type3D = [Vec3; 3];
         #[inline]
         fn embed(repr_3d: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
@@ -150,7 +150,7 @@ mod private_impls {
                 .map(|vec3| inj.transform_point3(vec3))
         }
     }
-    impl Flattenable for MultiTriangle {
+    impl Flattenable for MultiTriangle<Vec2> {
         type Type3D = Vec<[Vec3; 3]>;
         #[inline]
         fn embed(repr_3d: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
@@ -169,7 +169,7 @@ mod private_impls {
                 .collect::<Vec<_>>()
         }
     }
-    impl Flattenable for LineString {
+    impl Flattenable for LineString<Vec2> {
         type Type3D = Vec<Vec3>;
         #[inline]
         fn embed(repr_3d: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
@@ -191,7 +191,7 @@ mod private_impls {
                 .collect::<Vec<_>>()
         }
     }
-    impl Flattenable for MultiLineString {
+    impl Flattenable for MultiLineString<Vec2> {
         type Type3D = Vec<Vec<Vec3>>;
         #[inline]
         fn embed(repr_3d: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
@@ -210,7 +210,7 @@ mod private_impls {
                 .collect::<Vec<_>>()
         }
     }
-    impl Flattenable for Ring {
+    impl Flattenable for Ring<Vec2> {
         type Type3D = Vec<Vec3>;
         #[inline]
         fn embed(repr_3d: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
@@ -233,7 +233,7 @@ mod private_impls {
                 .collect::<Vec<_>>()
         }
     }
-    impl Flattenable for MultiRing {
+    impl Flattenable for MultiRing<Vec2> {
         type Type3D = Vec<Vec<Vec3>>;
         #[inline]
         fn embed(repr_3d: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
@@ -252,7 +252,7 @@ mod private_impls {
                 .collect::<Vec<_>>()
         }
     }
-    impl Flattenable for Polygon {
+    impl Flattenable for Polygon<Vec2> {
         type Type3D = (Vec<Vec3>, Vec<Vec<Vec3>>);
         #[inline]
         fn embed(repr_3d: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
@@ -271,7 +271,7 @@ mod private_impls {
             )
         }
     }
-    impl Flattenable for MultiPolygon {
+    impl Flattenable for MultiPolygon<Vec2> {
         type Type3D = Vec<(Vec<Vec3>, Vec<Vec<Vec3>>)>;
         #[inline]
         fn embed(repr_3d: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {

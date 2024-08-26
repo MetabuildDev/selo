@@ -16,7 +16,7 @@ pub mod prelude {
     pub use super::working_plane::WorkingPlane;
 }
 
-pub fn intersect_line_2d_point(a: Line, b: Line) -> Option<Vec2> {
+pub fn intersect_line_2d_point<P: Point2>(a: Line<P>, b: Line<P>) -> Option<P> {
     geo::line_intersection::line_intersection(a.into(), b.into()).and_then(|coord| match coord {
         geo::LineIntersection::SinglePoint {
             intersection,
@@ -26,10 +26,10 @@ pub fn intersect_line_2d_point(a: Line, b: Line) -> Option<Vec2> {
     })
 }
 
-pub fn triangulate_glam(polygon: Polygon) -> Vec<Triangle> {
-    let triangles = geo::Polygon::from(&polygon)
+pub fn triangulate_glam<P: Point2>(polygon: Polygon<P>) -> Vec<Triangle<P>> {
+    let triangles = geo::Polygon::<P::Float>::from(&polygon)
         .constrained_triangulation(geo::triangulate_spade::SpadeTriangulationConfig {
-            snap_radius: 0.001,
+            snap_radius: P::Float::from(0.001),
         })
         .unwrap();
 
@@ -39,7 +39,9 @@ pub fn triangulate_glam(polygon: Polygon) -> Vec<Triangle> {
         .collect::<Vec<_>>()
 }
 
-pub fn stitch_triangles_glam(triangles: impl IntoIterator<Item = Triangle>) -> Vec<Ring> {
+pub fn stitch_triangles_glam<P: Point2>(
+    triangles: impl IntoIterator<Item = Triangle<P>>,
+) -> Vec<Ring<P>> {
     let geo_triangles = triangles
         .into_iter()
         .map(geo::Triangle::from)
@@ -56,15 +58,15 @@ pub fn stitch_triangles_glam(triangles: impl IntoIterator<Item = Triangle>) -> V
         .collect::<Vec<_>>()
 }
 
-pub fn boolops_union_glam(rings: impl IntoIterator<Item = Ring>) -> MultiPolygon {
+pub fn boolops_union_glam<P: Point2>(rings: impl IntoIterator<Item = Ring<P>>) -> MultiPolygon<P> {
     let rings = rings.into_iter().collect::<Vec<_>>();
 
     rings
         .clone()
         .into_iter()
         .map(|ring| MultiPolygon(vec![ring.to_polygon()]))
-        .map(|multi_poly| geo::MultiPolygon::from(&multi_poly))
-        .try_fold(empty_multipolygon(), |multi_poly, other| {
+        .map(|multi_poly| geo::MultiPolygon::<P::Float>::from(&multi_poly))
+        .try_fold(empty_multipolygon::<P>(), |multi_poly, other| {
             SpadeBoolops::union(&multi_poly, &other)
         })
         .map(|multi_poly| MultiPolygon::from(&multi_poly))
@@ -73,26 +75,29 @@ pub fn boolops_union_glam(rings: impl IntoIterator<Item = Ring>) -> MultiPolygon
         ))
 }
 
-pub fn buffer_polygon_glam(polygon: Polygon, expand_by: f64) -> MultiPolygon {
-    let geo_polygon = geo::Polygon::from(&polygon);
-    let polygon_f64 = geo_polygon.map_coords(coord_up_precision);
+pub fn buffer_polygon_glam<P: Point2>(polygon: Polygon<P>, expand_by: f64) -> MultiPolygon<P> {
+    let geo_polygon = geo::Polygon::<P::Float>::from(&polygon);
+    let polygon_f64 = geo_polygon.map_coords(cast_coord);
 
     let buffered = geo_buffer::buffer_polygon(&polygon_f64, expand_by);
 
-    let buffered_f32 = buffered.map_coords(coord_down_precision);
+    let buffered_f32 = buffered.map_coords(cast_coord);
 
     (&buffered_f32).into()
 }
 
-pub fn skeleton_lines_glam(polygon: Polygon, orientation: bool) -> Vec<LineString> {
-    let geo_polygon = geo::Polygon::from(&polygon);
-    let polygon_f64 = geo_polygon.map_coords(coord_up_precision);
+pub fn skeleton_lines_glam<P: Point2>(
+    polygon: Polygon<P>,
+    orientation: bool,
+) -> Vec<LineString<P>> {
+    let geo_polygon = geo::Polygon::<P::Float>::from(&polygon);
+    let polygon_f64 = geo_polygon.map_coords(cast_coord);
 
     let skeleton_lines = geo_buffer::skeleton_of_polygon_to_linestring(&polygon_f64, orientation);
 
     skeleton_lines
         .into_iter()
-        .map(|ls| ls.map_coords(coord_down_precision))
-        .map(|ls| LineString::from(&ls))
+        .map(|ls| ls.map_coords(cast_coord))
+        .map(|ls| LineString::<P>::from(&ls))
         .collect::<Vec<_>>()
 }

@@ -1,6 +1,8 @@
 use glam::Vec2;
 
-use super::{Line, Ring};
+use crate::{coord_to_vec2, vec2_to_coord};
+
+use super::{Line, Point, Point2, Ring};
 
 /// Represents the set of points in the lines represented by each consecutive pair of points.
 ///
@@ -16,15 +18,15 @@ use super::{Line, Ring};
 /// ```
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
-pub struct LineString(pub Vec<Vec2>);
+pub struct LineString<P: Point>(pub Vec<P>);
 
-impl Default for LineString {
+impl<P: Point> Default for LineString<P> {
     fn default() -> Self {
         Self(vec![])
     }
 }
 
-impl LineString {
+impl<P: Point> LineString<P> {
     /// constructs an empty [`LineString`]
     ///
     /// # Example
@@ -60,7 +62,7 @@ impl LineString {
     /// assert_eq!(&linestring.0, &expected);
     /// assert_eq!(&linestring_deduped.0, &expected);
     /// ```
-    pub fn new(mut points: Vec<Vec2>) -> Self {
+    pub fn new(mut points: Vec<P>) -> Self {
         points.dedup();
         LineString(points)
     }
@@ -98,7 +100,7 @@ impl LineString {
     /// assert!(open_linestring.to_ring().is_none());
     /// assert!(closed_linestring.to_ring().is_some());
     /// ```
-    pub fn to_ring(&self) -> Option<Ring> {
+    pub fn to_ring(&self) -> Option<Ring<P>> {
         self.closed().then(|| Ring::new(self.0.clone()))
     }
 
@@ -117,7 +119,7 @@ impl LineString {
     /// let closed_ring : Ring = open_linestring.close();
     /// assert!(closed_ring.to_linestring().closed())
     /// ```
-    pub fn close(self) -> Ring {
+    pub fn close(self) -> Ring<P> {
         Ring::new(self.0)
     }
 
@@ -139,7 +141,7 @@ impl LineString {
     /// assert_eq!(points_iter.next(), Some(Vec2::ONE * 2.0));
     /// assert_eq!(points_iter.next(), None);
     /// ```
-    pub fn points(&self) -> impl Iterator<Item = Vec2> + '_ {
+    pub fn points(&self) -> impl Iterator<Item = P> + '_ {
         self.0.iter().copied()
     }
 
@@ -161,16 +163,16 @@ impl LineString {
     /// assert_eq!(lines_iter.next(), Some(Line([Vec2::ONE, Vec2::ONE * 2.0])));
     /// assert_eq!(lines_iter.next(), None);
     /// ```
-    pub fn lines(&self) -> impl Iterator<Item = Line> + '_ {
+    pub fn lines(&self) -> impl Iterator<Item = Line<P>> + '_ {
         self.0.windows(2).map(|s| Line([s[0], s[1]]))
     }
 }
 
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
-pub struct MultiLineString(pub Vec<LineString>);
+pub struct MultiLineString<P: Point>(pub Vec<LineString<P>>);
 
-impl Default for MultiLineString {
+impl<P: Point> Default for MultiLineString<P> {
     fn default() -> Self {
         Self(vec![])
     }
@@ -178,29 +180,25 @@ impl Default for MultiLineString {
 
 // Conversions
 
-impl From<&Ring> for LineString {
-    fn from(r: &Ring) -> Self {
+impl<P: Point> From<&Ring<P>> for LineString<P> {
+    fn from(r: &Ring<P>) -> Self {
         r.to_linestring().into()
     }
 }
 
-impl From<&geo::LineString<f32>> for LineString {
-    fn from(ls: &geo::LineString<f32>) -> Self {
-        LineString::new(
-            ls.0.iter()
-                .map(|c| Vec2::new(c.x as f32, c.y as f32))
-                .collect(),
-        )
+impl<P: Point2> From<&geo::LineString<P::Float>> for LineString<P> {
+    fn from(ls: &geo::LineString<P::Float>) -> Self {
+        LineString::new(ls.0.iter().map(|c| coord_to_vec2(*c)).collect())
     }
 }
 
-impl From<&LineString> for geo::LineString<f32> {
-    fn from(r: &LineString) -> Self {
-        Self(r.0.iter().map(|p| geo::Coord { x: p.x, y: p.y }).collect())
+impl<P: Point2> From<&LineString<P>> for geo::LineString<P::Float> {
+    fn from(r: &LineString<P>) -> Self {
+        Self(r.0.iter().map(|c| vec2_to_coord(*c)).collect())
     }
 }
 
-impl<TS: AsRef<[geo::LineString<f32>]>> From<&TS> for MultiLineString {
+impl<P: Point2, TS: AsRef<[geo::LineString<P::Float>]>> From<&TS> for MultiLineString<P> {
     fn from(value: &TS) -> Self {
         MultiLineString(
             value
@@ -212,8 +210,8 @@ impl<TS: AsRef<[geo::LineString<f32>]>> From<&TS> for MultiLineString {
     }
 }
 
-impl From<&MultiLineString> for Vec<geo::LineString<f32>> {
-    fn from(value: &MultiLineString) -> Self {
+impl<P: Point2> From<&MultiLineString<P>> for Vec<geo::LineString<P::Float>> {
+    fn from(value: &MultiLineString<P>) -> Self {
         value
             .0
             .iter()

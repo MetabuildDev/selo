@@ -9,5 +9,6 @@ glam.workspace = true
 bevy_math.workspace = true
 geo-buffer.workspace = true
 itertools.workspace = true
+num-traits = "0.2"
 
 bevy_reflect = { workspace = true, optional = true}
