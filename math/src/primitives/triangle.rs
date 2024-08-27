@@ -1,5 +1,3 @@
-use glam::Vec2;
-
 use crate::utils::{coord_to_vec2, vec2_to_coord};
 
 use super::{Point, Point2};

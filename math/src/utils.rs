@@ -1,5 +1,4 @@
 use geo::*;
-use glam::*;
 
 use crate::Point2;
 

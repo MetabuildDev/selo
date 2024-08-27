@@ -1,6 +1,5 @@
 use std::iter::once;
 
-use glam::Vec2;
 use itertools::Itertools as _;
 
 use crate::coord_to_vec2;

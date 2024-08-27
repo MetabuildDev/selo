@@ -1,5 +1,3 @@
-use glam::Vec2;
-
 use super::{Line, MultiRing, Point, Point2, Ring};
 
 /// Represents the inside area of a closed [`LineString`] with an arbitrary number of holes which
