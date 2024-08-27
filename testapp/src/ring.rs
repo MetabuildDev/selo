@@ -105,28 +105,29 @@ pub struct RingParams<'w, 's> {
 }
 
 impl RingParams<'_, '_> {
-    pub fn iter_just_rings(&self) -> impl Iterator<Item = Vec<Vec3>> + '_ {
+    pub fn iter_just_rings(&self) -> impl Iterator<Item = math::Ring<Vec3>> + '_ {
         self.iter_rings().map(|(ring, _)| ring)
     }
 
-    pub fn iter_rings(&self) -> impl Iterator<Item = (Vec<Vec3>, WorkingPlane)> + '_ {
+    pub fn iter_rings(&self) -> impl Iterator<Item = (math::Ring<Vec3>, WorkingPlane)> + '_ {
         self.ring.iter().filter_map(|(ring, wp)| {
-            let points = ring
-                .points
-                .iter()
-                .map(|entity| {
-                    self.points
-                        .get(*entity)
-                        .map(|(position, RingPoint(idx))| (idx, position.translation()))
-                })
-                .collect::<Result<Vec<_>, _>>()
-                .map(|mut vec| {
-                    vec.sort_by_key(|(idx, _)| *idx);
-                    vec.into_iter()
-                        .map(|(_, position)| position)
-                        .collect::<Vec<_>>()
-                })
-                .ok()?;
+            let points = math::Ring::new(
+                ring.points
+                    .iter()
+                    .map(|entity| {
+                        self.points
+                            .get(*entity)
+                            .map(|(position, RingPoint(idx))| (idx, position.translation()))
+                    })
+                    .collect::<Result<Vec<_>, _>>()
+                    .map(|mut vec| {
+                        vec.sort_by_key(|(idx, _)| *idx);
+                        vec.into_iter()
+                            .map(|(_, position)| position)
+                            .collect::<Vec<_>>()
+                    })
+                    .ok()?,
+            );
             Some((points, **wp))
         })
     }
@@ -246,16 +247,10 @@ fn render_rings(mut gizmos: Gizmos, ring: RingParams) {
     };
     ring.iter_just_rings()
         .zip(colors.into_iter().cycle())
-        .for_each(|(mut points, color)| {
-            if points.first() != points.last() {
-                points.extend(points.first().cloned());
-            }
-            points
-                .windows(2)
-                .map(|win| (win[0], win[1]))
-                .for_each(|(start, end)| {
-                    gizmos.line(start, end, color);
-                });
+        .for_each(|(ring, color)| {
+            ring.lines().for_each(|line| {
+                gizmos.line(line.src(), line.dst(), color);
+            });
         });
 }
 

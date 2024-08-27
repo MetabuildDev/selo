@@ -3,6 +3,7 @@ pub mod primitives;
 mod utils;
 mod working_plane;
 
+pub use embedded_primitive::*;
 use geo::{MapCoords as _, SpadeBoolops, StitchTriangles as _, TriangulateSpade as _};
 pub use primitives::*;
 

@@ -1,6 +1,6 @@
 use bevy::{color::palettes, input::common_conditions::input_just_pressed, prelude::*};
 use itertools::Itertools;
-use math::{boolops_union_glam, Ring};
+use math::{boolops_union_glam, Flattenable, Ring};
 
 use crate::{
     ring::{Ring2D, RingLine, RingParams, RingPoint},
@@ -30,27 +30,17 @@ fn render_polygon_union(mut gizmos: Gizmos, rings: RingParams) {
         .chunk_by(|(_, wp)| *wp)
         .into_iter()
         .for_each(|(wp, group)| {
-            let (proj, inj) = wp.xy_projection_injection();
             let rings_projected = group
                 .into_iter()
-                .map(|(ring, _)| {
-                    Ring::new(
-                        ring.into_iter()
-                            .map(|p| proj.transform_point(p).truncate())
-                            .collect::<Vec<_>>(),
-                    )
-                })
+                .map(|(ring, _)| Ring::embed(&ring, wp))
                 .collect::<Vec<_>>();
             boolops_union_glam(rings_projected)
                 .0
                 .into_iter()
                 .for_each(|polygon| {
-                    polygon
-                        .lines()
-                        .map(|line| line.0.map(|p| inj.transform_point(p.extend(0.0))))
-                        .for_each(|line| {
-                            gizmos.line(line[0], line[1], palettes::basic::RED);
-                        });
+                    polygon.unembed(wp).lines().for_each(|line| {
+                        gizmos.line(line.src(), line.dst(), palettes::basic::RED);
+                    });
                 });
         });
 }
@@ -67,28 +57,16 @@ fn do_unioning(
             .chunk_by(|(_, wp)| *wp)
             .into_iter()
             .flat_map(|(wp, group)| {
-                let (proj, inj) = wp.xy_projection_injection();
                 let polygons_projected = group
                     .into_iter()
-                    .map(|(ring, _)| {
-                        Ring::new(
-                            ring.into_iter()
-                                .map(|p| proj.transform_point(p).truncate())
-                                .collect::<Vec<_>>(),
-                        )
-                    })
+                    .map(|(ring, _)| math::Ring::embed(&ring, wp))
                     .collect::<Vec<_>>();
                 boolops_union_glam(polygons_projected)
                     .0
                     .into_iter()
                     .map(move |polygon| {
-                        let points = polygon
-                            .exterior()
-                            .points_open()
-                            .iter()
-                            .map(|start| inj.transform_point(start.extend(0.0)))
-                            .collect::<Vec<_>>();
-                        SpawnRing { points }
+                        let exterior = polygon.exterior().unembed(wp);
+                        SpawnRing(exterior)
                     })
             }),
     );

@@ -24,11 +24,7 @@ impl Plugin for SpawnerPlugin {
 }
 
 #[derive(Debug, Clone, Event)]
-pub struct SpawnTriangle {
-    pub a: Vec3,
-    pub b: Vec3,
-    pub c: Vec3,
-}
+pub struct SpawnTriangle(pub math::Triangle<Vec3>);
 
 fn spawn_triangle(
     mut spawn_events: EventReader<SpawnTriangle>,
@@ -42,41 +38,41 @@ fn spawn_triangle(
 
     mut attached_lines: Query<&mut AttachedLines, ()>,
 ) {
-    spawn_events.read().for_each(|SpawnTriangle { a, b, c }| {
-        let [a, b, c] = [a, b, c].map(|position| {
-            spawn_point_inner(
-                *position,
-                &mut cmds,
-                &mut meshes,
-                &mut materials,
-                &mut ids.0,
-                |_id| TrianglePoint,
-            )
-        });
-        let [_ab, _bc, _ca] = [(a, b), (b, c), (c, a)].map(|(start, end)| {
-            spawn_line_inner(
-                start,
-                end,
-                &mut cmds,
-                &mut attached_lines,
-                &mut ids.2,
-                |_| TriangleLine,
-            )
-        });
+    spawn_events
+        .read()
+        .for_each(|SpawnTriangle(math::Triangle([a, b, c]))| {
+            let [a, b, c] = [a, b, c].map(|position| {
+                spawn_point_inner(
+                    *position,
+                    &mut cmds,
+                    &mut meshes,
+                    &mut materials,
+                    &mut ids.0,
+                    |_id| TrianglePoint,
+                )
+            });
+            let [_ab, _bc, _ca] = [(a, b), (b, c), (c, a)].map(|(start, end)| {
+                spawn_line_inner(
+                    start,
+                    end,
+                    &mut cmds,
+                    &mut attached_lines,
+                    &mut ids.2,
+                    |_| TriangleLine,
+                )
+            });
 
-        ids.2 += 1;
+            ids.2 += 1;
 
-        cmds.spawn((
-            Name::new(format!("Triangle {n}", n = ids.2)),
-            Triangle { a, b, c },
-        ));
-    });
+            cmds.spawn((
+                Name::new(format!("Triangle {n}", n = ids.2)),
+                Triangle { a, b, c },
+            ));
+        });
 }
 
 #[derive(Debug, Clone, Event)]
-pub struct SpawnRing {
-    pub points: Vec<Vec3>,
-}
+pub struct SpawnRing(pub math::Ring<Vec3>);
 
 fn spawn_ring(
     mut spawn_events: EventReader<SpawnRing>,
@@ -90,12 +86,13 @@ fn spawn_ring(
 
     mut attached_lines: Query<&mut AttachedLines, ()>,
 ) {
-    spawn_events.read().for_each(|SpawnRing { points }| {
-        let points = points
+    spawn_events.read().for_each(|SpawnRing(ring)| {
+        let points = ring
+            .iter_points_open()
             .into_iter()
             .map(|position| {
                 spawn_point_inner(
-                    *position,
+                    position,
                     &mut cmds,
                     &mut meshes,
                     &mut materials,

@@ -16,6 +16,15 @@ use super::{Point, Point2};
 #[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
 pub struct Line<P: Point>(pub [P; 2]);
 
+impl<P: Point> Line<P> {
+    pub fn src(&self) -> P {
+        self.0[0]
+    }
+    pub fn dst(&self) -> P {
+        self.0[1]
+    }
+}
+
 // Conversions
 
 impl<P: Point2> From<geo::Line<P::Float>> for Line<P> {
@@ -26,6 +35,6 @@ impl<P: Point2> From<geo::Line<P::Float>> for Line<P> {
 
 impl<P: Point2> From<Line<P>> for geo::Line<P::Float> {
     fn from(line: Line<P>) -> Self {
-        geo::Line::new(vec2_to_coord(line.0[0]), vec2_to_coord(line.0[1]))
+        geo::Line::new(vec2_to_coord(line.src()), vec2_to_coord(line.dst()))
     }
 }

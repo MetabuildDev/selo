@@ -76,18 +76,19 @@ pub struct LineParams<'w, 's, F: QueryFilter + 'static = ()> {
 }
 
 impl<F: QueryFilter + 'static> LineParams<'_, '_, F> {
-    pub fn iter_just_lines(&self) -> impl Iterator<Item = [Vec3; 2]> + '_ {
+    pub fn iter_just_lines(&self) -> impl Iterator<Item = math::Line<Vec3>> + '_ {
         self.iter_lines().map(|(line, _)| line)
     }
 
-    pub fn iter_lines(&self) -> impl Iterator<Item = ([Vec3; 2], WorkingPlane)> + '_ {
+    pub fn iter_lines(&self) -> impl Iterator<Item = (math::Line<Vec3>, WorkingPlane)> + '_ {
         self.lines.iter().filter_map(|(line, wp)| {
-            let points = self
-                .points
-                .get_many([line.start, line.end])
-                .map(|poss| poss.map(|pos| pos.translation()))
-                .ok()?;
-            Some((points, **wp))
+            let line = math::Line(
+                self.points
+                    .get_many([line.start, line.end])
+                    .map(|poss| poss.map(|pos| pos.translation()))
+                    .ok()?,
+            );
+            Some((line, **wp))
         })
     }
 }
@@ -196,12 +197,12 @@ pub fn render_drawing_line(
 
 fn render_lines(mut gizmos: Gizmos, lines: LineParams<With<JustLine>>) {
     let color = palettes::basic::GREEN;
-    lines.iter_just_lines().for_each(|[start, end]| {
-        let difference = end - start;
-        gizmos.line(start, end, color);
+    lines.iter_just_lines().for_each(|line| {
+        let difference = line.dst() - line.src();
+        gizmos.line(line.src(), line.dst(), color);
         gizmos.arrow(
-            end - (difference.normalize() * 150.0).clamp_length_max(difference.length()),
-            end,
+            line.dst() - (difference.normalize() * 150.0).clamp_length_max(difference.length()),
+            line.dst(),
             color,
         );
     })
