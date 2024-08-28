@@ -1,6 +1,6 @@
 use crate::utils::{coord_to_vec2, vec2_to_coord};
 
-use super::{Point, Point2};
+use crate::point::{Point, Point2};
 
 /// A 2D Triangle
 ///

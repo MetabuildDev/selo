@@ -1,4 +1,5 @@
-use super::{Line, MultiRing, Point, Point2, Ring};
+use super::{Line, MultiRing, Ring};
+use crate::point::{Point, Point2};
 
 /// Represents the inside area of a closed [`LineString`] with an arbitrary number of holes which
 /// are excluded from this area.

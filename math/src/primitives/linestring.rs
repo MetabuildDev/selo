@@ -1,6 +1,7 @@
 use crate::{coord_to_vec2, vec2_to_coord};
 
-use super::{Line, Point, Point2, Ring};
+use super::{Line, Ring};
+use crate::point::{Point, Point2};
 
 /// Represents the set of points in the lines represented by each consecutive pair of points.
 ///

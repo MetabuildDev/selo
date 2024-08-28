@@ -1,18 +1,23 @@
-mod embedded_primitive;
-pub mod primitives;
-mod utils;
-mod working_plane;
-
 pub use embedded_primitive::*;
 use geo::{MapCoords as _, SpadeBoolops, StitchTriangles as _, TriangulateSpade as _};
+
+mod embedded_primitive;
+mod working_plane;
+
+mod utils;
+use utils::*;
+
+pub mod primitives;
 pub use primitives::*;
+
+mod point;
+pub use point::*;
 
 use glam::*;
 
-use utils::*;
-
 pub mod prelude {
     pub use super::embedded_primitive::FlatPrimitive;
+    pub use super::point::*;
     pub use super::primitives::*;
     pub use super::working_plane::WorkingPlane;
 }

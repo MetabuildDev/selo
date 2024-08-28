@@ -4,7 +4,8 @@ use itertools::Itertools as _;
 
 use crate::coord_to_vec2;
 
-use super::{Line, LineString, Point, Point2, Polygon};
+use super::{Line, LineString, Polygon};
+use crate::point::{Point, Point2};
 
 /// Represents the inside area of a closed [`LineString`].
 ///
