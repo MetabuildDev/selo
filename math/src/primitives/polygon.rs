@@ -1,4 +1,5 @@
 use super::{Line, MultiRing, Ring};
+use crate::point::{Point, Point2};
 
 /// Represents the inside area of a closed [`LineString`] with an arbitrary number of holes which
 /// are excluded from this area.
@@ -19,9 +20,9 @@ use super::{Line, MultiRing, Ring};
 /// ```
 #[derive(Debug, Clone, Default, PartialEq)]
 #[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
-pub struct Polygon(pub Ring, pub MultiRing);
+pub struct Polygon<P: Point>(pub Ring<P>, pub MultiRing<P>);
 
-impl Polygon {
+impl<P: Point> Polygon<P> {
     /// Creates a new [`Polygon`] from a [`Ring`] and a [`MultiRing`]
     ///
     /// # Example
@@ -38,7 +39,7 @@ impl Polygon {
     ///
     /// let polygon = Polygon::new(exterior, interiors);
     /// ```
-    pub fn new(exterior: Ring, interior: MultiRing) -> Self {
+    pub fn new(exterior: Ring<P>, interior: MultiRing<P>) -> Self {
         Self(exterior, interior)
     }
 
@@ -60,7 +61,7 @@ impl Polygon {
     ///
     /// assert_eq!(polygon.exterior(), &exterior);
     /// ```
-    pub fn exterior(&self) -> &Ring {
+    pub fn exterior(&self) -> &Ring<P> {
         &self.0
     }
 
@@ -83,7 +84,7 @@ impl Polygon {
     ///
     /// assert_eq!(polygon.interior(), &interiors);
     /// ```
-    pub fn interior(&self) -> &MultiRing {
+    pub fn interior(&self) -> &MultiRing<P> {
         &self.1
     }
 
@@ -132,7 +133,7 @@ impl Polygon {
     ///
     /// assert_eq!(iter.next(), None);
     /// ```
-    pub fn lines(&self) -> impl Iterator<Item = Line> + '_ {
+    pub fn lines(&self) -> impl Iterator<Item = Line<P>> + '_ {
         self.0
             .lines()
             .chain(self.1 .0.iter().flat_map(|ring| ring.lines()))
@@ -141,15 +142,15 @@ impl Polygon {
 
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
-pub struct MultiPolygon(pub Vec<Polygon>);
+pub struct MultiPolygon<P: Point>(pub Vec<Polygon<P>>);
 
-impl Default for MultiPolygon {
+impl<P: Point> Default for MultiPolygon<P> {
     fn default() -> Self {
         Self(vec![])
     }
 }
 
-impl MultiPolygon {
+impl<P: Point> MultiPolygon<P> {
     /// constructs an empty [`MultiPolygon`]
     ///
     /// # Example
@@ -168,8 +169,8 @@ impl MultiPolygon {
 
 // Conversions
 
-impl From<&Polygon> for geo::Polygon<f32> {
-    fn from(value: &Polygon) -> Self {
+impl<P: Point2> From<&Polygon<P>> for geo::Polygon<P::Float> {
+    fn from(value: &Polygon<P>) -> Self {
         geo::Polygon::new(
             value.exterior().into(),
             value.interior().0.iter().map(|r| r.into()).collect(),
@@ -177,8 +178,8 @@ impl From<&Polygon> for geo::Polygon<f32> {
     }
 }
 
-impl From<&geo::Polygon<f32>> for Polygon {
-    fn from(value: &geo::Polygon<f32>) -> Self {
+impl<P: Point2> From<&geo::Polygon<P::Float>> for Polygon<P> {
+    fn from(value: &geo::Polygon<P::Float>) -> Self {
         Polygon(
             Ring::try_from(value.exterior()).unwrap(),
             MultiRing(
@@ -192,14 +193,14 @@ impl From<&geo::Polygon<f32>> for Polygon {
     }
 }
 
-impl From<&geo::MultiPolygon<f32>> for MultiPolygon {
-    fn from(value: &geo::MultiPolygon<f32>) -> Self {
+impl<P: Point2> From<&geo::MultiPolygon<P::Float>> for MultiPolygon<P> {
+    fn from(value: &geo::MultiPolygon<P::Float>) -> Self {
         MultiPolygon(value.iter().map(|poly| poly.into()).collect())
     }
 }
 
-impl From<&MultiPolygon> for geo::MultiPolygon<f32> {
-    fn from(value: &MultiPolygon) -> Self {
+impl<P: Point2> From<&MultiPolygon<P>> for geo::MultiPolygon<P::Float> {
+    fn from(value: &MultiPolygon<P>) -> Self {
         geo::MultiPolygon::new(value.0.iter().map(|poly| poly.into()).collect())
     }
 }

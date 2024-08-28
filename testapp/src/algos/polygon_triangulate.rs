@@ -1,6 +1,6 @@
 use bevy::{color::palettes, input::common_conditions::input_just_pressed, prelude::*};
 use itertools::Itertools;
-use math::{triangulate_glam, Ring};
+use math::{triangulate_glam, Flattenable as _, Ring};
 
 use crate::{
     ring::{Ring2D, RingLine, RingParams, RingPoint},
@@ -30,19 +30,12 @@ fn render_triangulation(mut gizmos: Gizmos, rings: RingParams) {
         .chunk_by(|(_, wp)| *wp)
         .into_iter()
         .for_each(|(wp, group)| {
-            let (proj, inj) = wp.xy_projection_injection();
             group
                 .into_iter()
-                .map(|(ring, _)| {
-                    Ring::new(
-                        ring.into_iter()
-                            .map(|p| proj.transform_point(p).truncate())
-                            .collect::<Vec<_>>(),
-                    )
-                })
+                .map(|(ring, _)| Ring::embed(&ring, wp))
                 .flat_map(|ring| triangulate_glam(ring.to_polygon()))
-                .map(|tri| tri.0.map(|p| inj.transform_point(p.extend(0.0))))
-                .for_each(|[a, b, c]| {
+                .map(|tri| tri.unembed(wp))
+                .for_each(|math::Triangle([a, b, c])| {
                     gizmos.primitive_3d(
                         &Triangle3d::new(a, b, c),
                         Vec3::ZERO,
@@ -65,19 +58,12 @@ fn do_triangulation(
             .chunk_by(|(_, wp)| *wp)
             .into_iter()
             .flat_map(|(wp, group)| {
-                let (proj, inj) = wp.xy_projection_injection();
                 group
                     .into_iter()
-                    .map(move |(ring, _)| {
-                        Ring::new(
-                            ring.into_iter()
-                                .map(|p| proj.transform_point(p).truncate())
-                                .collect::<Vec<_>>(),
-                        )
-                    })
+                    .map(move |(ring, _)| Ring::embed(&ring, wp))
                     .flat_map(|ring| triangulate_glam(ring.to_polygon()))
-                    .map(move |tri| tri.0.map(|p| inj.transform_point(p.extend(0.0))))
-                    .map(|[a, b, c]| SpawnTriangle { a, b, c })
+                    .map(move |tri| tri.unembed(wp))
+                    .map(|tri| SpawnTriangle(tri))
             }),
     );
 

@@ -1,6 +1,6 @@
 use bevy::{color::palettes, input::common_conditions::input_just_pressed, prelude::*};
 use itertools::Itertools;
-use math::stitch_triangles_glam;
+use math::{stitch_triangles_glam, Flattenable};
 
 use crate::{
     spawner::SpawnRing,
@@ -30,22 +30,17 @@ fn render_polygon_stitch(mut gizmos: Gizmos, triangles: TriangleParams) {
         .chunk_by(|(_, wp)| *wp)
         .into_iter()
         .for_each(|(wp, group)| {
-            let (proj, inj) = wp.xy_projection_injection();
             let triangles_projected = group
                 .into_iter()
                 .map(|(triangle, _)| triangle)
-                .map(|triangle| {
-                    math::Triangle(triangle.map(|p| proj.transform_point(p).truncate()))
-                })
+                .map(|triangle| math::Triangle::embed(&triangle, wp))
                 .collect::<Vec<_>>();
             stitch_triangles_glam(triangles_projected)
                 .into_iter()
                 .for_each(|ring| {
-                    ring.lines()
-                        .map(|line| line.0.map(|p| inj.transform_point(p.extend(0.0))))
-                        .for_each(|line| {
-                            gizmos.line(line[0], line[1], palettes::basic::RED);
-                        });
+                    ring.unembed(wp).lines().for_each(|line| {
+                        gizmos.line(line.src(), line.dst(), palettes::basic::RED);
+                    });
                 });
         });
 }
@@ -62,23 +57,14 @@ fn do_stitching(
             .chunk_by(|(_, wp)| *wp)
             .into_iter()
             .flat_map(|(wp, group)| {
-                let (proj, inj) = wp.xy_projection_injection();
                 let triangles_projected = group
                     .into_iter()
                     .map(|(triangle, _)| triangle)
-                    .map(|triangle| {
-                        math::Triangle(triangle.map(|p| proj.transform_point(p).truncate()))
-                    })
+                    .map(|triangle| math::Triangle::embed(&triangle, wp))
                     .collect::<Vec<_>>();
                 stitch_triangles_glam(triangles_projected)
                     .into_iter()
-                    .map(move |ring| {
-                        let points = ring
-                            .iter_points_open()
-                            .map(|start| inj.transform_point(start.extend(0.0)))
-                            .collect::<Vec<_>>();
-                        SpawnRing { points }
-                    })
+                    .map(move |ring| SpawnRing(ring.unembed(wp)))
             }),
     );
 

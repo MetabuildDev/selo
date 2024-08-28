@@ -1,31 +1,25 @@
 use geo::*;
-use glam::*;
 
-pub(crate) fn coord_up_precision(c: Coord<f32>) -> Coord<f64> {
+use crate::Point2;
+
+pub(crate) fn cast_coord<From: GeoFloat, To: GeoFloat>(c: Coord<From>) -> Coord<To> {
     Coord {
-        x: c.x as f64,
-        y: c.y as f64,
+        x: To::from(c.x).unwrap(),
+        y: To::from(c.y).unwrap(),
     }
 }
 
-pub(crate) fn coord_down_precision(c: Coord<f64>) -> Coord<f32> {
-    Coord {
-        x: c.x as f32,
-        y: c.y as f32,
-    }
+pub(crate) fn coord_to_vec2<P: Point2>(coord: geo::Coord<P::Float>) -> P {
+    P::new(coord.x, coord.y)
 }
 
-pub(crate) fn coord_to_vec2(coord: geo::Coord<f32>) -> Vec2 {
-    Vec2::new(coord.x, coord.y)
-}
-
-pub(crate) fn vec2_to_coord(vec2: Vec2) -> geo::Coord<f32> {
+pub(crate) fn vec2_to_coord<P: Point2>(vec2: P) -> geo::Coord<P::Float> {
     geo::Coord {
-        x: vec2.x,
-        y: vec2.y,
+        x: vec2.x(),
+        y: vec2.y(),
     }
 }
 
-pub(crate) fn empty_multipolygon() -> MultiPolygon<f32> {
+pub(crate) fn empty_multipolygon<P: Point2>() -> MultiPolygon<P::Float> {
     MultiPolygon::new(vec![])
 }

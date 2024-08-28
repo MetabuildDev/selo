@@ -1,6 +1,6 @@
-use glam::Vec2;
-
 use crate::utils::{coord_to_vec2, vec2_to_coord};
+
+use crate::point::{Point, Point2};
 
 /// A 2D Triangle
 ///
@@ -14,13 +14,13 @@ use crate::utils::{coord_to_vec2, vec2_to_coord};
 /// ```
 #[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
-pub struct Triangle(pub [Vec2; 3]);
+pub struct Triangle<P: Point>(pub [P; 3]);
 
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
-pub struct MultiTriangle(pub Vec<Triangle>);
+pub struct MultiTriangle<P: Point>(pub Vec<Triangle<P>>);
 
-impl Default for MultiTriangle {
+impl<P: Point> Default for MultiTriangle<P> {
     fn default() -> Self {
         Self(vec![])
     }
@@ -28,19 +28,19 @@ impl Default for MultiTriangle {
 
 // Conversions
 
-impl From<geo::Triangle<f32>> for Triangle {
-    fn from(tri: geo::Triangle<f32>) -> Self {
+impl<P: Point2> From<geo::Triangle<P::Float>> for Triangle<P> {
+    fn from(tri: geo::Triangle<P::Float>) -> Self {
         Triangle(tri.to_array().map(coord_to_vec2))
     }
 }
 
-impl From<Triangle> for geo::Triangle<f32> {
-    fn from(tri: Triangle) -> Self {
+impl<P: Point2> From<Triangle<P>> for geo::Triangle<P::Float> {
+    fn from(tri: Triangle<P>) -> Self {
         geo::Triangle::from(tri.0.map(vec2_to_coord))
     }
 }
 
-impl<TS: AsRef<[geo::Triangle<f32>]>> From<&TS> for MultiTriangle {
+impl<P: Point2, TS: AsRef<[geo::Triangle<P::Float>]>> From<&TS> for MultiTriangle<P> {
     fn from(value: &TS) -> Self {
         MultiTriangle(
             value
@@ -53,8 +53,8 @@ impl<TS: AsRef<[geo::Triangle<f32>]>> From<&TS> for MultiTriangle {
     }
 }
 
-impl From<&MultiTriangle> for Vec<geo::Triangle<f32>> {
-    fn from(value: &MultiTriangle) -> Self {
+impl<P: Point2> From<&MultiTriangle<P>> for Vec<geo::Triangle<P::Float>> {
+    fn from(value: &MultiTriangle<P>) -> Self {
         value
             .0
             .iter()

@@ -89,22 +89,25 @@ pub struct TriangleParams<'w, 's> {
 }
 
 impl TriangleParams<'_, '_> {
+    #[allow(unused)]
     pub fn iter_entities(&self) -> impl Iterator<Item = (Entity, [Entity; 3])> + '_ {
         self.triangles
             .iter()
             .map(|(entity, triangle, _)| (entity, [triangle.a, triangle.b, triangle.c]))
     }
 
-    pub fn iter_just_triangles(&self) -> impl Iterator<Item = [Vec3; 3]> + '_ {
+    pub fn iter_just_triangles(&self) -> impl Iterator<Item = math::Triangle<Vec3>> + '_ {
         self.iter_triangles().map(|(triangle, _)| triangle)
     }
 
-    pub fn iter_triangles(&self) -> impl Iterator<Item = ([Vec3; 3], WorkingPlane)> + '_ {
+    pub fn iter_triangles(
+        &self,
+    ) -> impl Iterator<Item = (math::Triangle<Vec3>, WorkingPlane)> + '_ {
         self.triangles.iter().filter_map(|(_, triangle, wp)| {
             let points = self
                 .points
                 .get_many([triangle.a, triangle.b, triangle.c])
-                .map(|poss| poss.map(|pos| pos.translation()))
+                .map(|poss| math::Triangle(poss.map(|pos| pos.translation())))
                 .ok()?;
             Some((points, **wp))
         })
@@ -180,14 +183,16 @@ fn render_triangle_construction(
 }
 
 fn render_triangles(mut gizmos: Gizmos, triangles: TriangleParams) {
-    triangles.iter_just_triangles().for_each(|[a, b, c]| {
-        gizmos.primitive_3d(
-            &Triangle3d::new(a, b, c),
-            Vec3::ZERO,
-            Quat::default(),
-            palettes::basic::TEAL,
-        );
-    })
+    triangles
+        .iter_just_triangles()
+        .for_each(|math::Triangle([a, b, c])| {
+            gizmos.primitive_3d(
+                &Triangle3d::new(a, b, c),
+                Vec3::ZERO,
+                Quat::default(),
+                palettes::basic::TEAL,
+            );
+        })
 }
 
 fn cleanup_unfinished(

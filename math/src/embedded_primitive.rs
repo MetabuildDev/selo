@@ -7,10 +7,10 @@ pub trait Flattenable {
     type Type3D;
 
     /// method to transform the geometry from a 3D plane to the XY plane into 2D coordinates
-    fn embed(repr_3d: Self::Type3D, working_plane: WorkingPlane) -> Self;
+    fn embed(repr_3d: &Self::Type3D, working_plane: WorkingPlane) -> Self;
 
     /// method to transform the geometry from the XY plane with 2D coordinates back to a 3D plane
-    fn unembed(self, working_plane: WorkingPlane) -> Self::Type3D;
+    fn unembed(&self, working_plane: WorkingPlane) -> Self::Type3D;
 }
 
 /// This type represents geometry in a 3D context which was projected to 2D coordinates to apply
@@ -45,7 +45,7 @@ impl<A: Flattenable> FlatPrimitive<A> {
     /// ```
     pub fn new(from: A::Type3D, working_plane: WorkingPlane) -> Self {
         Self {
-            primitive: A::embed(from, working_plane),
+            primitive: A::embed(&from, working_plane),
             working_plane,
         }
     }
@@ -101,7 +101,7 @@ impl<A: Flattenable> FlatPrimitive<A> {
     /// ```
     pub fn unpack(self) -> (A::Type3D, WorkingPlane) {
         (
-            A::unembed(self.primitive, self.working_plane),
+            A::unembed(&self.primitive, self.working_plane),
             self.working_plane,
         )
     }
@@ -112,182 +112,202 @@ mod private_impls {
     use crate::primitives::*;
     use glam::*;
 
-    impl Flattenable for Line {
-        type Type3D = [Vec3; 2];
+    impl Flattenable for Line<Vec2> {
+        type Type3D = Line<Vec3>;
         #[inline]
-        fn embed(repr_3d: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
+        fn embed(repr_3d: &Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
             let proj = working_plane.xy_projection();
             Line(
                 repr_3d
+                    .0
                     .map(|vec3| proj.transform_point3(vec3))
                     .map(|vec2| vec2.truncate()),
             )
         }
         #[inline]
-        fn unembed(self, working_plane: crate::prelude::WorkingPlane) -> Self::Type3D {
+        fn unembed(&self, working_plane: crate::prelude::WorkingPlane) -> Self::Type3D {
             let inj = working_plane.xy_injection();
-            self.0
-                .map(|vec2| vec2.extend(0.0))
-                .map(|vec3| inj.transform_point3(vec3))
+            Line(
+                self.0
+                    .map(|vec2| vec2.extend(0.0))
+                    .map(|vec3| inj.transform_point3(vec3)),
+            )
         }
     }
-    impl Flattenable for Triangle {
-        type Type3D = [Vec3; 3];
+    impl Flattenable for Triangle<Vec2> {
+        type Type3D = Triangle<Vec3>;
         #[inline]
-        fn embed(repr_3d: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
+        fn embed(repr_3d: &Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
             let proj = working_plane.xy_projection();
             Triangle(
                 repr_3d
+                    .0
                     .map(|vec3| proj.transform_point3(vec3))
                     .map(|vec2| vec2.truncate()),
             )
         }
         #[inline]
-        fn unembed(self, working_plane: crate::prelude::WorkingPlane) -> Self::Type3D {
+        fn unembed(&self, working_plane: crate::prelude::WorkingPlane) -> Self::Type3D {
             let inj = working_plane.xy_injection();
-            self.0
-                .map(|vec2| vec2.extend(0.0))
-                .map(|vec3| inj.transform_point3(vec3))
+            Triangle(
+                self.0
+                    .map(|vec2| vec2.extend(0.0))
+                    .map(|vec3| inj.transform_point3(vec3)),
+            )
         }
     }
-    impl Flattenable for MultiTriangle {
-        type Type3D = Vec<[Vec3; 3]>;
+    impl Flattenable for MultiTriangle<Vec2> {
+        type Type3D = MultiTriangle<Vec3>;
         #[inline]
-        fn embed(repr_3d: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
+        fn embed(repr_3d: &Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
             MultiTriangle(
                 repr_3d
-                    .into_iter()
+                    .0
+                    .iter()
                     .map(|triangle| Triangle::embed(triangle, working_plane))
                     .collect::<Vec<_>>(),
             )
         }
         #[inline]
-        fn unembed(self, working_plane: crate::prelude::WorkingPlane) -> Self::Type3D {
-            self.0
-                .into_iter()
-                .map(|triangle| triangle.unembed(working_plane))
-                .collect::<Vec<_>>()
+        fn unembed(&self, working_plane: crate::prelude::WorkingPlane) -> Self::Type3D {
+            MultiTriangle(
+                self.0
+                    .iter()
+                    .map(|triangle| triangle.unembed(working_plane))
+                    .collect::<Vec<_>>(),
+            )
         }
     }
-    impl Flattenable for LineString {
-        type Type3D = Vec<Vec3>;
+    impl Flattenable for LineString<Vec2> {
+        type Type3D = LineString<Vec3>;
         #[inline]
-        fn embed(repr_3d: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
+        fn embed(repr_3d: &Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
             let proj = working_plane.xy_projection();
             LineString(
                 repr_3d
-                    .into_iter()
+                    .points()
                     .map(|p| proj.transform_point3(p))
                     .map(|p| p.truncate())
                     .collect::<Vec<_>>(),
             )
         }
         #[inline]
-        fn unembed(self, working_plane: crate::prelude::WorkingPlane) -> Self::Type3D {
+        fn unembed(&self, working_plane: crate::prelude::WorkingPlane) -> Self::Type3D {
             let inj = working_plane.xy_injection();
-            self.points()
-                .map(|vec2| vec2.extend(0.0))
-                .map(|vec3| inj.transform_point3(vec3))
-                .collect::<Vec<_>>()
+            LineString(
+                self.points()
+                    .map(|vec2| vec2.extend(0.0))
+                    .map(|vec3| inj.transform_point3(vec3))
+                    .collect::<Vec<_>>(),
+            )
         }
     }
-    impl Flattenable for MultiLineString {
-        type Type3D = Vec<Vec<Vec3>>;
+    impl Flattenable for MultiLineString<Vec2> {
+        type Type3D = MultiLineString<Vec3>;
         #[inline]
-        fn embed(repr_3d: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
+        fn embed(repr_3d: &Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
             MultiLineString(
                 repr_3d
-                    .into_iter()
+                    .0
+                    .iter()
                     .map(|linestring| LineString::embed(linestring, working_plane))
                     .collect::<Vec<_>>(),
             )
         }
         #[inline]
-        fn unembed(self, working_plane: crate::prelude::WorkingPlane) -> Self::Type3D {
-            self.0
-                .into_iter()
-                .map(|linestring| linestring.unembed(working_plane))
-                .collect::<Vec<_>>()
+        fn unembed(&self, working_plane: crate::prelude::WorkingPlane) -> Self::Type3D {
+            MultiLineString(
+                self.0
+                    .iter()
+                    .map(|linestring| linestring.unembed(working_plane))
+                    .collect::<Vec<_>>(),
+            )
         }
     }
-    impl Flattenable for Ring {
-        type Type3D = Vec<Vec3>;
+    impl Flattenable for Ring<Vec2> {
+        type Type3D = Ring<Vec3>;
         #[inline]
-        fn embed(repr_3d: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
+        fn embed(repr_3d: &Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
             let proj = working_plane.xy_projection();
             Ring::new(
                 repr_3d
-                    .into_iter()
+                    .iter_points_open()
                     .map(|vec3| proj.transform_point3(vec3))
                     .map(|vec2| vec2.truncate())
                     .collect::<Vec<_>>(),
             )
         }
         #[inline]
-        fn unembed(self, working_plane: crate::prelude::WorkingPlane) -> Self::Type3D {
+        fn unembed(&self, working_plane: crate::prelude::WorkingPlane) -> Self::Type3D {
             let inj = working_plane.xy_injection();
-            self.to_linestring()
-                .points()
-                .map(|vec2| vec2.extend(0.0))
-                .map(|vec3| inj.transform_point3(vec3))
-                .collect::<Vec<_>>()
+            Ring::new(
+                self.iter_points_open()
+                    .map(|vec2| vec2.extend(0.0))
+                    .map(|vec3| inj.transform_point3(vec3))
+                    .collect::<Vec<_>>(),
+            )
         }
     }
-    impl Flattenable for MultiRing {
-        type Type3D = Vec<Vec<Vec3>>;
+    impl Flattenable for MultiRing<Vec2> {
+        type Type3D = MultiRing<Vec3>;
         #[inline]
-        fn embed(repr_3d: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
+        fn embed(repr_3d: &Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
             MultiRing(
                 repr_3d
-                    .into_iter()
+                    .0
+                    .iter()
                     .map(|ring| Ring::embed(ring, working_plane))
                     .collect::<Vec<_>>(),
             )
         }
         #[inline]
-        fn unembed(self, working_plane: crate::prelude::WorkingPlane) -> Self::Type3D {
-            self.0
-                .into_iter()
-                .map(|ring| ring.unembed(working_plane))
-                .collect::<Vec<_>>()
+        fn unembed(&self, working_plane: crate::prelude::WorkingPlane) -> Self::Type3D {
+            MultiRing(
+                self.0
+                    .iter()
+                    .map(|ring| ring.unembed(working_plane))
+                    .collect::<Vec<_>>(),
+            )
         }
     }
-    impl Flattenable for Polygon {
-        type Type3D = (Vec<Vec3>, Vec<Vec<Vec3>>);
+    impl Flattenable for Polygon<Vec2> {
+        type Type3D = Polygon<Vec3>;
         #[inline]
-        fn embed(repr_3d: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
+        fn embed(repr_3d: &Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
             let (ring, multiring) = (
-                Ring::embed(repr_3d.0, working_plane),
-                MultiRing::embed(repr_3d.1, working_plane),
+                Ring::embed(repr_3d.exterior(), working_plane),
+                MultiRing::embed(repr_3d.interior(), working_plane),
             );
             Polygon::new(ring, multiring)
         }
         #[inline]
-        fn unembed(self, working_plane: crate::prelude::WorkingPlane) -> Self::Type3D {
-            let (ring, multiring) = (self.0, self.1);
-            (
-                ring.unembed(working_plane),
-                multiring.unembed(working_plane),
+        fn unembed(&self, working_plane: crate::prelude::WorkingPlane) -> Self::Type3D {
+            Polygon::new(
+                self.exterior().unembed(working_plane),
+                self.interior().unembed(working_plane),
             )
         }
     }
-    impl Flattenable for MultiPolygon {
-        type Type3D = Vec<(Vec<Vec3>, Vec<Vec<Vec3>>)>;
+    impl Flattenable for MultiPolygon<Vec2> {
+        type Type3D = MultiPolygon<Vec3>;
         #[inline]
-        fn embed(repr_3d: Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
+        fn embed(repr_3d: &Self::Type3D, working_plane: crate::prelude::WorkingPlane) -> Self {
             MultiPolygon(
                 repr_3d
-                    .into_iter()
+                    .0
+                    .iter()
                     .map(|polygon| Polygon::embed(polygon, working_plane))
                     .collect::<Vec<_>>(),
             )
         }
         #[inline]
-        fn unembed(self, working_plane: crate::prelude::WorkingPlane) -> Self::Type3D {
-            self.0
-                .into_iter()
-                .map(|polygon| polygon.unembed(working_plane))
-                .collect::<Vec<_>>()
+        fn unembed(&self, working_plane: crate::prelude::WorkingPlane) -> Self::Type3D {
+            MultiPolygon(
+                self.0
+                    .iter()
+                    .map(|polygon| polygon.unembed(working_plane))
+                    .collect::<Vec<_>>(),
+            )
         }
     }
 }
