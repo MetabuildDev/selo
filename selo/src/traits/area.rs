@@ -3,6 +3,20 @@ use crate::{Point, Wedge};
 /// Generalized area
 /// In 2d, this gives the signed area of the shape
 /// In 3d, this gives the normal of the shape scaled by its area
+///
+/// Example
+///
+/// ```
+/// use selo::prelude::*;
+///
+/// let polygon = Ring::new(vec![
+///     Vec2::new(1.0, 1.0),
+///     Vec2::new(-2.0, 4.0),
+///     Vec2::new(-2.0, -2.0),
+/// ]);
+/// assert_eq!(polygon.area(), 9.0)
+/// ```
+///
 pub trait Area {
     type P: Point;
 
