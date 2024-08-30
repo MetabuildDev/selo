@@ -21,7 +21,9 @@ impl<P: Point> LinesIter for Line<P> {
 impl<P: Point> LinesIter for LineString<P> {
     type P = P;
     fn iter_lines(&self) -> impl Iterator<Item = Line<Self::P>> {
-        self.0.windows(2).map(|l| Line(l.try_into().unwrap()))
+        self.iter_points()
+            .tuple_windows()
+            .map(|(a, b)| Line([a, b]))
     }
 }
 
