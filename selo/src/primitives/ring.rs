@@ -1,7 +1,6 @@
 use std::iter::once;
 
 use itertools::Itertools as _;
-use num_traits::NumCast;
 
 use crate::{coord_to_vec2, Area, IterPoints, Wedge};
 
@@ -207,7 +206,7 @@ impl<P: Point> Area for Ring<P> {
             .circular_tuple_windows()
             .map(|(a, b)| a.wedge(b))
             .sum::<<P as Wedge>::Output>()
-            / <<P as Point>::S as NumCast>::from(2f32).unwrap()
+            / <<P as Point>::S as From<f32>>::from(2f32)
     }
 }
 

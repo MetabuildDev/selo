@@ -1,4 +1,4 @@
-use num_traits::{Float, NumCast};
+use num_traits::Float;
 
 use crate::utils::{coord_to_vec2, vec2_to_coord};
 
@@ -26,7 +26,7 @@ impl<P: Point> Line<P> {
     }
 
     pub fn center(&self) -> P {
-        (self.0[0] + self.0[1]) / <<P as Point>::S as NumCast>::from(2f32).unwrap()
+        (self.0[0] + self.0[1]) / <<P as Point>::S as From<f32>>::from(2f32)
     }
 
     pub fn to_dst(&self) -> P {
