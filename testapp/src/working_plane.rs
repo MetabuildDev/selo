@@ -5,7 +5,7 @@ use bevy::{
 };
 use bevy_egui::{egui, EguiContext};
 use bevy_inspector_egui::bevy_inspector::ui_for_value;
-use math::prelude::WorkingPlane;
+use selo::prelude::WorkingPlane;
 
 use crate::{
     gizmos::GizmosExt, line::Line, point::Point, ring::Ring2D, state::AppState, triangle::Triangle,

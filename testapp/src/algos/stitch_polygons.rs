@@ -1,6 +1,6 @@
 use bevy::{color::palettes, input::common_conditions::input_just_pressed, prelude::*};
 use itertools::Itertools;
-use math::{stitch_triangles_glam, Flattenable};
+use selo::{stitch_triangles_glam, Flattenable};
 
 use crate::{
     spawner::SpawnRing,
@@ -33,7 +33,7 @@ fn render_polygon_stitch(mut gizmos: Gizmos, triangles: TriangleParams) {
             let triangles_projected = group
                 .into_iter()
                 .map(|(triangle, _)| triangle)
-                .map(|triangle| math::Triangle::embed(&triangle, wp))
+                .map(|triangle| selo::Triangle::embed(&triangle, wp))
                 .collect::<Vec<_>>();
             stitch_triangles_glam(triangles_projected)
                 .into_iter()
@@ -60,7 +60,7 @@ fn do_stitching(
                 let triangles_projected = group
                     .into_iter()
                     .map(|(triangle, _)| triangle)
-                    .map(|triangle| math::Triangle::embed(&triangle, wp))
+                    .map(|triangle| selo::Triangle::embed(&triangle, wp))
                     .collect::<Vec<_>>();
                 stitch_triangles_glam(triangles_projected)
                     .into_iter()

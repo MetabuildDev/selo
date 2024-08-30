@@ -24,7 +24,7 @@ impl Plugin for SpawnerPlugin {
 }
 
 #[derive(Debug, Clone, Event)]
-pub struct SpawnTriangle(pub math::Triangle<Vec3>);
+pub struct SpawnTriangle(pub selo::Triangle<Vec3>);
 
 fn spawn_triangle(
     mut spawn_events: EventReader<SpawnTriangle>,
@@ -40,7 +40,7 @@ fn spawn_triangle(
 ) {
     spawn_events
         .read()
-        .for_each(|SpawnTriangle(math::Triangle([a, b, c]))| {
+        .for_each(|SpawnTriangle(selo::Triangle([a, b, c]))| {
             let [a, b, c] = [a, b, c].map(|position| {
                 spawn_point_inner(
                     *position,
@@ -72,7 +72,7 @@ fn spawn_triangle(
 }
 
 #[derive(Debug, Clone, Event)]
-pub struct SpawnRing(pub math::Ring<Vec3>);
+pub struct SpawnRing(pub selo::Ring<Vec3>);
 
 fn spawn_ring(
     mut spawn_events: EventReader<SpawnRing>,

@@ -2,7 +2,7 @@ use crate::gizmos::GizmosExt;
 use bevy::{color::palettes, prelude::*};
 use bevy_egui::{egui, EguiContext};
 use bevy_inspector_egui::bevy_inspector::ui_for_resource;
-use math::prelude::WorkingPlane;
+use selo::prelude::WorkingPlane;
 
 use crate::gizmos::AnimatedGizmos;
 

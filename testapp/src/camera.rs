@@ -6,7 +6,7 @@ use bevy::{
     },
     prelude::*,
 };
-use math::prelude::WorkingPlane;
+use selo::prelude::WorkingPlane;
 
 use crate::{
     pointer::PointerParams,

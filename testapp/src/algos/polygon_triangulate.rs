@@ -1,6 +1,6 @@
 use bevy::{color::palettes, input::common_conditions::input_just_pressed, prelude::*};
 use itertools::Itertools;
-use math::{triangulate_glam, Flattenable as _, Ring};
+use selo::{triangulate_glam, Flattenable as _, Ring};
 
 use crate::{
     ring::{Ring2D, RingLine, RingParams, RingPoint},
@@ -35,7 +35,7 @@ fn render_triangulation(mut gizmos: Gizmos, rings: RingParams) {
                 .map(|(ring, _)| Ring::embed(&ring, wp))
                 .flat_map(|ring| triangulate_glam(ring.to_polygon()))
                 .map(|tri| tri.unembed(wp))
-                .for_each(|math::Triangle([a, b, c])| {
+                .for_each(|selo::Triangle([a, b, c])| {
                     gizmos.primitive_3d(
                         &Triangle3d::new(a, b, c),
                         Vec3::ZERO,

@@ -1,7 +1,7 @@
 use bevy::{color::palettes, prelude::*};
 use bevy_egui::{egui, EguiContext};
 use itertools::Itertools;
-use math::{buffer_polygon_glam, Flattenable as _, Ring};
+use selo::{buffer_polygon_glam, Flattenable as _, Ring};
 
 use crate::ring::RingParams;
 
