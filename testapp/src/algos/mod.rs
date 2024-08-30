@@ -5,7 +5,7 @@ mod polygon_expand;
 mod polygon_triangulate;
 mod stitch_polygons;
 mod straight_skeleton;
-mod working_planes;
+mod workplanes;
 
 use bevy::{color::palettes, prelude::*};
 
@@ -19,7 +19,7 @@ impl Plugin for AlgoPlugin {
                 polygon_triangulate::PolygonTriangulationPlugin,
                 polygon_expand::PolygonExpandPlugin,
                 straight_skeleton::PolygonSkeletonPlugin,
-                working_planes::WorkplanePlugin,
+                workplanes::WorkplanePlugin,
                 stitch_polygons::StitchTrianglesPlugin,
                 polygon_boolops::PolygonBoolopsPlugin,
             ))

@@ -11,7 +11,7 @@ use crate::{
     point::{spawn_point, Point},
     pointer::PointerParams,
     state::AppState,
-    working_plane::{AttachedWorkplane, WorkplaneParams},
+    workplane::{AttachedWorkplane, WorkplaneParams},
 };
 
 pub struct LinePlugin;
@@ -182,10 +182,10 @@ pub fn render_drawing_line(
     mut gizmos: Gizmos,
     pointer: PointerParams,
     points: Query<&GlobalTransform, (With<Point>, With<UnfinishedLine>)>,
-    working_plane: WorkplaneParams,
+    workplane: WorkplaneParams,
 ) {
     let pointer_pos = pointer
-        .world_position_3d(working_plane.current())
+        .world_position_3d(workplane.current())
         .unwrap_or_default();
     points
         .iter()

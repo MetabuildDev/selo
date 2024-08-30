@@ -10,7 +10,7 @@ use crate::{
     point::{spawn_point, Point},
     pointer::PointerParams,
     state::AppState,
-    working_plane::{AttachedWorkplane, WorkplaneParams},
+    workplane::{AttachedWorkplane, WorkplaneParams},
 };
 
 pub struct TrianglePlugin;
@@ -160,10 +160,10 @@ fn render_triangle_construction(
     start: Query<&GlobalTransform, With<TriangleStart>>,
     mid: Query<&GlobalTransform, With<TriangleMid>>,
     pointer: PointerParams,
-    working_plane: WorkplaneParams,
+    workplane: WorkplaneParams,
 ) {
     let pointer_pos = pointer
-        .world_position_3d(working_plane.current())
+        .world_position_3d(workplane.current())
         .unwrap_or_default();
     let start = start.single().translation();
     let mid = mid.get_single().map(|p| p.translation());

@@ -10,7 +10,7 @@ use crate::{
     point::{spawn_point, Point},
     pointer::PointerParams,
     state::AppState,
-    working_plane::{AttachedWorkplane, WorkplaneParams},
+    workplane::{AttachedWorkplane, WorkplaneParams},
 };
 
 pub struct RingPlugin;
@@ -258,7 +258,7 @@ fn render_ring_construction(
     mut gizmos: Gizmos,
     points: Query<(&GlobalTransform, &RingPoint), With<UnfinishedRingPoint>>,
     pointer: PointerParams,
-    working_plane: WorkplaneParams,
+    workplane: WorkplaneParams,
 ) {
     let points = points
         .iter()
@@ -274,7 +274,7 @@ fn render_ring_construction(
         });
 
     let pointer_pos = pointer
-        .world_position_3d(working_plane.current())
+        .world_position_3d(workplane.current())
         .unwrap_or_default();
     if let Some(end) = points.last().cloned() {
         gizmos.line(pointer_pos, end, palettes::basic::AQUA);

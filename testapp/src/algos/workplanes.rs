@@ -40,7 +40,7 @@ impl Plugin for WorkplanePlugin {
             .add_systems(
                 Update,
                 (
-                    render_working_plane_normalization,
+                    render_workplane_normalization,
                     ui.run_if(resource_exists::<WorkplanePoints>),
                 )
                     .run_if(in_state(AlgorithmState::WorkplaneNormalization)),
@@ -48,7 +48,7 @@ impl Plugin for WorkplanePlugin {
             .add_systems(
                 Update,
                 (
-                    render_working_plane_transform,
+                    render_workplane_transform,
                     ui.run_if(resource_exists::<WorkplanePoints>),
                 )
                     .run_if(in_state(AlgorithmState::WorkplaneTransform)),
@@ -65,7 +65,7 @@ impl Default for WorkplanePoints {
     }
 }
 
-fn render_working_plane_normalization(mut gizmos: AnimatedGizmos, points: Res<WorkplanePoints>) {
+fn render_workplane_normalization(mut gizmos: AnimatedGizmos, points: Res<WorkplanePoints>) {
     let plane = Workplane::from_three_points(**points);
     let normalized_plane = plane.hesse_normal_form();
 
@@ -95,7 +95,7 @@ fn render_working_plane_normalization(mut gizmos: AnimatedGizmos, points: Res<Wo
     );
 }
 
-fn render_working_plane_transform(mut gizmos: AnimatedGizmos, points: Res<WorkplanePoints>) {
+fn render_workplane_transform(mut gizmos: AnimatedGizmos, points: Res<WorkplanePoints>) {
     let plane = Workplane::from_three_points(**points);
     let normalized_plane = plane.hesse_normal_form();
 

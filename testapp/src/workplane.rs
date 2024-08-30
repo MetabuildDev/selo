@@ -18,19 +18,19 @@ impl Plugin for WorkplanePlugin {
         app.register_type::<ActiveWorkplane>()
             .register_type::<StoredWorkplane>()
             .register_type::<AttachedWorkplane>()
-            .add_systems(Startup, spawn_initial_working_plane)
+            .add_systems(Startup, spawn_initial_workplane)
             .add_systems(
                 Update,
                 (ui_active, ui_inactive)
                     .chain()
                     .run_if(in_state(AppState::Workplane)),
             )
-            .add_systems(Update, render_working_plane)
-            .observe(add_working_plane::<Point>)
-            .observe(add_working_plane::<Line>)
-            .observe(add_working_plane::<Triangle>)
-            .observe(add_working_plane::<Ring2D>)
-            .observe(keep_active_working_plane_unique);
+            .add_systems(Update, render_workplane)
+            .observe(add_workplane::<Point>)
+            .observe(add_workplane::<Line>)
+            .observe(add_workplane::<Triangle>)
+            .observe(add_workplane::<Ring2D>)
+            .observe(keep_active_workplane_unique);
     }
 }
 
@@ -54,16 +54,16 @@ impl WorkplaneParams<'_, '_> {
     }
 }
 
-fn add_working_plane<C: Component>(
+fn add_workplane<C: Component>(
     trigger: Trigger<OnAdd, C>,
     mut cmds: Commands,
-    working_plane: WorkplaneParams,
+    workplane: WorkplaneParams,
 ) {
     cmds.entity(trigger.entity())
-        .insert(AttachedWorkplane(working_plane.current()));
+        .insert(AttachedWorkplane(workplane.current()));
 }
 
-fn keep_active_working_plane_unique(
+fn keep_active_workplane_unique(
     trigger: Trigger<OnAdd, ActiveWorkplane>,
     mut cmds: Commands,
     other: Query<Entity, With<ActiveWorkplane>>,
@@ -76,7 +76,7 @@ fn keep_active_working_plane_unique(
         });
 }
 
-fn spawn_initial_working_plane(mut cmds: Commands) {
+fn spawn_initial_workplane(mut cmds: Commands) {
     cmds.spawn((
         Name::new("Initial Workplane"),
         ActiveWorkplane,
@@ -86,11 +86,11 @@ fn spawn_initial_working_plane(mut cmds: Commands) {
     ));
 }
 
-fn render_working_plane(mut gizmos: Gizmos, working_plane: WorkplaneParams) {
-    let working_plane = working_plane.current();
+fn render_workplane(mut gizmos: Gizmos, workplane: WorkplaneParams) {
+    let workplane = workplane.current();
     gizmos.plane_3d(
-        working_plane.origin(),
-        working_plane.normal(),
+        workplane.origin(),
+        workplane.normal(),
         palettes::basic::SILVER,
     );
     gizmos.plane_3d(Vec3::ZERO, Dir3::Z, palettes::basic::GREEN);
@@ -143,7 +143,7 @@ fn ui_inactive(world: &mut World) {
     match resp {
         Some(o) => match o {
             Outcome::New => {
-                world.run_system_once(spawn_initial_working_plane);
+                world.run_system_once(spawn_initial_workplane);
             }
             Outcome::NewActive(e) => {
                 world.commands().entity(e).insert(ActiveWorkplane);
