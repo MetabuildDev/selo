@@ -7,8 +7,7 @@ use crate::point::{Point, Point2};
 /// # Example
 ///
 /// ```
-/// # use selo::Line;
-/// # use glam::Vec2;
+/// # use selo::prelude::*;
 ///
 /// let line = Line([Vec2::X, Vec2::Y]);
 /// ```

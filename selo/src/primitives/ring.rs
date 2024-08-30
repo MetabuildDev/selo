@@ -14,8 +14,7 @@ use crate::point::{Point, Point2};
 /// # Example
 ///
 /// ```
-/// # use selo::Ring;
-/// # use glam::Vec2;
+/// # use selo::prelude::*;
 ///
 /// let ring = Ring::new(vec![Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]);
 /// ```
@@ -36,8 +35,7 @@ impl<P: Point> Ring<P> {
     /// # Example
     ///
     /// ```
-    /// # use selo::Ring;
-    /// # use glam::Vec2;
+    /// # use selo::prelude::*;
     ///
     /// let ring_from_open = Ring::new(vec![Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]);
     /// let ring_from_closed = Ring::new(vec![Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y, Vec2::ZERO]);
@@ -66,8 +64,7 @@ impl<P: Point> Ring<P> {
     /// # Example
     ///
     /// ```
-    /// # use selo::Ring;
-    /// # use glam::Vec2;
+    /// # use selo::prelude::*;
     ///
     /// let ring = Ring::new(vec![Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]);
     ///
@@ -82,8 +79,7 @@ impl<P: Point> Ring<P> {
     /// # Example
     ///
     /// ```
-    /// # use selo::Ring;
-    /// # use glam::Vec2;
+    /// # use selo::prelude::*;
     ///
     /// let ring = Ring::new(vec![Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]);
     ///
@@ -104,8 +100,7 @@ impl<P: Point> Ring<P> {
     /// # Example
     ///
     /// ```
-    /// # use selo::Ring;
-    /// # use glam::Vec2;
+    /// # use selo::prelude::*;
     ///
     /// let ring = Ring::new(vec![Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]);
     ///
@@ -127,9 +122,7 @@ impl<P: Point> Ring<P> {
     /// # Example
     ///
     /// ```
-    /// # use selo::Ring;
-    /// # use selo::LineString;
-    /// # use glam::Vec2;
+    /// # use selo::prelude::*;
     ///
     /// let ring = Ring::new(vec![Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]);
     ///
@@ -146,10 +139,7 @@ impl<P: Point> Ring<P> {
     /// # Example
     ///
     /// ```
-    /// # use selo::Ring;
-    /// # use selo::Polygon;
-    /// # use selo::MultiRing;
-    /// # use glam::Vec2;
+    /// # use selo::prelude::*;
     ///
     /// let ring = Ring::new(vec![Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]);
     ///
@@ -166,9 +156,7 @@ impl<P: Point> Ring<P> {
     /// # Example
     ///
     /// ```
-    /// # use selo::Ring;
-    /// # use selo::Line;
-    /// # use glam::Vec2;
+    /// # use selo::prelude::*;
     ///
     /// let ring = Ring::new(vec![Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]);
     ///

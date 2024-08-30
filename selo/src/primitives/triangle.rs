@@ -7,8 +7,7 @@ use crate::point::{Point, Point2};
 /// # Example
 ///
 /// ```
-/// # use selo::Triangle;
-/// # use glam::Vec2;
+/// # use selo::prelude::*;
 ///
 /// let triangle = Triangle([Vec2::ZERO, Vec2::X, Vec2::Y]);
 /// ```

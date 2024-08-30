@@ -10,8 +10,7 @@ use crate::point::{Point, Point2};
 /// # Example
 ///
 /// ```
-/// # use selo::LineString;
-/// # use glam::Vec2;
+/// # use selo::prelude::*;
 ///
 /// let line = LineString(vec![Vec2::X, Vec2::Y, Vec2::ONE, Vec2::ONE * 2.0]);
 /// ```
@@ -46,8 +45,7 @@ impl<P: Point> LineString<P> {
     /// # Example
     ///
     /// ```
-    /// # use selo::LineString;
-    /// # use glam::Vec2;
+    /// # use selo::prelude::*;
     ///
     /// let linestring = LineString::new(vec![Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]);
     ///
@@ -72,8 +70,7 @@ impl<P: Point> LineString<P> {
     /// # Example
     ///
     /// ```
-    /// # use selo::LineString;
-    /// # use glam::Vec2;
+    /// # use selo::prelude::*;
     ///
     /// let open_linestring = LineString::new(vec![Vec2::X, Vec2::Y, Vec2::ONE, Vec2::ONE * 2.0]);
     /// let closed_linestring = LineString::new(vec![Vec2::ZERO, Vec2::X, Vec2::Y, Vec2::ZERO]);
@@ -90,8 +87,7 @@ impl<P: Point> LineString<P> {
     /// # Example
     ///
     /// ```
-    /// # use selo::LineString;
-    /// # use glam::Vec2;
+    /// # use selo::prelude::*;
     ///
     /// let open_linestring = LineString::new(vec![Vec2::X, Vec2::Y, Vec2::ONE, Vec2::ONE * 2.0]);
     /// let closed_linestring = LineString::new(vec![Vec2::ZERO, Vec2::X, Vec2::Y, Vec2::ZERO]);
@@ -108,9 +104,7 @@ impl<P: Point> LineString<P> {
     /// # Example
     ///
     /// ```
-    /// # use selo::LineString;
-    /// # use selo::Ring;
-    /// # use glam::Vec2;
+    /// # use selo::prelude::*;
     ///
     /// let open_linestring = LineString::new(vec![Vec2::X, Vec2::Y, Vec2::ONE, Vec2::ONE * 2.0]);
     /// assert!(!open_linestring.closed());
@@ -127,8 +121,7 @@ impl<P: Point> LineString<P> {
     /// Example
     ///
     /// ```
-    /// # use selo::LineString;
-    /// # use glam::Vec2;
+    /// # use selo::prelude::*;
     ///
     /// let linestring = LineString::new(vec![Vec2::X, Vec2::Y, Vec2::ONE, Vec2::ONE * 2.0]);
     ///
@@ -149,9 +142,7 @@ impl<P: Point> LineString<P> {
     /// Example
     ///
     /// ```
-    /// # use selo::LineString;
-    /// # use selo::Line;
-    /// # use glam::Vec2;
+    /// # use selo::prelude::*;
     ///
     /// let linestring = LineString::new(vec![Vec2::X, Vec2::Y, Vec2::ONE, Vec2::ONE * 2.0]);
     ///
