@@ -1,10 +1,11 @@
 use std::iter::once;
 
 use itertools::Itertools as _;
+use num_traits::NumCast;
 
-use crate::coord_to_vec2;
+use crate::{coord_to_vec2, Area, IterPoints, Wedge};
 
-use super::{Line, LineString, Polygon};
+use super::{Line, LineString, Polygon, Triangle};
 use crate::point::{Point, Point2};
 
 /// Represents the inside area of a closed [`LineString`].
@@ -51,7 +52,8 @@ impl<P: Point> Ring<P> {
     /// assert_eq!(ring_from_closed.points_open(), &expected);
     /// assert_eq!(ring_extremely_deduped.points_open(), &expected);
     /// ```
-    pub fn new(mut points: Vec<P>) -> Self {
+    pub fn new(points: impl Into<Vec<P>>) -> Self {
+        let mut points = points.into();
         points.dedup();
         if points.last() == points.first() {
             points.pop();
@@ -91,7 +93,7 @@ impl<P: Point> Ring<P> {
     /// assert_eq!(iter.next(), Some(Vec2::Y));
     /// assert_eq!(iter.next(), None);
     /// ```
-    pub fn iter_points_open(&self) -> impl Iterator<Item = P> + '_ {
+    pub fn iter_points_open(&self) -> impl Iterator<Item = P> + Clone + ExactSizeIterator + '_ {
         self.0.iter().copied()
     }
 
@@ -203,24 +205,64 @@ impl<P: Point> MultiRing<P> {
     }
 }
 
+// Traits
+
+impl<P: Point> IterPoints for Ring<P> {
+    type P = P;
+    fn iter_points(&self) -> impl Iterator<Item = P> {
+        self.0.iter().copied()
+    }
+}
+
+impl<P: Point> IterPoints for MultiRing<P> {
+    type P = P;
+    fn iter_points(&self) -> impl Iterator<Item = P> {
+        self.0.iter().flat_map(IterPoints::iter_points)
+    }
+}
+
+impl<P: Point> Area for Ring<P> {
+    type P = P;
+    fn area(&self) -> <P as Wedge>::Output {
+        self.iter_points_open()
+            .circular_tuple_windows()
+            .map(|(a, b)| a.wedge(b))
+            .sum::<<P as Wedge>::Output>()
+            / <<P as Point>::S as NumCast>::from(2f32).unwrap()
+    }
+}
+
+impl<P: Point> Area for MultiRing<P> {
+    type P = P;
+    fn area(&self) -> <P as Wedge>::Output {
+        self.0.iter().map(Area::area).sum()
+    }
+}
+
 // Conversions
 
-impl<P: Point2> From<geo::Triangle<P::Float>> for Ring<P> {
-    fn from(value: geo::Triangle<P::Float>) -> Self {
+impl<P: Point2> From<geo::Triangle<P::S>> for Ring<P> {
+    fn from(value: geo::Triangle<P::S>) -> Self {
         Self::new(value.to_array().map(|c| coord_to_vec2(c)).to_vec())
     }
 }
 
-impl<P: Point2> TryFrom<&geo::LineString<P::Float>> for Ring<P> {
+impl<P: Point2> TryFrom<&geo::LineString<P::S>> for Ring<P> {
     type Error = ();
 
-    fn try_from(ls: &geo::LineString<P::Float>) -> Result<Self, Self::Error> {
+    fn try_from(ls: &geo::LineString<P::S>) -> Result<Self, Self::Error> {
         LineString::from(ls).to_ring().ok_or(())
     }
 }
 
-impl<P: Point2> From<&Ring<P>> for geo::LineString<P::Float> {
+impl<P: Point2> From<&Ring<P>> for geo::LineString<P::S> {
     fn from(value: &Ring<P>) -> Self {
         (&value.to_linestring()).into()
+    }
+}
+
+impl<P: Point> From<Triangle<P>> for Ring<P> {
+    fn from(value: Triangle<P>) -> Self {
+        Ring::new(value.0.to_vec())
     }
 }

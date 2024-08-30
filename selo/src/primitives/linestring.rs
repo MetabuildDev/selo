@@ -176,19 +176,19 @@ impl<P: Point> From<&Ring<P>> for LineString<P> {
     }
 }
 
-impl<P: Point2> From<&geo::LineString<P::Float>> for LineString<P> {
-    fn from(ls: &geo::LineString<P::Float>) -> Self {
+impl<P: Point2> From<&geo::LineString<P::S>> for LineString<P> {
+    fn from(ls: &geo::LineString<P::S>) -> Self {
         LineString::new(ls.0.iter().map(|c| coord_to_vec2(*c)).collect())
     }
 }
 
-impl<P: Point2> From<&LineString<P>> for geo::LineString<P::Float> {
+impl<P: Point2> From<&LineString<P>> for geo::LineString<P::S> {
     fn from(r: &LineString<P>) -> Self {
         Self(r.0.iter().map(|c| vec2_to_coord(*c)).collect())
     }
 }
 
-impl<P: Point2, TS: AsRef<[geo::LineString<P::Float>]>> From<&TS> for MultiLineString<P> {
+impl<P: Point2, TS: AsRef<[geo::LineString<P::S>]>> From<&TS> for MultiLineString<P> {
     fn from(value: &TS) -> Self {
         MultiLineString(
             value
@@ -200,7 +200,7 @@ impl<P: Point2, TS: AsRef<[geo::LineString<P::Float>]>> From<&TS> for MultiLineS
     }
 }
 
-impl<P: Point2> From<&MultiLineString<P>> for Vec<geo::LineString<P::Float>> {
+impl<P: Point2> From<&MultiLineString<P>> for Vec<geo::LineString<P::S>> {
     fn from(value: &MultiLineString<P>) -> Self {
         value
             .0

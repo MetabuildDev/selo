@@ -1,6 +1,8 @@
 use bevy_math::*;
 use primitives::InfinitePlane3d;
 
+use crate::{Area, IterPoints};
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
 pub struct WorkingPlane {
@@ -13,6 +15,13 @@ impl WorkingPlane {
         Self {
             plane: InfinitePlane3d::new(normal),
             origin,
+        }
+    }
+
+    pub fn from_primitive<P: IterPoints<P = Vec3> + Area<P = Vec3>>(p: &P) -> Self {
+        Self {
+            plane: InfinitePlane3d::new(p.area().normalize()),
+            origin: p.iter_points().next().unwrap(),
         }
     }
 
