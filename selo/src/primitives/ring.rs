@@ -204,9 +204,9 @@ impl<P: Point> MultiRing<P> {
     /// # Example
     ///
     /// ```
-    /// # use selo::MultiRing;
+    /// # use selo::prelude::*;
     ///
-    /// let empty = MultiRing::empty();
+    /// let empty = MultiRing::<Vec2>::empty();
     ///
     /// assert!(empty.0.is_empty());
     /// ```

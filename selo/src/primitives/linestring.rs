@@ -31,9 +31,9 @@ impl<P: Point> LineString<P> {
     /// # Example
     ///
     /// ```
-    /// # use selo::LineString;
+    /// # use selo::prelude::*;
     ///
-    /// let empty = LineString::empty();
+    /// let empty = LineString::<Vec2>::empty();
     ///
     /// assert!(empty.0.is_empty());
     /// ```
@@ -115,7 +115,7 @@ impl<P: Point> LineString<P> {
     /// let open_linestring = LineString::new(vec![Vec2::X, Vec2::Y, Vec2::ONE, Vec2::ONE * 2.0]);
     /// assert!(!open_linestring.closed());
     ///
-    /// let closed_ring : Ring = open_linestring.close();
+    /// let closed_ring: Ring<Vec2> = open_linestring.close();
     /// assert!(closed_ring.to_linestring().closed())
     /// ```
     pub fn close(self) -> Ring<P> {

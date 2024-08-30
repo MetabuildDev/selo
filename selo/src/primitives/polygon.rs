@@ -156,9 +156,9 @@ impl<P: Point> MultiPolygon<P> {
     /// # Example
     ///
     /// ```
-    /// # use selo::MultiPolygon;
+    /// # use selo::prelude::*;
     ///
-    /// let empty = MultiPolygon::empty();
+    /// let empty = MultiPolygon::<Vec2>::empty();
     ///
     /// assert!(empty.0.is_empty());
     /// ```

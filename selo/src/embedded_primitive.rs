@@ -18,12 +18,11 @@ pub trait Flattenable {
 ///
 /// ```
 /// # use selo::prelude::*;
-/// # use glam::Vec3;
 ///
 /// let [a,b,c] = [Vec3::X, Vec3::Y, Vec3::Z];
 /// let plane = WorkingPlane::from_three_points([a,b,c]);
 ///
-/// let triangle_2d = EmbeddedPrimitive::<Triangle>::new([a,b,c], plane);
+/// let triangle_2d = FlatPrimitive::<Triangle<Vec2>>::new(Triangle([a,b,c]), plane);
 /// ```
 #[derive(Debug, Clone)]
 pub struct FlatPrimitive<P: Flattenable> {
@@ -41,7 +40,7 @@ impl<A: Flattenable> FlatPrimitive<A> {
     /// let [a,b,c] = [Vec3::X, Vec3::Y, Vec3::Z];
     /// let plane = WorkingPlane::from_three_points([a,b,c]);
     ///
-    /// let triangle_2d = EmbeddedPrimitive::<Triangle>::new([a,b,c], plane);
+    /// let triangle_2d = FlatPrimitive::<Triangle<Vec2>>::new(Triangle([a,b,c]), plane);
     /// ```
     pub fn new(from: A::Type3D, working_plane: WorkingPlane) -> Self {
         Self {
@@ -54,14 +53,13 @@ impl<A: Flattenable> FlatPrimitive<A> {
     ///
     /// ```
     /// # use selo::prelude::*;
-    /// # use glam::Vec3;
     ///
     /// let [a,b,c] = [Vec3::X, Vec3::Y, Vec3::Z];
     /// let plane = WorkingPlane::from_three_points([a,b,c]);
     ///
-    /// let triangle_2d = EmbeddedPrimitive::<Triangle>::new([a,b,c], plane);
+    /// let triangle_2d = FlatPrimitive::<Triangle<Vec2>>::new(Triangle([a,b,c]), plane);
     ///
-    /// let flip_triangle = |triangle: Triangle| -> Triangle {
+    /// let flip_triangle = |triangle: Triangle<Vec2>| -> Triangle<Vec2> {
     ///     Triangle(triangle.0.map(|mut vec2| {
     ///         vec2.y = -vec2.y;
     ///         vec2
@@ -86,9 +84,9 @@ impl<A: Flattenable> FlatPrimitive<A> {
     /// let [a,b,c] = [Vec3::X, Vec3::Y, Vec3::Z];
     /// let plane = WorkingPlane::from_three_points([a,b,c]);
     ///
-    /// let triangle_2d = EmbeddedPrimitive::<Triangle>::new([a,b,c], plane);
+    /// let triangle_2d = FlatPrimitive::<Triangle<Vec2>>::new(Triangle([a,b,c]), plane);
     ///
-    /// let flip_triangle = |triangle: Triangle| -> Triangle {
+    /// let flip_triangle = |triangle: Triangle<Vec2>| -> Triangle<Vec2> {
     ///     Triangle(triangle.0.map(|mut vec2| {
     ///         vec2.y = -vec2.y;
     ///         vec2
@@ -97,7 +95,7 @@ impl<A: Flattenable> FlatPrimitive<A> {
     ///
     /// let flipped_triangle = triangle_2d.map_geometry(flip_triangle);
     ///
-    /// let ([a,b,c], plane) = flipped_triangle.unpack();
+    /// let (Triangle([a,b,c]), plane) = flipped_triangle.unpack();
     /// ```
     pub fn unpack(self) -> (A::Type3D, WorkingPlane) {
         (
