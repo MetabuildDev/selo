@@ -19,7 +19,7 @@ impl Plugin for AlgoPlugin {
                 polygon_triangulate::PolygonTriangulationPlugin,
                 polygon_expand::PolygonExpandPlugin,
                 straight_skeleton::PolygonSkeletonPlugin,
-                working_planes::WorkingPlanePlugin,
+                working_planes::WorkplanePlugin,
                 stitch_polygons::StitchTrianglesPlugin,
                 polygon_boolops::PolygonBoolopsPlugin,
             ))

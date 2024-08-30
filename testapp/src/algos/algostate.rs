@@ -36,8 +36,8 @@ pub enum AlgorithmState {
     PolygonTriangulate,
     StraightSkeleton,
     PolygonExpansion,
-    WorkingPlaneNormalization,
-    WorkingPlaneTransform,
+    WorkplaneNormalization,
+    WorkplaneTransform,
     StitchTriangles,
     PolygonBoolops,
 }

@@ -18,7 +18,7 @@ impl Plugin for StatePlugin {
                     change_state(AppState::Triangle).run_if(input_just_pressed(KeyCode::KeyT)),
                     change_state(AppState::Ring).run_if(input_just_pressed(KeyCode::KeyP)),
                     change_state(AppState::Algorithms).run_if(input_just_pressed(KeyCode::Escape)),
-                    change_state(AppState::WorkingPlane).run_if(input_just_pressed(KeyCode::KeyW)),
+                    change_state(AppState::Workplane).run_if(input_just_pressed(KeyCode::KeyW)),
                 ),
             )
             .add_systems(
@@ -36,7 +36,7 @@ pub enum AppState {
     Line,
     Triangle,
     Ring,
-    WorkingPlane,
+    Workplane,
 }
 
 fn change_state(state: AppState) -> impl Fn(ResMut<NextState<AppState>>) {

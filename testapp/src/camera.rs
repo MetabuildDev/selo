@@ -6,12 +6,12 @@ use bevy::{
     },
     prelude::*,
 };
-use selo::prelude::WorkingPlane;
+use selo::prelude::Workplane;
 
 use crate::{
     pointer::PointerParams,
     state::AppState,
-    working_plane::{ActiveWorkingPlane, StoredWorkingPlane, WorkingPlaneParams},
+    working_plane::{ActiveWorkplane, StoredWorkplane, WorkplaneParams},
 };
 
 pub struct CameraPlugin;
@@ -50,7 +50,7 @@ impl CameraParams<'_, '_> {
     pub fn screen_ray_onto_plane(
         &self,
         screen_pos: Vec2,
-        working_plane: WorkingPlane,
+        working_plane: Workplane,
     ) -> Option<Vec3> {
         self.screen_ray_into_world(screen_pos).and_then(|ray| {
             let dist = ray.intersect_plane(working_plane.origin, working_plane.plane)?;
@@ -84,10 +84,10 @@ fn setup_cameras(mut cmds: Commands) {
 
 fn align_camera_with_active_working_plane(
     working_plane: Query<
-        &StoredWorkingPlane,
+        &StoredWorkplane,
         (
-            With<ActiveWorkingPlane>,
-            Or<(Changed<StoredWorkingPlane>, Added<ActiveWorkingPlane>)>,
+            With<ActiveWorkplane>,
+            Or<(Changed<StoredWorkplane>, Added<ActiveWorkplane>)>,
         ),
     >,
     mut cam: Query<&mut Transform, With<MainCamera>>,
@@ -109,7 +109,7 @@ fn move_camera(
     pointer: PointerParams,
     mut mouse: EventReader<MouseMotion>,
     mut cam: Query<&mut Transform, With<MainCamera>>,
-    working_plane: WorkingPlaneParams,
+    working_plane: WorkplaneParams,
 ) {
     if let Some(pos) = pointer.screen_position() {
         let delta = mouse
@@ -132,7 +132,7 @@ fn move_camera(
 fn rotate_camera(
     mut mouse: EventReader<MouseMotion>,
     mut cam: Query<&mut Transform, With<MainCamera>>,
-    working_plane: WorkingPlaneParams,
+    working_plane: WorkplaneParams,
 ) {
     let delta = mouse.read().map(|drag| drag.delta).sum::<Vec2>() * 0.0025;
     cam.iter_mut().for_each(|mut transform| {

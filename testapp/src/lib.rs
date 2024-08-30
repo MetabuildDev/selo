@@ -31,7 +31,7 @@ pub fn run() {
         triangle::TrianglePlugin,
         ring::RingPlugin,
         algos::AlgoPlugin,
-        working_plane::WorkingPlanePlugin,
+        working_plane::WorkplanePlugin,
         spawner::SpawnerPlugin,
     ));
 
