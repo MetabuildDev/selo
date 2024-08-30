@@ -4,7 +4,7 @@ use bevy::{
     input::common_conditions::input_just_pressed,
     prelude::*,
 };
-use math::prelude::WorkingPlane;
+use selo::prelude::WorkingPlane;
 
 use crate::{
     drop_system,
@@ -76,13 +76,13 @@ pub struct LineParams<'w, 's, F: QueryFilter + 'static = ()> {
 }
 
 impl<F: QueryFilter + 'static> LineParams<'_, '_, F> {
-    pub fn iter_just_lines(&self) -> impl Iterator<Item = math::Line<Vec3>> + '_ {
+    pub fn iter_just_lines(&self) -> impl Iterator<Item = selo::Line<Vec3>> + '_ {
         self.iter_lines().map(|(line, _)| line)
     }
 
-    pub fn iter_lines(&self) -> impl Iterator<Item = (math::Line<Vec3>, WorkingPlane)> + '_ {
+    pub fn iter_lines(&self) -> impl Iterator<Item = (selo::Line<Vec3>, WorkingPlane)> + '_ {
         self.lines.iter().filter_map(|(line, wp)| {
-            let line = math::Line(
+            let line = selo::Line(
                 self.points
                     .get_many([line.start, line.end])
                     .map(|poss| poss.map(|pos| pos.translation()))

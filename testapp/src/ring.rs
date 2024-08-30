@@ -2,7 +2,7 @@ use bevy::{
     color::palettes, ecs::system::SystemParam, input::common_conditions::input_just_pressed,
     prelude::*,
 };
-use math::prelude::WorkingPlane;
+use selo::prelude::WorkingPlane;
 
 use crate::{
     drop_system,
@@ -105,13 +105,13 @@ pub struct RingParams<'w, 's> {
 }
 
 impl RingParams<'_, '_> {
-    pub fn iter_just_rings(&self) -> impl Iterator<Item = math::Ring<Vec3>> + '_ {
+    pub fn iter_just_rings(&self) -> impl Iterator<Item = selo::Ring<Vec3>> + '_ {
         self.iter_rings().map(|(ring, _)| ring)
     }
 
-    pub fn iter_rings(&self) -> impl Iterator<Item = (math::Ring<Vec3>, WorkingPlane)> + '_ {
+    pub fn iter_rings(&self) -> impl Iterator<Item = (selo::Ring<Vec3>, WorkingPlane)> + '_ {
         self.ring.iter().filter_map(|(ring, wp)| {
-            let points = math::Ring::new(
+            let points = selo::Ring::new(
                 ring.points
                     .iter()
                     .map(|entity| {

@@ -17,13 +17,12 @@ pub trait Flattenable {
 /// algorithms for problems which are typically easier to solve in 2D space.
 ///
 /// ```
-/// # use math::prelude::*;
-/// # use glam::Vec3;
+/// # use selo::prelude::*;
 ///
 /// let [a,b,c] = [Vec3::X, Vec3::Y, Vec3::Z];
 /// let plane = WorkingPlane::from_three_points([a,b,c]);
 ///
-/// let triangle_2d = EmbeddedPrimitive::<Triangle>::new([a,b,c], plane);
+/// let triangle_2d = FlatPrimitive::<Triangle<Vec2>>::new(Triangle([a,b,c]), plane);
 /// ```
 #[derive(Debug, Clone)]
 pub struct FlatPrimitive<P: Flattenable> {
@@ -35,13 +34,13 @@ impl<A: Flattenable> FlatPrimitive<A> {
     /// Transforms a given 3D geometry that is flat with respect to some [`WorkingPlane`] into 2D space
     ///
     /// ```
-    /// # use math::prelude::*;
+    /// # use selo::prelude::*;
     /// # use glam::Vec3;
     ///
     /// let [a,b,c] = [Vec3::X, Vec3::Y, Vec3::Z];
     /// let plane = WorkingPlane::from_three_points([a,b,c]);
     ///
-    /// let triangle_2d = EmbeddedPrimitive::<Triangle>::new([a,b,c], plane);
+    /// let triangle_2d = FlatPrimitive::<Triangle<Vec2>>::new(Triangle([a,b,c]), plane);
     /// ```
     pub fn new(from: A::Type3D, working_plane: WorkingPlane) -> Self {
         Self {
@@ -53,15 +52,14 @@ impl<A: Flattenable> FlatPrimitive<A> {
     /// Apply transformations to the flattened 2D geometry
     ///
     /// ```
-    /// # use math::prelude::*;
-    /// # use glam::Vec3;
+    /// # use selo::prelude::*;
     ///
     /// let [a,b,c] = [Vec3::X, Vec3::Y, Vec3::Z];
     /// let plane = WorkingPlane::from_three_points([a,b,c]);
     ///
-    /// let triangle_2d = EmbeddedPrimitive::<Triangle>::new([a,b,c], plane);
+    /// let triangle_2d = FlatPrimitive::<Triangle<Vec2>>::new(Triangle([a,b,c]), plane);
     ///
-    /// let flip_triangle = |triangle: Triangle| -> Triangle {
+    /// let flip_triangle = |triangle: Triangle<Vec2>| -> Triangle<Vec2> {
     ///     Triangle(triangle.0.map(|mut vec2| {
     ///         vec2.y = -vec2.y;
     ///         vec2
@@ -80,15 +78,15 @@ impl<A: Flattenable> FlatPrimitive<A> {
     /// Transform the 2D geometry back into 3D space onto the [`WorkingPlane`] where it came from.
     ///
     /// ```
-    /// # use math::prelude::*;
+    /// # use selo::prelude::*;
     /// # use glam::Vec3;
     ///
     /// let [a,b,c] = [Vec3::X, Vec3::Y, Vec3::Z];
     /// let plane = WorkingPlane::from_three_points([a,b,c]);
     ///
-    /// let triangle_2d = EmbeddedPrimitive::<Triangle>::new([a,b,c], plane);
+    /// let triangle_2d = FlatPrimitive::<Triangle<Vec2>>::new(Triangle([a,b,c]), plane);
     ///
-    /// let flip_triangle = |triangle: Triangle| -> Triangle {
+    /// let flip_triangle = |triangle: Triangle<Vec2>| -> Triangle<Vec2> {
     ///     Triangle(triangle.0.map(|mut vec2| {
     ///         vec2.y = -vec2.y;
     ///         vec2
@@ -97,7 +95,7 @@ impl<A: Flattenable> FlatPrimitive<A> {
     ///
     /// let flipped_triangle = triangle_2d.map_geometry(flip_triangle);
     ///
-    /// let ([a,b,c], plane) = flipped_triangle.unpack();
+    /// let (Triangle([a,b,c]), plane) = flipped_triangle.unpack();
     /// ```
     pub fn unpack(self) -> (A::Type3D, WorkingPlane) {
         (

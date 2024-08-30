@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["math", "testapp"]
+members = ["selo", "testapp"]
 
 [workspace.dependencies]
 geo = { git = "https://github.com/RobWalt/geo.git", branch = "feat/spade-boolops" }
@@ -17,4 +17,4 @@ bevy-inspector-egui = "0.25"
 bevy_egui = "0.28"
 bevy_mod_picking = "0.20"
 
-math = { path = "math" }
+selo = { path = "selo" }

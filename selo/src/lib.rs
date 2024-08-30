@@ -20,6 +20,7 @@ pub mod prelude {
     pub use super::point::*;
     pub use super::primitives::*;
     pub use super::working_plane::WorkingPlane;
+    pub use glam::*;
 }
 
 pub fn intersect_line_2d_point<P: Point2>(a: Line<P>, b: Line<P>) -> Option<P> {

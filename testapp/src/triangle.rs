@@ -2,7 +2,7 @@ use bevy::{
     color::palettes, ecs::system::SystemParam, input::common_conditions::input_just_pressed,
     prelude::*,
 };
-use math::prelude::WorkingPlane;
+use selo::prelude::WorkingPlane;
 
 use crate::{
     drop_system,
@@ -96,18 +96,18 @@ impl TriangleParams<'_, '_> {
             .map(|(entity, triangle, _)| (entity, [triangle.a, triangle.b, triangle.c]))
     }
 
-    pub fn iter_just_triangles(&self) -> impl Iterator<Item = math::Triangle<Vec3>> + '_ {
+    pub fn iter_just_triangles(&self) -> impl Iterator<Item = selo::Triangle<Vec3>> + '_ {
         self.iter_triangles().map(|(triangle, _)| triangle)
     }
 
     pub fn iter_triangles(
         &self,
-    ) -> impl Iterator<Item = (math::Triangle<Vec3>, WorkingPlane)> + '_ {
+    ) -> impl Iterator<Item = (selo::Triangle<Vec3>, WorkingPlane)> + '_ {
         self.triangles.iter().filter_map(|(_, triangle, wp)| {
             let points = self
                 .points
                 .get_many([triangle.a, triangle.b, triangle.c])
-                .map(|poss| math::Triangle(poss.map(|pos| pos.translation())))
+                .map(|poss| selo::Triangle(poss.map(|pos| pos.translation())))
                 .ok()?;
             Some((points, **wp))
         })
@@ -185,7 +185,7 @@ fn render_triangle_construction(
 fn render_triangles(mut gizmos: Gizmos, triangles: TriangleParams) {
     triangles
         .iter_just_triangles()
-        .for_each(|math::Triangle([a, b, c])| {
+        .for_each(|selo::Triangle([a, b, c])| {
             gizmos.primitive_3d(
                 &Triangle3d::new(a, b, c),
                 Vec3::ZERO,

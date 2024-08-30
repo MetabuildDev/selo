@@ -10,8 +10,7 @@ use crate::point::{Point, Point2};
 /// # Example
 ///
 /// ```
-/// # use math::LineString;
-/// # use glam::Vec2;
+/// # use selo::prelude::*;
 ///
 /// let line = LineString(vec![Vec2::X, Vec2::Y, Vec2::ONE, Vec2::ONE * 2.0]);
 /// ```
@@ -31,9 +30,9 @@ impl<P: Point> LineString<P> {
     /// # Example
     ///
     /// ```
-    /// # use math::LineString;
+    /// # use selo::prelude::*;
     ///
-    /// let empty = LineString::empty();
+    /// let empty = LineString::<Vec2>::empty();
     ///
     /// assert!(empty.0.is_empty());
     /// ```
@@ -46,8 +45,7 @@ impl<P: Point> LineString<P> {
     /// # Example
     ///
     /// ```
-    /// # use math::LineString;
-    /// # use glam::Vec2;
+    /// # use selo::prelude::*;
     ///
     /// let linestring = LineString::new(vec![Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]);
     ///
@@ -72,8 +70,7 @@ impl<P: Point> LineString<P> {
     /// # Example
     ///
     /// ```
-    /// # use math::LineString;
-    /// # use glam::Vec2;
+    /// # use selo::prelude::*;
     ///
     /// let open_linestring = LineString::new(vec![Vec2::X, Vec2::Y, Vec2::ONE, Vec2::ONE * 2.0]);
     /// let closed_linestring = LineString::new(vec![Vec2::ZERO, Vec2::X, Vec2::Y, Vec2::ZERO]);
@@ -90,8 +87,7 @@ impl<P: Point> LineString<P> {
     /// # Example
     ///
     /// ```
-    /// # use math::LineString;
-    /// # use glam::Vec2;
+    /// # use selo::prelude::*;
     ///
     /// let open_linestring = LineString::new(vec![Vec2::X, Vec2::Y, Vec2::ONE, Vec2::ONE * 2.0]);
     /// let closed_linestring = LineString::new(vec![Vec2::ZERO, Vec2::X, Vec2::Y, Vec2::ZERO]);
@@ -108,14 +104,12 @@ impl<P: Point> LineString<P> {
     /// # Example
     ///
     /// ```
-    /// # use math::LineString;
-    /// # use math::Ring;
-    /// # use glam::Vec2;
+    /// # use selo::prelude::*;
     ///
     /// let open_linestring = LineString::new(vec![Vec2::X, Vec2::Y, Vec2::ONE, Vec2::ONE * 2.0]);
     /// assert!(!open_linestring.closed());
     ///
-    /// let closed_ring : Ring = open_linestring.close();
+    /// let closed_ring: Ring<Vec2> = open_linestring.close();
     /// assert!(closed_ring.to_linestring().closed())
     /// ```
     pub fn close(self) -> Ring<P> {
@@ -127,8 +121,7 @@ impl<P: Point> LineString<P> {
     /// Example
     ///
     /// ```
-    /// # use math::LineString;
-    /// # use glam::Vec2;
+    /// # use selo::prelude::*;
     ///
     /// let linestring = LineString::new(vec![Vec2::X, Vec2::Y, Vec2::ONE, Vec2::ONE * 2.0]);
     ///
@@ -149,9 +142,7 @@ impl<P: Point> LineString<P> {
     /// Example
     ///
     /// ```
-    /// # use math::LineString;
-    /// # use math::Line;
-    /// # use glam::Vec2;
+    /// # use selo::prelude::*;
     ///
     /// let linestring = LineString::new(vec![Vec2::X, Vec2::Y, Vec2::ONE, Vec2::ONE * 2.0]);
     ///

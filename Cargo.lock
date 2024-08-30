@@ -2882,19 +2882,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "math"
-version = "0.1.0"
-dependencies = [
- "bevy_math",
- "bevy_reflect",
- "geo 0.28.0 (git+https://github.com/RobWalt/geo.git?branch=feat/spade-boolops)",
- "geo-buffer",
- "glam",
- "itertools 0.13.0",
- "num-traits",
-]
-
-[[package]]
 name = "memchr"
 version = "2.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3814,6 +3801,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "selo"
+version = "0.1.0"
+dependencies = [
+ "bevy_math",
+ "bevy_reflect",
+ "geo 0.28.0 (git+https://github.com/RobWalt/geo.git?branch=feat/spade-boolops)",
+ "geo-buffer",
+ "glam",
+ "itertools 0.13.0",
+ "num-traits",
+]
+
+[[package]]
 name = "send_wrapper"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4064,7 +4064,7 @@ dependencies = [
  "bevy_egui",
  "bevy_mod_picking",
  "itertools 0.13.0",
- "math",
+ "selo",
  "strum",
 ]
 

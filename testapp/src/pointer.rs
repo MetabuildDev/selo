@@ -1,5 +1,5 @@
 use bevy::{ecs::system::SystemParam, prelude::*};
-use math::prelude::WorkingPlane;
+use selo::prelude::WorkingPlane;
 
 use crate::camera::CameraParams;
 

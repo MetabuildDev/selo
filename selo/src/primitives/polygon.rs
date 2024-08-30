@@ -7,9 +7,7 @@ use crate::point::{Point, Point2};
 /// # Example
 ///
 /// ```
-/// # use math::Polygon;
-/// # use math::{Ring, MultiRing};
-/// # use glam::Vec2;
+/// # use selo::prelude::*;
 ///
 /// let exterior = Ring::new([Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y].map(|vec2| vec2 * 5.0).to_vec());
 /// let interior_1 = Ring::new([Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y].map(|vec2| vec2 + Vec2::ONE).to_vec());
@@ -28,9 +26,7 @@ impl<P: Point> Polygon<P> {
     /// # Example
     ///
     /// ```
-    /// # use math::Polygon;
-    /// # use math::{Ring, MultiRing};
-    /// # use glam::Vec2;
+    /// # use selo::prelude::*;
     ///
     /// let exterior = Ring::new([Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y].map(|vec2| vec2 * 5.0).to_vec());
     /// let interior_1 = Ring::new([Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y].map(|vec2| vec2 + Vec2::ONE).to_vec());
@@ -48,9 +44,7 @@ impl<P: Point> Polygon<P> {
     /// # Example
     ///
     /// ```
-    /// # use math::Polygon;
-    /// # use math::{Ring, MultiRing};
-    /// # use glam::Vec2;
+    /// # use selo::prelude::*;
     ///
     /// let exterior = Ring::new([Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y].map(|vec2| vec2 * 5.0).to_vec());
     /// let interior_1 = Ring::new([Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y].map(|vec2| vec2 + Vec2::ONE).to_vec());
@@ -71,9 +65,7 @@ impl<P: Point> Polygon<P> {
     /// # Example
     ///
     /// ```
-    /// # use math::Polygon;
-    /// # use math::{Ring, MultiRing};
-    /// # use glam::Vec2;
+    /// # use selo::prelude::*;
     ///
     /// let exterior = Ring::new([Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y].map(|vec2| vec2 * 5.0).to_vec());
     /// let interior_1 = Ring::new([Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y].map(|vec2| vec2 + Vec2::ONE).to_vec());
@@ -102,10 +94,7 @@ impl<P: Point> Polygon<P> {
     /// # Example
     ///
     /// ```
-    /// # use math::Polygon;
-    /// # use math::{Ring, MultiRing};
-    /// # use math::Line;
-    /// # use glam::Vec2;
+    /// # use selo::prelude::*;
     ///
     /// let exterior = Ring::new([Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y].map(|vec2| vec2 * 5.0).to_vec());
     /// let interior_1 = Ring::new([Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y].map(|vec2| vec2 + Vec2::ONE).to_vec());
@@ -156,9 +145,9 @@ impl<P: Point> MultiPolygon<P> {
     /// # Example
     ///
     /// ```
-    /// # use math::MultiPolygon;
+    /// # use selo::prelude::*;
     ///
-    /// let empty = MultiPolygon::empty();
+    /// let empty = MultiPolygon::<Vec2>::empty();
     ///
     /// assert!(empty.0.is_empty());
     /// ```
