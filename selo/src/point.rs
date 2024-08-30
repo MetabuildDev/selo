@@ -7,7 +7,7 @@ use std::{
 use geo::{CoordNum, GeoFloat};
 use num_traits::Float;
 
-// Vector space equipped with a wedge product
+// Vector space equipped with a dot & wedge products
 pub trait Point:
     Debug
     + Clone
