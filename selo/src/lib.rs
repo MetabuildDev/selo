@@ -1,3 +1,5 @@
+#![allow(refining_impl_trait)]
+
 pub use embedded_primitive::*;
 use geo::{MapCoords as _, SpadeBoolops, StitchTriangles as _, TriangulateSpade as _};
 

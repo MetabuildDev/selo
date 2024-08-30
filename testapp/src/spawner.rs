@@ -1,4 +1,5 @@
 use bevy::{color::palettes, ecs::entity::EntityHashSet, prelude::*};
+use selo::IterPoints;
 
 use crate::{
     line::{AttachedLines, Line},
@@ -88,8 +89,7 @@ fn spawn_ring(
 ) {
     spawn_events.read().for_each(|SpawnRing(ring)| {
         let points = ring
-            .iter_points_open()
-            .into_iter()
+            .iter_points()
             .map(|position| {
                 spawn_point_inner(
                     position,

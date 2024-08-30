@@ -1,4 +1,4 @@
-use crate::{coord_to_vec2, vec2_to_coord};
+use crate::{coord_to_vec2, vec2_to_coord, IterPoints};
 
 use super::{Line, Ring};
 use crate::point::{Point, Point2};
@@ -116,27 +116,6 @@ impl<P: Point> LineString<P> {
         Ring::new(self.0)
     }
 
-    /// Iterate over the points of this [`LineString`]
-    ///
-    /// Example
-    ///
-    /// ```
-    /// # use selo::prelude::*;
-    ///
-    /// let linestring = LineString::new(vec![Vec2::X, Vec2::Y, Vec2::ONE, Vec2::ONE * 2.0]);
-    ///
-    /// let mut points_iter = linestring.points();
-    ///
-    /// assert_eq!(points_iter.next(), Some(Vec2::X));
-    /// assert_eq!(points_iter.next(), Some(Vec2::Y));
-    /// assert_eq!(points_iter.next(), Some(Vec2::ONE));
-    /// assert_eq!(points_iter.next(), Some(Vec2::ONE * 2.0));
-    /// assert_eq!(points_iter.next(), None);
-    /// ```
-    pub fn points(&self) -> impl Iterator<Item = P> + '_ {
-        self.0.iter().copied()
-    }
-
     /// Iterate over the lines of this [`LineString`]
     ///
     /// Example
@@ -165,6 +144,22 @@ pub struct MultiLineString<P: Point>(pub Vec<LineString<P>>);
 impl<P: Point> Default for MultiLineString<P> {
     fn default() -> Self {
         Self(vec![])
+    }
+}
+
+// Traits
+
+impl<P: Point> IterPoints for LineString<P> {
+    type P = P;
+    fn iter_points(&self) -> impl Iterator<Item = P> + ExactSizeIterator {
+        self.0.iter().copied()
+    }
+}
+
+impl<P: Point> IterPoints for MultiLineString<P> {
+    type P = P;
+    fn iter_points(&self) -> impl Iterator<Item = P> {
+        self.0.iter().flat_map(IterPoints::iter_points)
     }
 }
 

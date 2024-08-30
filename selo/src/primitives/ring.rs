@@ -76,27 +76,6 @@ impl<P: Point> Ring<P> {
         &self.0
     }
 
-    /// Iterates over all the points of the [`Ring`] with `first != last``.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use selo::prelude::*;
-    ///
-    /// let ring = Ring::new(vec![Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]);
-    ///
-    /// let mut iter = ring.iter_points_open();
-    ///
-    /// assert_eq!(iter.next(), Some(Vec2::ZERO));
-    /// assert_eq!(iter.next(), Some(Vec2::X));
-    /// assert_eq!(iter.next(), Some(Vec2::ONE));
-    /// assert_eq!(iter.next(), Some(Vec2::Y));
-    /// assert_eq!(iter.next(), None);
-    /// ```
-    pub fn iter_points_open(&self) -> impl Iterator<Item = P> + Clone + ExactSizeIterator + '_ {
-        self.0.iter().copied()
-    }
-
     /// Iterates over all the points of the [`Ring`] with `first == last`.
     ///
     /// # Example
@@ -106,7 +85,7 @@ impl<P: Point> Ring<P> {
     ///
     /// let ring = Ring::new(vec![Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]);
     ///
-    /// let mut iter = ring.iter_points_closed();
+    /// let mut iter = ring.iter_points_duplicate_endpoints();
     ///
     /// assert_eq!(iter.next(), Some(Vec2::ZERO));
     /// assert_eq!(iter.next(), Some(Vec2::X));
@@ -115,7 +94,7 @@ impl<P: Point> Ring<P> {
     /// assert_eq!(iter.next(), Some(Vec2::ZERO));
     /// assert_eq!(iter.next(), None);
     /// ```
-    pub fn iter_points_closed(&self) -> impl Iterator<Item = P> + '_ {
+    pub fn iter_points_duplicate_endpoints(&self) -> impl Iterator<Item = P> + '_ {
         self.0.iter().chain(self.0.first()).copied()
     }
 
@@ -209,14 +188,14 @@ impl<P: Point> MultiRing<P> {
 
 impl<P: Point> IterPoints for Ring<P> {
     type P = P;
-    fn iter_points(&self) -> impl Iterator<Item = P> {
+    fn iter_points(&self) -> impl Iterator<Item = P> + Clone + ExactSizeIterator {
         self.0.iter().copied()
     }
 }
 
 impl<P: Point> IterPoints for MultiRing<P> {
     type P = P;
-    fn iter_points(&self) -> impl Iterator<Item = P> {
+    fn iter_points(&self) -> impl Iterator<Item = P> + Clone {
         self.0.iter().flat_map(IterPoints::iter_points)
     }
 }
@@ -224,7 +203,7 @@ impl<P: Point> IterPoints for MultiRing<P> {
 impl<P: Point> Area for Ring<P> {
     type P = P;
     fn area(&self) -> <P as Wedge>::Output {
-        self.iter_points_open()
+        self.iter_points()
             .circular_tuple_windows()
             .map(|(a, b)| a.wedge(b))
             .sum::<<P as Wedge>::Output>()
