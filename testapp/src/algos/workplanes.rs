@@ -2,71 +2,71 @@ use crate::gizmos::GizmosExt;
 use bevy::{color::palettes, prelude::*};
 use bevy_egui::{egui, EguiContext};
 use bevy_inspector_egui::bevy_inspector::ui_for_resource;
-use selo::prelude::WorkingPlane;
+use selo::prelude::Workplane;
 
 use crate::gizmos::AnimatedGizmos;
 
 use super::algostate::AlgorithmState;
 
-pub struct WorkingPlanePlugin;
+pub struct WorkplanePlugin;
 
-impl Plugin for WorkingPlanePlugin {
+impl Plugin for WorkplanePlugin {
     fn build(&self, app: &mut App) {
-        app.register_type::<WorkingPlanePoints>()
+        app.register_type::<WorkplanePoints>()
             .add_systems(
-                OnEnter(AlgorithmState::WorkingPlaneNormalization),
+                OnEnter(AlgorithmState::WorkplaneNormalization),
                 |mut cmds: Commands| {
-                    cmds.init_resource::<WorkingPlanePoints>();
+                    cmds.init_resource::<WorkplanePoints>();
                 },
             )
             .add_systems(
-                OnExit(AlgorithmState::WorkingPlaneNormalization),
+                OnExit(AlgorithmState::WorkplaneNormalization),
                 |mut cmds: Commands| {
-                    cmds.remove_resource::<WorkingPlanePoints>();
+                    cmds.remove_resource::<WorkplanePoints>();
                 },
             )
             .add_systems(
-                OnEnter(AlgorithmState::WorkingPlaneTransform),
+                OnEnter(AlgorithmState::WorkplaneTransform),
                 |mut cmds: Commands| {
-                    cmds.init_resource::<WorkingPlanePoints>();
+                    cmds.init_resource::<WorkplanePoints>();
                 },
             )
             .add_systems(
-                OnExit(AlgorithmState::WorkingPlaneTransform),
+                OnExit(AlgorithmState::WorkplaneTransform),
                 |mut cmds: Commands| {
-                    cmds.remove_resource::<WorkingPlanePoints>();
+                    cmds.remove_resource::<WorkplanePoints>();
                 },
             )
             .add_systems(
                 Update,
                 (
-                    render_working_plane_normalization,
-                    ui.run_if(resource_exists::<WorkingPlanePoints>),
+                    render_workplane_normalization,
+                    ui.run_if(resource_exists::<WorkplanePoints>),
                 )
-                    .run_if(in_state(AlgorithmState::WorkingPlaneNormalization)),
+                    .run_if(in_state(AlgorithmState::WorkplaneNormalization)),
             )
             .add_systems(
                 Update,
                 (
-                    render_working_plane_transform,
-                    ui.run_if(resource_exists::<WorkingPlanePoints>),
+                    render_workplane_transform,
+                    ui.run_if(resource_exists::<WorkplanePoints>),
                 )
-                    .run_if(in_state(AlgorithmState::WorkingPlaneTransform)),
+                    .run_if(in_state(AlgorithmState::WorkplaneTransform)),
             );
     }
 }
 
 #[derive(Debug, Clone, Resource, Deref, DerefMut, Reflect)]
-struct WorkingPlanePoints([Vec3; 3]);
+struct WorkplanePoints([Vec3; 3]);
 
-impl Default for WorkingPlanePoints {
+impl Default for WorkplanePoints {
     fn default() -> Self {
         Self([Vec3::ZERO, Vec3::X, Vec3::Y].map(|p| p + Vec3::Z))
     }
 }
 
-fn render_working_plane_normalization(mut gizmos: AnimatedGizmos, points: Res<WorkingPlanePoints>) {
-    let plane = WorkingPlane::from_three_points(**points);
+fn render_workplane_normalization(mut gizmos: AnimatedGizmos, points: Res<WorkplanePoints>) {
+    let plane = Workplane::from_three_points(**points);
     let normalized_plane = plane.hesse_normal_form();
 
     gizmos.sphere(plane.origin, Quat::default(), 0.025, palettes::basic::BLUE);
@@ -95,8 +95,8 @@ fn render_working_plane_normalization(mut gizmos: AnimatedGizmos, points: Res<Wo
     );
 }
 
-fn render_working_plane_transform(mut gizmos: AnimatedGizmos, points: Res<WorkingPlanePoints>) {
-    let plane = WorkingPlane::from_three_points(**points);
+fn render_workplane_transform(mut gizmos: AnimatedGizmos, points: Res<WorkplanePoints>) {
+    let plane = Workplane::from_three_points(**points);
     let normalized_plane = plane.hesse_normal_form();
 
     let transform = plane.xy_injection();
@@ -152,7 +152,7 @@ fn render_working_plane_transform(mut gizmos: AnimatedGizmos, points: Res<Workin
 fn ui(world: &mut World) {
     let mut q = world.query::<&mut EguiContext>();
     let ctx = q.single_mut(world).get_mut().clone();
-    egui::Window::new("Working Plane Points").show(&ctx, |ui| {
-        ui_for_resource::<WorkingPlanePoints>(world, ui);
+    egui::Window::new("Workplane Points").show(&ctx, |ui| {
+        ui_for_resource::<WorkplanePoints>(world, ui);
     });
 }

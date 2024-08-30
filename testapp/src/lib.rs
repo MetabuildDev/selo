@@ -8,7 +8,7 @@ mod ring;
 mod spawner;
 mod state;
 mod triangle;
-mod working_plane;
+mod workplane;
 
 use bevy::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
@@ -31,7 +31,7 @@ pub fn run() {
         triangle::TrianglePlugin,
         ring::RingPlugin,
         algos::AlgoPlugin,
-        working_plane::WorkingPlanePlugin,
+        workplane::WorkplanePlugin,
         spawner::SpawnerPlugin,
     ));
 

@@ -3,7 +3,7 @@ use bevy_mod_picking::prelude::*;
 
 use crate::{
     camera::CameraParams, drop_system, pointer::PointerParams, state::AppState,
-    working_plane::WorkingPlaneParams,
+    workplane::WorkplaneParams,
 };
 
 pub struct PointPlugin;
@@ -55,13 +55,13 @@ pub fn spawn_point(
     mut materials: ResMut<Assets<StandardMaterial>>,
     pointer: PointerParams,
     mut id: Local<usize>,
-    working_plane: WorkingPlaneParams,
+    workplane: WorkplaneParams,
 ) -> Entity {
     *id += 1;
 
     let name = Name::new(format!("Point {n}", n = *id));
     let position = pointer
-        .world_position_3d(working_plane.current())
+        .world_position_3d(workplane.current())
         .unwrap_or_default();
 
     let mesh = meshes.add(Circle::new(0.025));
@@ -121,12 +121,12 @@ fn apply_dragged_position(
     mut cmds: Commands,
     mut dragged: Query<(Entity, &mut Transform, &DraggedPosition)>,
     camera: CameraParams,
-    working_plane: WorkingPlaneParams,
+    workplane: WorkplaneParams,
 ) {
     dragged
         .iter_mut()
         .filter_map(|(entity, transform, dragged)| {
-            let pos = camera.screen_ray_onto_plane(dragged.position, working_plane.current())?;
+            let pos = camera.screen_ray_onto_plane(dragged.position, workplane.current())?;
             Some((entity, transform, pos))
         })
         .for_each(|(entity, mut transform, pos3d)| {

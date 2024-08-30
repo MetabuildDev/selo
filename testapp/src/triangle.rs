@@ -2,7 +2,7 @@ use bevy::{
     color::palettes, ecs::system::SystemParam, input::common_conditions::input_just_pressed,
     prelude::*,
 };
-use selo::prelude::WorkingPlane;
+use selo::prelude::Workplane;
 
 use crate::{
     drop_system,
@@ -10,7 +10,7 @@ use crate::{
     point::{spawn_point, Point},
     pointer::PointerParams,
     state::AppState,
-    working_plane::{AttachedWorkingPlane, WorkingPlaneParams},
+    workplane::{AttachedWorkplane, WorkplaneParams},
 };
 
 pub struct TrianglePlugin;
@@ -84,7 +84,7 @@ pub struct TriangleLine;
 
 #[derive(SystemParam)]
 pub struct TriangleParams<'w, 's> {
-    triangles: Query<'w, 's, (Entity, &'static Triangle, &'static AttachedWorkingPlane)>,
+    triangles: Query<'w, 's, (Entity, &'static Triangle, &'static AttachedWorkplane)>,
     points: Query<'w, 's, &'static GlobalTransform, With<Point>>,
 }
 
@@ -100,9 +100,7 @@ impl TriangleParams<'_, '_> {
         self.iter_triangles().map(|(triangle, _)| triangle)
     }
 
-    pub fn iter_triangles(
-        &self,
-    ) -> impl Iterator<Item = (selo::Triangle<Vec3>, WorkingPlane)> + '_ {
+    pub fn iter_triangles(&self) -> impl Iterator<Item = (selo::Triangle<Vec3>, Workplane)> + '_ {
         self.triangles.iter().filter_map(|(_, triangle, wp)| {
             let points = self
                 .points
@@ -162,10 +160,10 @@ fn render_triangle_construction(
     start: Query<&GlobalTransform, With<TriangleStart>>,
     mid: Query<&GlobalTransform, With<TriangleMid>>,
     pointer: PointerParams,
-    working_plane: WorkingPlaneParams,
+    workplane: WorkplaneParams,
 ) {
     let pointer_pos = pointer
-        .world_position_3d(working_plane.current())
+        .world_position_3d(workplane.current())
         .unwrap_or_default();
     let start = start.single().translation();
     let mid = mid.get_single().map(|p| p.translation());

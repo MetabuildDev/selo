@@ -1,5 +1,5 @@
 use bevy::{ecs::system::SystemParam, prelude::*};
-use selo::prelude::WorkingPlane;
+use selo::prelude::Workplane;
 
 use crate::camera::CameraParams;
 
@@ -14,8 +14,8 @@ impl PointerParams<'_, '_> {
         self.window.single().cursor_position()
     }
 
-    pub fn world_position_3d(&self, working_plane: WorkingPlane) -> Option<Vec3> {
+    pub fn world_position_3d(&self, workplane: Workplane) -> Option<Vec3> {
         self.screen_position()
-            .and_then(|screen_pos| self.camera.screen_ray_onto_plane(screen_pos, working_plane))
+            .and_then(|screen_pos| self.camera.screen_ray_onto_plane(screen_pos, workplane))
     }
 }

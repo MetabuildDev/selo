@@ -4,14 +4,14 @@ use bevy::{
     input::common_conditions::input_just_pressed,
     prelude::*,
 };
-use selo::prelude::WorkingPlane;
+use selo::prelude::Workplane;
 
 use crate::{
     drop_system,
     point::{spawn_point, Point},
     pointer::PointerParams,
     state::AppState,
-    working_plane::{AttachedWorkingPlane, WorkingPlaneParams},
+    workplane::{AttachedWorkplane, WorkplaneParams},
 };
 
 pub struct LinePlugin;
@@ -71,7 +71,7 @@ pub struct Line {
 
 #[derive(SystemParam)]
 pub struct LineParams<'w, 's, F: QueryFilter + 'static = ()> {
-    lines: Query<'w, 's, (&'static Line, &'static AttachedWorkingPlane), F>,
+    lines: Query<'w, 's, (&'static Line, &'static AttachedWorkplane), F>,
     points: Query<'w, 's, &'static GlobalTransform, With<Point>>,
 }
 
@@ -80,7 +80,7 @@ impl<F: QueryFilter + 'static> LineParams<'_, '_, F> {
         self.iter_lines().map(|(line, _)| line)
     }
 
-    pub fn iter_lines(&self) -> impl Iterator<Item = (selo::Line<Vec3>, WorkingPlane)> + '_ {
+    pub fn iter_lines(&self) -> impl Iterator<Item = (selo::Line<Vec3>, Workplane)> + '_ {
         self.lines.iter().filter_map(|(line, wp)| {
             let line = selo::Line(
                 self.points
@@ -182,10 +182,10 @@ pub fn render_drawing_line(
     mut gizmos: Gizmos,
     pointer: PointerParams,
     points: Query<&GlobalTransform, (With<Point>, With<UnfinishedLine>)>,
-    working_plane: WorkingPlaneParams,
+    workplane: WorkplaneParams,
 ) {
     let pointer_pos = pointer
-        .world_position_3d(working_plane.current())
+        .world_position_3d(workplane.current())
         .unwrap_or_default();
     points
         .iter()

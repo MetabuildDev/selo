@@ -5,12 +5,12 @@ use crate::{Area, Embed, IterPoints, Unembed};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
-pub struct WorkingPlane {
+pub struct Workplane {
     pub plane: InfinitePlane3d,
     pub origin: Vec3,
 }
 
-impl WorkingPlane {
+impl Workplane {
     pub fn from_normal_and_origin(normal: Dir3, origin: Vec3) -> Self {
         Self {
             plane: InfinitePlane3d::new(normal),
@@ -25,7 +25,7 @@ impl WorkingPlane {
         }
     }
 
-    /// Create a new `WorkingPlane` based on three points and compute the geometric center
+    /// Create a new `Workplane` based on three points and compute the geometric center
     /// of those points.
     ///
     /// The direction of the plane normal is determined by the winding order

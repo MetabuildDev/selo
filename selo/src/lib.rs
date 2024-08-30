@@ -4,7 +4,7 @@ pub use embedded_primitive::*;
 use geo::{MapCoords as _, SpadeBoolops, StitchTriangles as _, TriangulateSpade as _};
 
 mod embedded_primitive;
-mod working_plane;
+mod workplane;
 
 mod traits;
 pub use traits::*;
@@ -25,7 +25,7 @@ pub mod prelude {
     pub use super::point::*;
     pub use super::primitives::*;
     pub use super::traits::*;
-    pub use super::working_plane::WorkingPlane;
+    pub use super::workplane::Workplane;
     pub use glam::*;
 }
 

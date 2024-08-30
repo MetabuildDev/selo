@@ -2,7 +2,7 @@ use bevy::{
     color::palettes, ecs::system::SystemParam, input::common_conditions::input_just_pressed,
     prelude::*,
 };
-use selo::prelude::WorkingPlane;
+use selo::prelude::Workplane;
 
 use crate::{
     drop_system,
@@ -10,7 +10,7 @@ use crate::{
     point::{spawn_point, Point},
     pointer::PointerParams,
     state::AppState,
-    working_plane::{AttachedWorkingPlane, WorkingPlaneParams},
+    workplane::{AttachedWorkplane, WorkplaneParams},
 };
 
 pub struct RingPlugin;
@@ -100,7 +100,7 @@ pub struct Ring2D {
 
 #[derive(SystemParam)]
 pub struct RingParams<'w, 's> {
-    ring: Query<'w, 's, (&'static Ring2D, &'static AttachedWorkingPlane)>,
+    ring: Query<'w, 's, (&'static Ring2D, &'static AttachedWorkplane)>,
     points: Query<'w, 's, (&'static GlobalTransform, &'static RingPoint), With<Point>>,
 }
 
@@ -109,7 +109,7 @@ impl RingParams<'_, '_> {
         self.iter_rings().map(|(ring, _)| ring)
     }
 
-    pub fn iter_rings(&self) -> impl Iterator<Item = (selo::Ring<Vec3>, WorkingPlane)> + '_ {
+    pub fn iter_rings(&self) -> impl Iterator<Item = (selo::Ring<Vec3>, Workplane)> + '_ {
         self.ring.iter().filter_map(|(ring, wp)| {
             let points = selo::Ring::new(
                 ring.points
@@ -258,7 +258,7 @@ fn render_ring_construction(
     mut gizmos: Gizmos,
     points: Query<(&GlobalTransform, &RingPoint), With<UnfinishedRingPoint>>,
     pointer: PointerParams,
-    working_plane: WorkingPlaneParams,
+    workplane: WorkplaneParams,
 ) {
     let points = points
         .iter()
@@ -274,7 +274,7 @@ fn render_ring_construction(
         });
 
     let pointer_pos = pointer
-        .world_position_3d(working_plane.current())
+        .world_position_3d(workplane.current())
         .unwrap_or_default();
     if let Some(end) = points.last().cloned() {
         gizmos.line(pointer_pos, end, palettes::basic::AQUA);
