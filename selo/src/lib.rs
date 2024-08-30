@@ -21,7 +21,7 @@ pub use point::*;
 use glam::*;
 
 pub mod prelude {
-    pub use super::embedded_primitive::FlatPrimitive;
+    pub use super::embedded_primitive::{Embed, FlatPrimitive, Unembed};
     pub use super::point::*;
     pub use super::primitives::*;
     pub use super::traits::*;
@@ -82,7 +82,7 @@ pub fn boolops_union_glam<P: Point2>(rings: impl IntoIterator<Item = Ring<P>>) -
         .try_fold(empty_multipolygon::<P>(), |multi_poly, other| {
             SpadeBoolops::union(&multi_poly, &other)
         })
-        .map(|multi_poly| MultiPolygon::from(&multi_poly))
+        .map(|multi_poly| multi_poly.to_selo())
         .unwrap_or(MultiPolygon(
             rings.into_iter().map(|ring| ring.to_polygon()).collect(),
         ))

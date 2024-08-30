@@ -1,6 +1,7 @@
 use crate::utils::{coord_to_vec2, vec2_to_coord};
 
 use crate::point::{Point, Point2};
+use crate::{ToGeo, ToSelo};
 
 /// A 2D Triangle
 ///
@@ -62,3 +63,9 @@ impl<P: Point2> From<&MultiTriangle<P>> for Vec<geo::Triangle<P::S>> {
             .collect::<Vec<_>>()
     }
 }
+
+impl<P: Point2> ToGeo for Triangle<P> {
+    type GeoType = geo::Triangle<P::S>;
+}
+
+impl<P: Point2> ToSelo<Triangle<P>> for geo::Triangle<P::S> {}

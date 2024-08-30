@@ -1,7 +1,7 @@
 use bevy::{color::palettes, prelude::*};
 use bevy_egui::{egui, EguiContext};
 use itertools::Itertools;
-use selo::{skeleton_lines_glam, Flattenable as _, Ring};
+use selo::{skeleton_lines_glam, Embed, Unembed};
 
 use crate::ring::RingParams;
 
@@ -50,7 +50,7 @@ fn render_straight_skeleton(
         .for_each(|(wp, group)| {
             group
                 .into_iter()
-                .map(|(ring, _)| Ring::embed(&ring, wp))
+                .map(|(ring, _)| ring.embed(wp))
                 .flat_map(|ring| skeleton_lines_glam(ring.to_polygon(), !**orientation))
                 .for_each(|polygon| {
                     polygon.unembed(wp).lines().for_each(|line| {

@@ -1,4 +1,4 @@
-use crate::{coord_to_vec2, vec2_to_coord, IterPoints};
+use crate::{coord_to_vec2, vec2_to_coord, IterPoints, ToSelo};
 
 use super::{Line, Ring};
 use crate::point::{Point, Point2};
@@ -204,3 +204,5 @@ impl<P: Point2> From<&MultiLineString<P>> for Vec<geo::LineString<P::S>> {
             .collect::<Vec<_>>()
     }
 }
+
+impl<'a, P: Point2> ToSelo<LineString<P>> for &'a geo::LineString<P::S> {}

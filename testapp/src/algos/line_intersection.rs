@@ -1,6 +1,6 @@
 use bevy::{color::palettes, prelude::*};
 use itertools::Itertools;
-use selo::{primitives::*, Flattenable as _};
+use selo::prelude::*;
 
 use crate::line::LineParams;
 
@@ -27,7 +27,7 @@ fn render_intersection_points(mut gizmos: Gizmos, lines: LineParams) {
             let group = group.map(|(line, _)| line).collect::<Vec<_>>();
             group
                 .iter()
-                .map(|line| Line::embed(&line, wp))
+                .map(|line| line.embed(wp))
                 .tuple_combinations()
                 .filter_map(|(a, b)| selo::intersect_line_2d_point(a, b))
                 .for_each(|intersection| {
