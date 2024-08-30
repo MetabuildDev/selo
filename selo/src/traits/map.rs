@@ -37,7 +37,7 @@ impl<PIn: Point, POut: Point> Map<PIn, POut> for LineString<PIn> {
     type Output = LineString<POut>;
 
     fn map(&self, f: impl Fn(PIn) -> POut) -> LineString<POut> {
-        LineString(self.0.iter().map(|p| f(*p)).collect())
+        LineString(self.0.iter().copied().map(&f).collect())
     }
 }
 
@@ -53,7 +53,7 @@ impl<PIn: Point, POut: Point> Map<PIn, POut> for Ring<PIn> {
     type Output = Ring<POut>;
 
     fn map(&self, f: impl Fn(PIn) -> POut) -> Ring<POut> {
-        Ring::new(self.iter_points().map(|p| f(p)).collect::<Vec<_>>())
+        Ring::new(self.iter_points().map(&f).collect::<Vec<_>>())
     }
 }
 
