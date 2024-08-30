@@ -151,7 +151,7 @@ impl<P: Point> Default for MultiLineString<P> {
 
 impl<P: Point> IterPoints for LineString<P> {
     type P = P;
-    fn iter_points(&self) -> impl Iterator<Item = P> + ExactSizeIterator {
+    fn iter_points(&self) -> impl ExactSizeIterator<Item = P> {
         self.0.iter().copied()
     }
 }
@@ -167,7 +167,7 @@ impl<P: Point> IterPoints for MultiLineString<P> {
 
 impl<P: Point> From<&Ring<P>> for LineString<P> {
     fn from(r: &Ring<P>) -> Self {
-        r.to_linestring().into()
+        r.to_linestring()
     }
 }
 

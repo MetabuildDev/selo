@@ -188,7 +188,7 @@ impl<P: Point> MultiRing<P> {
 
 impl<P: Point> IterPoints for Ring<P> {
     type P = P;
-    fn iter_points(&self) -> impl Iterator<Item = P> + Clone + ExactSizeIterator {
+    fn iter_points(&self) -> impl Clone + ExactSizeIterator<Item = P> {
         self.0.iter().copied()
     }
 }
