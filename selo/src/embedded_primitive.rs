@@ -17,7 +17,7 @@ pub trait Flattenable {
 /// algorithms for problems which are typically easier to solve in 2D space.
 ///
 /// ```
-/// # use math::prelude::*;
+/// # use selo::prelude::*;
 /// # use glam::Vec3;
 ///
 /// let [a,b,c] = [Vec3::X, Vec3::Y, Vec3::Z];
@@ -35,7 +35,7 @@ impl<A: Flattenable> FlatPrimitive<A> {
     /// Transforms a given 3D geometry that is flat with respect to some [`WorkingPlane`] into 2D space
     ///
     /// ```
-    /// # use math::prelude::*;
+    /// # use selo::prelude::*;
     /// # use glam::Vec3;
     ///
     /// let [a,b,c] = [Vec3::X, Vec3::Y, Vec3::Z];
@@ -53,7 +53,7 @@ impl<A: Flattenable> FlatPrimitive<A> {
     /// Apply transformations to the flattened 2D geometry
     ///
     /// ```
-    /// # use math::prelude::*;
+    /// # use selo::prelude::*;
     /// # use glam::Vec3;
     ///
     /// let [a,b,c] = [Vec3::X, Vec3::Y, Vec3::Z];
@@ -80,7 +80,7 @@ impl<A: Flattenable> FlatPrimitive<A> {
     /// Transform the 2D geometry back into 3D space onto the [`WorkingPlane`] where it came from.
     ///
     /// ```
-    /// # use math::prelude::*;
+    /// # use selo::prelude::*;
     /// # use glam::Vec3;
     ///
     /// let [a,b,c] = [Vec3::X, Vec3::Y, Vec3::Z];

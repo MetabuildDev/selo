@@ -14,7 +14,7 @@ use crate::point::{Point, Point2};
 /// # Example
 ///
 /// ```
-/// # use math::Ring;
+/// # use selo::Ring;
 /// # use glam::Vec2;
 ///
 /// let ring = Ring::new(vec![Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]);
@@ -36,7 +36,7 @@ impl<P: Point> Ring<P> {
     /// # Example
     ///
     /// ```
-    /// # use math::Ring;
+    /// # use selo::Ring;
     /// # use glam::Vec2;
     ///
     /// let ring_from_open = Ring::new(vec![Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]);
@@ -66,7 +66,7 @@ impl<P: Point> Ring<P> {
     /// # Example
     ///
     /// ```
-    /// # use math::Ring;
+    /// # use selo::Ring;
     /// # use glam::Vec2;
     ///
     /// let ring = Ring::new(vec![Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]);
@@ -82,7 +82,7 @@ impl<P: Point> Ring<P> {
     /// # Example
     ///
     /// ```
-    /// # use math::Ring;
+    /// # use selo::Ring;
     /// # use glam::Vec2;
     ///
     /// let ring = Ring::new(vec![Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]);
@@ -104,7 +104,7 @@ impl<P: Point> Ring<P> {
     /// # Example
     ///
     /// ```
-    /// # use math::Ring;
+    /// # use selo::Ring;
     /// # use glam::Vec2;
     ///
     /// let ring = Ring::new(vec![Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]);
@@ -127,8 +127,8 @@ impl<P: Point> Ring<P> {
     /// # Example
     ///
     /// ```
-    /// # use math::Ring;
-    /// # use math::LineString;
+    /// # use selo::Ring;
+    /// # use selo::LineString;
     /// # use glam::Vec2;
     ///
     /// let ring = Ring::new(vec![Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]);
@@ -146,9 +146,9 @@ impl<P: Point> Ring<P> {
     /// # Example
     ///
     /// ```
-    /// # use math::Ring;
-    /// # use math::Polygon;
-    /// # use math::MultiRing;
+    /// # use selo::Ring;
+    /// # use selo::Polygon;
+    /// # use selo::MultiRing;
     /// # use glam::Vec2;
     ///
     /// let ring = Ring::new(vec![Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]);
@@ -166,8 +166,8 @@ impl<P: Point> Ring<P> {
     /// # Example
     ///
     /// ```
-    /// # use math::Ring;
-    /// # use math::Line;
+    /// # use selo::Ring;
+    /// # use selo::Line;
     /// # use glam::Vec2;
     ///
     /// let ring = Ring::new(vec![Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]);
@@ -204,7 +204,7 @@ impl<P: Point> MultiRing<P> {
     /// # Example
     ///
     /// ```
-    /// # use math::MultiRing;
+    /// # use selo::MultiRing;
     ///
     /// let empty = MultiRing::empty();
     ///
