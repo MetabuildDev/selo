@@ -1,6 +1,6 @@
 use bevy::{color::palettes, input::common_conditions::input_just_pressed, prelude::*};
 use itertools::Itertools;
-use selo::{boolops_union_glam, Flattenable, Ring};
+use selo::{boolops_union_glam, Embed, Unembed};
 
 use crate::{
     ring::{Ring2D, RingLine, RingParams, RingPoint},
@@ -32,7 +32,7 @@ fn render_polygon_union(mut gizmos: Gizmos, rings: RingParams) {
         .for_each(|(wp, group)| {
             let rings_projected = group
                 .into_iter()
-                .map(|(ring, _)| Ring::embed(&ring, wp))
+                .map(|(ring, _)| ring.embed(wp))
                 .collect::<Vec<_>>();
             boolops_union_glam(rings_projected)
                 .0

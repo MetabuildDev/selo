@@ -1,7 +1,7 @@
 use super::{Line, MultiRing, Ring};
 use crate::{
     point::{Point, Point2},
-    Area, Wedge,
+    Area, ToGeo, ToSelo, Wedge,
 };
 
 /// Represents the inside area of a closed [`LineString`] with an arbitrary number of holes which
@@ -224,3 +224,14 @@ impl<P: Point2> From<&MultiPolygon<P>> for geo::MultiPolygon<P::S> {
         geo::MultiPolygon::new(value.0.iter().map(|poly| poly.into()).collect())
     }
 }
+
+impl<'a, P: Point2> ToGeo for &'a Polygon<P> {
+    type GeoType = geo::Polygon<P::S>;
+}
+
+impl<'a, P: Point2> ToGeo for &'a MultiPolygon<P> {
+    type GeoType = geo::MultiPolygon<P::S>;
+}
+
+impl<'a, P: Point2> ToSelo<Polygon<P>> for &'a geo::Polygon<P::S> {}
+impl<'a, P: Point2> ToSelo<MultiPolygon<P>> for &'a geo::MultiPolygon<P::S> {}

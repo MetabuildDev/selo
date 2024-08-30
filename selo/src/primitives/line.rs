@@ -3,6 +3,7 @@ use num_traits::{Float, NumCast};
 use crate::utils::{coord_to_vec2, vec2_to_coord};
 
 use crate::point::{Point, Point2};
+use crate::{ToGeo, ToSelo};
 
 /// A 2D Line
 ///
@@ -65,3 +66,9 @@ impl<P: Point2> From<Line<P>> for geo::Line<P::S> {
         geo::Line::new(vec2_to_coord(line.src()), vec2_to_coord(line.dst()))
     }
 }
+
+impl<P: Point2> ToGeo for Line<P> {
+    type GeoType = geo::Line<P::S>;
+}
+
+impl<P: Point2> ToSelo<Line<P>> for geo::Line<P::S> {}

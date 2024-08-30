@@ -3,7 +3,7 @@ use std::iter::once;
 use itertools::Itertools as _;
 use num_traits::NumCast;
 
-use crate::{coord_to_vec2, Area, IterPoints, Wedge};
+use crate::{coord_to_vec2, Area, IterPoints, ToGeo, Wedge};
 
 use super::{Line, LineString, Polygon, Triangle};
 use crate::point::{Point, Point2};
@@ -244,4 +244,8 @@ impl<P: Point> From<Triangle<P>> for Ring<P> {
     fn from(value: Triangle<P>) -> Self {
         Ring::new(value.0.to_vec())
     }
+}
+
+impl<'a, P: Point2> ToGeo for &'a Ring<P> {
+    type GeoType = geo::LineString<P::S>;
 }

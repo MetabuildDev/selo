@@ -1,7 +1,7 @@
 use bevy_math::*;
 use primitives::InfinitePlane3d;
 
-use crate::{Area, IterPoints};
+use crate::{Area, Embed, IterPoints, Unembed};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
@@ -83,5 +83,14 @@ impl WorkingPlane {
     pub fn project_point(&self, pos: Vec3) -> Vec3 {
         let dist = self.plane.normal.dot(pos - self.origin);
         pos - dist * self.plane.normal
+    }
+
+    pub fn transform<T: Embed, O: Unembed>(
+        &self,
+        primitive: T,
+        f: impl FnOnce(T::Type2D) -> O,
+    ) -> O::Type3D {
+        let primitive_2d = primitive.embed(*self);
+        f(primitive_2d).unembed(*self)
     }
 }
