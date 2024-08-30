@@ -1,4 +1,4 @@
-use crate::{coord_to_vec2, vec2_to_coord};
+use crate::{coord_to_vec2, vec2_to_coord, IterPoints};
 
 use super::{Line, Ring};
 use crate::point::{Point, Point2};
@@ -116,27 +116,6 @@ impl<P: Point> LineString<P> {
         Ring::new(self.0)
     }
 
-    /// Iterate over the points of this [`LineString`]
-    ///
-    /// Example
-    ///
-    /// ```
-    /// # use selo::prelude::*;
-    ///
-    /// let linestring = LineString::new(vec![Vec2::X, Vec2::Y, Vec2::ONE, Vec2::ONE * 2.0]);
-    ///
-    /// let mut points_iter = linestring.points();
-    ///
-    /// assert_eq!(points_iter.next(), Some(Vec2::X));
-    /// assert_eq!(points_iter.next(), Some(Vec2::Y));
-    /// assert_eq!(points_iter.next(), Some(Vec2::ONE));
-    /// assert_eq!(points_iter.next(), Some(Vec2::ONE * 2.0));
-    /// assert_eq!(points_iter.next(), None);
-    /// ```
-    pub fn points(&self) -> impl Iterator<Item = P> + '_ {
-        self.0.iter().copied()
-    }
-
     /// Iterate over the lines of this [`LineString`]
     ///
     /// Example
@@ -168,27 +147,43 @@ impl<P: Point> Default for MultiLineString<P> {
     }
 }
 
+// Traits
+
+impl<P: Point> IterPoints for LineString<P> {
+    type P = P;
+    fn iter_points(&self) -> impl ExactSizeIterator<Item = P> {
+        self.0.iter().copied()
+    }
+}
+
+impl<P: Point> IterPoints for MultiLineString<P> {
+    type P = P;
+    fn iter_points(&self) -> impl Iterator<Item = P> {
+        self.0.iter().flat_map(IterPoints::iter_points)
+    }
+}
+
 // Conversions
 
 impl<P: Point> From<&Ring<P>> for LineString<P> {
     fn from(r: &Ring<P>) -> Self {
-        r.to_linestring().into()
+        r.to_linestring()
     }
 }
 
-impl<P: Point2> From<&geo::LineString<P::Float>> for LineString<P> {
-    fn from(ls: &geo::LineString<P::Float>) -> Self {
+impl<P: Point2> From<&geo::LineString<P::S>> for LineString<P> {
+    fn from(ls: &geo::LineString<P::S>) -> Self {
         LineString::new(ls.0.iter().map(|c| coord_to_vec2(*c)).collect())
     }
 }
 
-impl<P: Point2> From<&LineString<P>> for geo::LineString<P::Float> {
+impl<P: Point2> From<&LineString<P>> for geo::LineString<P::S> {
     fn from(r: &LineString<P>) -> Self {
         Self(r.0.iter().map(|c| vec2_to_coord(*c)).collect())
     }
 }
 
-impl<P: Point2, TS: AsRef<[geo::LineString<P::Float>]>> From<&TS> for MultiLineString<P> {
+impl<P: Point2, TS: AsRef<[geo::LineString<P::S>]>> From<&TS> for MultiLineString<P> {
     fn from(value: &TS) -> Self {
         MultiLineString(
             value
@@ -200,7 +195,7 @@ impl<P: Point2, TS: AsRef<[geo::LineString<P::Float>]>> From<&TS> for MultiLineS
     }
 }
 
-impl<P: Point2> From<&MultiLineString<P>> for Vec<geo::LineString<P::Float>> {
+impl<P: Point2> From<&MultiLineString<P>> for Vec<geo::LineString<P::S>> {
     fn from(value: &MultiLineString<P>) -> Self {
         value
             .0

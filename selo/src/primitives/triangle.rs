@@ -27,19 +27,19 @@ impl<P: Point> Default for MultiTriangle<P> {
 
 // Conversions
 
-impl<P: Point2> From<geo::Triangle<P::Float>> for Triangle<P> {
-    fn from(tri: geo::Triangle<P::Float>) -> Self {
+impl<P: Point2> From<geo::Triangle<P::S>> for Triangle<P> {
+    fn from(tri: geo::Triangle<P::S>) -> Self {
         Triangle(tri.to_array().map(coord_to_vec2))
     }
 }
 
-impl<P: Point2> From<Triangle<P>> for geo::Triangle<P::Float> {
+impl<P: Point2> From<Triangle<P>> for geo::Triangle<P::S> {
     fn from(tri: Triangle<P>) -> Self {
         geo::Triangle::from(tri.0.map(vec2_to_coord))
     }
 }
 
-impl<P: Point2, TS: AsRef<[geo::Triangle<P::Float>]>> From<&TS> for MultiTriangle<P> {
+impl<P: Point2, TS: AsRef<[geo::Triangle<P::S>]>> From<&TS> for MultiTriangle<P> {
     fn from(value: &TS) -> Self {
         MultiTriangle(
             value
@@ -52,7 +52,7 @@ impl<P: Point2, TS: AsRef<[geo::Triangle<P::Float>]>> From<&TS> for MultiTriangl
     }
 }
 
-impl<P: Point2> From<&MultiTriangle<P>> for Vec<geo::Triangle<P::Float>> {
+impl<P: Point2> From<&MultiTriangle<P>> for Vec<geo::Triangle<P::S>> {
     fn from(value: &MultiTriangle<P>) -> Self {
         value
             .0

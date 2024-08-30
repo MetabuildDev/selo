@@ -1,5 +1,8 @@
 use super::{Line, MultiRing, Ring};
-use crate::point::{Point, Point2};
+use crate::{
+    point::{Point, Point2},
+    Area, Wedge,
+};
 
 /// Represents the inside area of a closed [`LineString`] with an arbitrary number of holes which
 /// are excluded from this area.
@@ -127,11 +130,23 @@ impl<P: Point> Polygon<P> {
             .lines()
             .chain(self.1 .0.iter().flat_map(|ring| ring.lines()))
     }
+
+    pub fn to_multi(&self) -> MultiPolygon<P> {
+        MultiPolygon(vec![self.clone()])
+    }
 }
 
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
 pub struct MultiPolygon<P: Point>(pub Vec<Polygon<P>>);
+
+impl<P: Point> std::ops::Deref for MultiPolygon<P> {
+    type Target = Vec<Polygon<P>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 impl<P: Point> Default for MultiPolygon<P> {
     fn default() -> Self {
@@ -156,9 +171,25 @@ impl<P: Point> MultiPolygon<P> {
     }
 }
 
+// Traits
+
+impl<P: Point> Area for Polygon<P> {
+    type P = P;
+    fn area(&self) -> <P as Wedge>::Output {
+        self.exterior().area() - self.interior().area()
+    }
+}
+
+impl<P: Point> Area for MultiPolygon<P> {
+    type P = P;
+    fn area(&self) -> <P as Wedge>::Output {
+        self.0.iter().map(Area::area).sum()
+    }
+}
+
 // Conversions
 
-impl<P: Point2> From<&Polygon<P>> for geo::Polygon<P::Float> {
+impl<P: Point2> From<&Polygon<P>> for geo::Polygon<P::S> {
     fn from(value: &Polygon<P>) -> Self {
         geo::Polygon::new(
             value.exterior().into(),
@@ -167,8 +198,8 @@ impl<P: Point2> From<&Polygon<P>> for geo::Polygon<P::Float> {
     }
 }
 
-impl<P: Point2> From<&geo::Polygon<P::Float>> for Polygon<P> {
-    fn from(value: &geo::Polygon<P::Float>) -> Self {
+impl<P: Point2> From<&geo::Polygon<P::S>> for Polygon<P> {
+    fn from(value: &geo::Polygon<P::S>) -> Self {
         Polygon(
             Ring::try_from(value.exterior()).unwrap(),
             MultiRing(
@@ -182,13 +213,13 @@ impl<P: Point2> From<&geo::Polygon<P::Float>> for Polygon<P> {
     }
 }
 
-impl<P: Point2> From<&geo::MultiPolygon<P::Float>> for MultiPolygon<P> {
-    fn from(value: &geo::MultiPolygon<P::Float>) -> Self {
+impl<P: Point2> From<&geo::MultiPolygon<P::S>> for MultiPolygon<P> {
+    fn from(value: &geo::MultiPolygon<P::S>) -> Self {
         MultiPolygon(value.iter().map(|poly| poly.into()).collect())
     }
 }
 
-impl<P: Point2> From<&MultiPolygon<P>> for geo::MultiPolygon<P::Float> {
+impl<P: Point2> From<&MultiPolygon<P>> for geo::MultiPolygon<P::S> {
     fn from(value: &MultiPolygon<P>) -> Self {
         geo::MultiPolygon::new(value.0.iter().map(|poly| poly.into()).collect())
     }

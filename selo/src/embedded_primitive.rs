@@ -107,7 +107,7 @@ impl<A: Flattenable> FlatPrimitive<A> {
 
 mod private_impls {
     use super::Flattenable;
-    use crate::primitives::*;
+    use crate::{primitives::*, IterPoints};
     use glam::*;
 
     impl Flattenable for Line<Vec2> {
@@ -183,7 +183,7 @@ mod private_impls {
             let proj = working_plane.xy_projection();
             LineString(
                 repr_3d
-                    .points()
+                    .iter_points()
                     .map(|p| proj.transform_point3(p))
                     .map(|p| p.truncate())
                     .collect::<Vec<_>>(),
@@ -193,7 +193,7 @@ mod private_impls {
         fn unembed(&self, working_plane: crate::prelude::WorkingPlane) -> Self::Type3D {
             let inj = working_plane.xy_injection();
             LineString(
-                self.points()
+                self.iter_points()
                     .map(|vec2| vec2.extend(0.0))
                     .map(|vec3| inj.transform_point3(vec3))
                     .collect::<Vec<_>>(),
@@ -229,7 +229,7 @@ mod private_impls {
             let proj = working_plane.xy_projection();
             Ring::new(
                 repr_3d
-                    .iter_points_open()
+                    .iter_points()
                     .map(|vec3| proj.transform_point3(vec3))
                     .map(|vec2| vec2.truncate())
                     .collect::<Vec<_>>(),
@@ -239,7 +239,7 @@ mod private_impls {
         fn unembed(&self, working_plane: crate::prelude::WorkingPlane) -> Self::Type3D {
             let inj = working_plane.xy_injection();
             Ring::new(
-                self.iter_points_open()
+                self.iter_points()
                     .map(|vec2| vec2.extend(0.0))
                     .map(|vec3| inj.transform_point3(vec3))
                     .collect::<Vec<_>>(),

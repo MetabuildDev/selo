@@ -1,8 +1,13 @@
+#![allow(refining_impl_trait)]
+
 pub use embedded_primitive::*;
 use geo::{MapCoords as _, SpadeBoolops, StitchTriangles as _, TriangulateSpade as _};
 
 mod embedded_primitive;
 mod working_plane;
+
+mod traits;
+pub use traits::*;
 
 mod utils;
 use utils::*;
@@ -19,6 +24,7 @@ pub mod prelude {
     pub use super::embedded_primitive::FlatPrimitive;
     pub use super::point::*;
     pub use super::primitives::*;
+    pub use super::traits::*;
     pub use super::working_plane::WorkingPlane;
     pub use glam::*;
 }
@@ -34,9 +40,9 @@ pub fn intersect_line_2d_point<P: Point2>(a: Line<P>, b: Line<P>) -> Option<P> {
 }
 
 pub fn triangulate_glam<P: Point2>(polygon: Polygon<P>) -> Vec<Triangle<P>> {
-    let triangles = geo::Polygon::<P::Float>::from(&polygon)
+    let triangles = geo::Polygon::<P::S>::from(&polygon)
         .constrained_triangulation(geo::triangulate_spade::SpadeTriangulationConfig {
-            snap_radius: P::Float::from(0.001),
+            snap_radius: P::S::from(0.001),
         })
         .unwrap();
 
@@ -72,7 +78,7 @@ pub fn boolops_union_glam<P: Point2>(rings: impl IntoIterator<Item = Ring<P>>) -
         .clone()
         .into_iter()
         .map(|ring| MultiPolygon(vec![ring.to_polygon()]))
-        .map(|multi_poly| geo::MultiPolygon::<P::Float>::from(&multi_poly))
+        .map(|multi_poly| geo::MultiPolygon::<P::S>::from(&multi_poly))
         .try_fold(empty_multipolygon::<P>(), |multi_poly, other| {
             SpadeBoolops::union(&multi_poly, &other)
         })
@@ -83,7 +89,7 @@ pub fn boolops_union_glam<P: Point2>(rings: impl IntoIterator<Item = Ring<P>>) -
 }
 
 pub fn buffer_polygon_glam<P: Point2>(polygon: Polygon<P>, expand_by: f64) -> MultiPolygon<P> {
-    let geo_polygon = geo::Polygon::<P::Float>::from(&polygon);
+    let geo_polygon = geo::Polygon::<P::S>::from(&polygon);
     let polygon_f64 = geo_polygon.map_coords(cast_coord);
 
     let buffered = geo_buffer::buffer_polygon(&polygon_f64, expand_by);
@@ -97,7 +103,7 @@ pub fn skeleton_lines_glam<P: Point2>(
     polygon: Polygon<P>,
     orientation: bool,
 ) -> Vec<LineString<P>> {
-    let geo_polygon = geo::Polygon::<P::Float>::from(&polygon);
+    let geo_polygon = geo::Polygon::<P::S>::from(&polygon);
     let polygon_f64 = geo_polygon.map_coords(cast_coord);
 
     let skeleton_lines = geo_buffer::skeleton_of_polygon_to_linestring(&polygon_f64, orientation);
