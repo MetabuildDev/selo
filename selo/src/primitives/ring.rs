@@ -1,4 +1,4 @@
-use std::iter::once;
+use std::{iter::once, ops::Index};
 
 use itertools::Itertools as _;
 
@@ -154,6 +154,36 @@ impl<P: Point> Ring<P> {
             .circular_tuple_windows()
             .map(|(a, b)| Line([*a, *b]))
     }
+
+    /// Reverses the winding of the `Ring`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use selo::prelude::*;
+    ///
+    /// let ring = Ring::new(vec![Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]);
+    ///
+    /// let mut iter = ring.lines();
+    ///
+    /// assert_eq!(iter.next(), Some(Line([Vec2::Y, Vec2::ZERO])));
+    /// assert_eq!(iter.next(), Some(Line([Vec2::ONE, Vec2::Y])));
+    /// assert_eq!(iter.next(), Some(Line([Vec2::X, Vec2::ONE])));
+    /// assert_eq!(iter.next(), Some(Line([Vec2::ZERO, Vec2::X])));
+    /// assert_eq!(iter.next(), None);
+    /// ```
+    pub fn reverse(&self) -> Self {
+        Ring(self.0.iter().copied().rev().collect())
+    }
+
+    pub fn try_set_point(&mut self, i: usize, new: P) -> bool {
+        let len = self.0.len();
+        if self.0[(i + 1) % len] == new || self.0[(i + len - 1) % len] == new {
+            return false;
+        }
+        self.0[i] = new;
+        true
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -185,9 +215,19 @@ impl<P: Point> MultiRing<P> {
 
 // Traits
 
+impl<P: Point> Index<usize> for Ring<P> {
+    type Output = P;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.0[index]
+    }
+}
+
 impl<P: Point> IterPoints for Ring<P> {
     type P = P;
-    fn iter_points(&self) -> impl Clone + ExactSizeIterator<Item = P> {
+    fn iter_points(
+        &self,
+    ) -> impl Clone + ExactSizeIterator<Item = P> + DoubleEndedIterator<Item = P> {
         self.0.iter().copied()
     }
 }

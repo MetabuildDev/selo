@@ -1,5 +1,6 @@
 use num_traits::Float;
 
+use crate::errors::GeometryError;
 use crate::utils::{coord_to_vec2, vec2_to_coord};
 
 use crate::point::{Point, Point2};
@@ -19,6 +20,13 @@ use crate::{ToGeo, ToSelo};
 pub struct Line<P: Point>(pub [P; 2]);
 
 impl<P: Point> Line<P> {
+    pub fn new(a: P, b: P) -> Result<Self, GeometryError> {
+        if a == b {
+            return Err(GeometryError::InvalidGeometry);
+        }
+        Ok(Self([a, b]))
+    }
+
     pub fn src(&self) -> P {
         self.0[0]
     }
@@ -50,6 +58,15 @@ impl<P: Point> Line<P> {
         let v = p - self.src();
         let to_dst = self.to_dst();
         to_dst.dot(v) / to_dst.dot(to_dst)
+    }
+    pub fn scalar_of_normed(&self, p: P) -> P::S {
+        self.scalar_of(p) * self.length()
+    }
+
+    pub fn project(&self, p: P) -> P {
+        let d = self.to_dst();
+        let v = p - self.src();
+        d * (v.dot(d) / d.dot(d)) + self.src()
     }
 }
 

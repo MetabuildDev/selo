@@ -27,6 +27,11 @@ pub trait Point:
     + 'static
 {
     type S: Float + Debug + CoordNum + GeoFloat + /* for spade boolops */ From<f32> + Into<f64>;
+
+    fn abs_diff_eq(self, rhs: Self, max_abs_diff: Self::S) -> bool {
+        let diff = self.sub(rhs);
+        diff.dot(diff) < max_abs_diff * max_abs_diff
+    }
 }
 
 // Dot product
@@ -118,7 +123,7 @@ impl Point for glam::DVec3 {
     type S = f64;
 }
 
-pub trait Point2: Point {
+pub trait Point2: Point + Wedge<Output = Self::S> {
     fn x(self) -> Self::S;
     fn y(self) -> Self::S;
     fn new(x: Self::S, y: Self::S) -> Self;
@@ -127,11 +132,9 @@ impl Point2 for glam::Vec2 {
     fn x(self) -> Self::S {
         self.x
     }
-
     fn y(self) -> Self::S {
         self.y
     }
-
     fn new(x: Self::S, y: Self::S) -> Self {
         Self { x, y }
     }
@@ -140,12 +143,48 @@ impl Point2 for glam::DVec2 {
     fn x(self) -> Self::S {
         self.x
     }
+    fn y(self) -> Self::S {
+        self.y
+    }
+    fn new(x: Self::S, y: Self::S) -> Self {
+        Self { x, y }
+    }
+}
+
+pub trait Point3: Point {
+    fn x(self) -> Self::S;
+    fn y(self) -> Self::S;
+    fn z(self) -> Self::S;
+    fn new(x: Self::S, y: Self::S, z: Self::S) -> Self;
+}
+impl Point3 for glam::Vec3 {
+    fn x(self) -> Self::S {
+        self.x
+    }
+    fn y(self) -> Self::S {
+        self.y
+    }
+    fn z(self) -> Self::S {
+        self.z
+    }
+
+    fn new(x: Self::S, y: Self::S, z: Self::S) -> Self {
+        Self { x, y, z }
+    }
+}
+impl Point3 for glam::DVec3 {
+    fn x(self) -> Self::S {
+        self.x
+    }
 
     fn y(self) -> Self::S {
         self.y
     }
+    fn z(self) -> Self::S {
+        self.z
+    }
 
-    fn new(x: Self::S, y: Self::S) -> Self {
-        Self { x, y }
+    fn new(x: Self::S, y: Self::S, z: Self::S) -> Self {
+        Self { x, y, z }
     }
 }
