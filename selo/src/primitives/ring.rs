@@ -278,6 +278,11 @@ impl<P: Point2> From<&Ring<P>> for geo::LineString<P::S> {
         (&value.to_linestring()).into()
     }
 }
+impl<P: Point2> From<Ring<P>> for geo::LineString<P::S> {
+    fn from(value: Ring<P>) -> Self {
+        value.into()
+    }
+}
 
 impl<P: Point> From<Triangle<P>> for Ring<P> {
     fn from(value: Triangle<P>) -> Self {
@@ -286,6 +291,13 @@ impl<P: Point> From<Triangle<P>> for Ring<P> {
 }
 
 impl<'a, P: Point2> ToGeo for &'a Ring<P> {
+    type GeoType = geo::LineString<P::S>;
+    fn to_geo(self) -> Self::GeoType {
+        self.into()
+    }
+}
+
+impl<'a, P: Point2> ToGeo for Ring<P> {
     type GeoType = geo::LineString<P::S>;
     fn to_geo(self) -> Self::GeoType {
         self.into()

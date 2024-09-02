@@ -2,6 +2,7 @@ use std::{
     fmt::Debug,
     iter::Sum,
     ops::{Add, AddAssign, Div, Mul, Sub, SubAssign},
+    str::FromStr,
 };
 
 use geo::{CoordNum, GeoFloat};
@@ -205,7 +206,7 @@ impl Point3 for glam::DVec3 {
     }
 }
 
-pub trait SeloScalar: Float + Debug + CoordNum + GeoFloat + /* for spade boolops */ From<f32> + Into<f64> {
+pub trait SeloScalar: Float + Debug + CoordNum + GeoFloat + FromStr +  /* for spade boolops */ From<f32> + Into<f64> {
     type Point2: Point2<S2 = Self>;
     type Point3: Point3<S3 = Self>;
 }
