@@ -18,3 +18,27 @@ bevy_egui = "0.28"
 bevy_mod_picking = "0.20"
 
 selo = { path = "selo" }
+
+# ===========
+# dev profile
+# ===========
+
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.dev]
+opt-level = 1
+lto = false
+
+# ===============
+# release profile
+# ===============
+
+# https://nnethercote.github.io/perf-book/build-configuration.html#maximizing-runtime-speed
+[profile.release]
+# https://nnethercote.github.io/perf-book/build-configuration.html#optimization-level
+opt-level = "s"
+# https://nnethercote.github.io/perf-book/build-configuration.html#codegen-units
+codegen-units = 1
+# https://nnethercote.github.io/perf-book/build-configuration.html#link-time-optimization
+lto = "fat"
