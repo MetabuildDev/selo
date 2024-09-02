@@ -26,7 +26,7 @@ pub trait Point:
     + Sync
     + 'static
 {
-    type S: Float + Debug + CoordNum + GeoFloat + /* for spade boolops */ From<f32> + Into<f64>;
+    type S: SeloScalar;
 
     fn abs_diff_eq(self, rhs: Self, max_abs_diff: Self::S) -> bool {
         let diff = self.sub(rhs);
@@ -123,12 +123,18 @@ impl Point for glam::DVec3 {
     type S = f64;
 }
 
-pub trait Point2: Point + Wedge<Output = Self::S> {
+pub trait Point2: Point<S = Self::S2> + Wedge<Output = Self::S> {
+    // This is only needed to wire up the bounds.
+    // Without it, there is no way to specify that `<Self::S as SeloScalar>::Point2` must be equal to Self
+    type S2: SeloScalar<Point2 = Self>;
+
     fn x(self) -> Self::S;
     fn y(self) -> Self::S;
     fn new(x: Self::S, y: Self::S) -> Self;
 }
 impl Point2 for glam::Vec2 {
+    type S2 = Self::S;
+
     fn x(self) -> Self::S {
         self.x
     }
@@ -140,6 +146,8 @@ impl Point2 for glam::Vec2 {
     }
 }
 impl Point2 for glam::DVec2 {
+    type S2 = Self::S;
+
     fn x(self) -> Self::S {
         self.x
     }
@@ -151,40 +159,62 @@ impl Point2 for glam::DVec2 {
     }
 }
 
-pub trait Point3: Point {
+pub trait Point3: Point<S = Self::S3> {
+    // This is only needed to wire up the bounds.
+    // Without it, there is no way to specify that `<Self::S as SeloScalar>::Point3` must be equal to Self
+    type S3: SeloScalar<Point3 = Self>;
+
     fn x(self) -> Self::S;
     fn y(self) -> Self::S;
     fn z(self) -> Self::S;
     fn new(x: Self::S, y: Self::S, z: Self::S) -> Self;
 }
 impl Point3 for glam::Vec3 {
-    fn x(self) -> Self::S {
+    type S3 = Self::S;
+
+    fn x(self) -> Self::S3 {
         self.x
     }
-    fn y(self) -> Self::S {
+    fn y(self) -> Self::S3 {
         self.y
     }
-    fn z(self) -> Self::S {
+    fn z(self) -> Self::S3 {
         self.z
     }
 
-    fn new(x: Self::S, y: Self::S, z: Self::S) -> Self {
+    fn new(x: Self::S3, y: Self::S3, z: Self::S3) -> Self {
         Self { x, y, z }
     }
 }
 impl Point3 for glam::DVec3 {
-    fn x(self) -> Self::S {
+    type S3 = Self::S;
+
+    fn x(self) -> Self::S3 {
         self.x
     }
 
-    fn y(self) -> Self::S {
+    fn y(self) -> Self::S3 {
         self.y
     }
-    fn z(self) -> Self::S {
+    fn z(self) -> Self::S3 {
         self.z
     }
 
-    fn new(x: Self::S, y: Self::S, z: Self::S) -> Self {
+    fn new(x: Self::S3, y: Self::S3, z: Self::S3) -> Self {
         Self { x, y, z }
     }
+}
+
+pub trait SeloScalar: Float + Debug + CoordNum + GeoFloat + /* for spade boolops */ From<f32> + Into<f64> {
+    type Point2: Point2<S2 = Self>;
+    type Point3: Point3<S3 = Self>;
+}
+
+impl SeloScalar for f32 {
+    type Point2 = glam::Vec2;
+    type Point3 = glam::Vec3;
+}
+impl SeloScalar for f64 {
+    type Point2 = glam::DVec2;
+    type Point3 = glam::DVec3;
 }

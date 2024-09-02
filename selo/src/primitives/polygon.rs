@@ -1,7 +1,7 @@
 use super::{Line, MultiRing, Ring};
 use crate::{
     point::{Point, Point2},
-    Area, ToGeo, ToSelo, Wedge,
+    Area, SeloScalar, ToGeo, ToSelo, Wedge,
 };
 
 /// Represents the inside area of a closed [`LineString`] with an arbitrary number of holes which
@@ -227,11 +227,27 @@ impl<P: Point2> From<&MultiPolygon<P>> for geo::MultiPolygon<P::S> {
 
 impl<'a, P: Point2> ToGeo for &'a Polygon<P> {
     type GeoType = geo::Polygon<P::S>;
+    fn to_geo(self) -> Self::GeoType {
+        self.into()
+    }
 }
 
 impl<'a, P: Point2> ToGeo for &'a MultiPolygon<P> {
     type GeoType = geo::MultiPolygon<P::S>;
+    fn to_geo(self) -> Self::GeoType {
+        self.into()
+    }
 }
 
-impl<'a, P: Point2> ToSelo<Polygon<P>> for &'a geo::Polygon<P::S> {}
-impl<'a, P: Point2> ToSelo<MultiPolygon<P>> for &'a geo::MultiPolygon<P::S> {}
+impl<'a, S: SeloScalar> ToSelo for &'a geo::Polygon<S> {
+    type SeloType = Polygon<S::Point2>;
+    fn to_selo(self) -> Self::SeloType {
+        self.into()
+    }
+}
+impl<'a, S: SeloScalar> ToSelo for &'a geo::MultiPolygon<S> {
+    type SeloType = MultiPolygon<S::Point2>;
+    fn to_selo(self) -> Self::SeloType {
+        self.into()
+    }
+}

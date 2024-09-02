@@ -287,4 +287,7 @@ impl<P: Point> From<Triangle<P>> for Ring<P> {
 
 impl<'a, P: Point2> ToGeo for &'a Ring<P> {
     type GeoType = geo::LineString<P::S>;
+    fn to_geo(self) -> Self::GeoType {
+        self.into()
+    }
 }
