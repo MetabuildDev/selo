@@ -2,22 +2,24 @@ use glam::Vec2;
 
 use crate::{Line, MultiPolygon, Polygon, Ring};
 
+#[inline]
 pub fn split_ring_polygon(polygon: &Polygon<Vec2>) -> MultiPolygon<Vec2> {
-    find_double_line(polygon)
-        .and_then(|line| find_points(polygon, line))
-        .map(|(point_before, point_after)| split_poly(polygon, point_before, point_after))
-        .map(|(poly_split_1, poly_split_2)| {
-            MultiPolygon(
+    MultiPolygon(
+        find_double_line(polygon)
+            .and_then(|line| find_points(polygon, line))
+            .map(|(point_before, point_after)| split_poly(polygon, point_before, point_after))
+            .map(|(poly_split_1, poly_split_2)| {
                 [
                     split_ring_polygon(&poly_split_1).0,
                     split_ring_polygon(&poly_split_2).0,
                 ]
-                .concat(),
-            )
-        })
-        .unwrap_or_else(|| MultiPolygon(vec![polygon.clone()]))
+                .concat()
+            })
+            .unwrap_or_else(|| vec![polygon.clone()]),
+    )
 }
 
+#[inline]
 fn split_poly(
     polygon: &Polygon<Vec2>,
     point_before: Vec2,
@@ -52,17 +54,20 @@ fn split_poly(
     (make_poly(p1_lines), make_poly(p2_lines))
 }
 
+#[inline]
 fn find_points(polygon: &Polygon<Vec2>, line: Line<Vec2>) -> Option<(Vec2, Vec2)> {
-    let mut lines = polygon.exterior().lines().collect::<Vec<_>>();
-    let end = lines.iter().cloned().take(2).collect::<Vec<_>>();
-    lines.extend(end);
-    lines
+    polygon
+        .exterior()
+        .lines()
+        .chain(polygon.exterior().lines().take(2))
+        .collect::<Vec<_>>()
         .windows(3)
         .find(|win| win[1] == line)
         .map(|win| (win[0], win[2]))
         .map(|(l_before, l_after)| (l_before.src(), l_after.dst()))
 }
 
+#[inline]
 fn find_double_line(polygon: &Polygon<Vec2>) -> Option<Line<Vec2>> {
     polygon
         .exterior()

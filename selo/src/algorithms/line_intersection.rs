@@ -12,7 +12,7 @@ impl<P: Point2> Line<P> {
     /// - b scales (o.dst - o.src) to the intersection
     /// - Line2D intersections only happen if a and b are within [0.0, 1.0]. Otherwise, either line (or both) get cut
     ///   outside of its segment.
-    #[inline(always)]
+    #[inline]
     pub fn intersection(&self, o: &Self, tolerance: P::S) -> Line2DIntersection<P> {
         let r = self.to_dst();
         let s = o.to_dst();
@@ -81,7 +81,7 @@ pub enum Line2DIntersectionKind<P: Point2> {
     OutsideDst(P::S),
 }
 impl<P: Point2> Line2DIntersectionKind<P> {
-    #[inline(always)]
+    #[inline]
     fn new(scalar: P::S, tolerance: P::S) -> Self {
         if scalar < -tolerance {
             Self::OutsideSrc(scalar)
@@ -92,13 +92,13 @@ impl<P: Point2> Line2DIntersectionKind<P> {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn is_endpoint(&self, tolerance: P::S) -> bool {
         let scalar = self.scalar();
         scalar.abs() <= tolerance || (scalar - <P::S>::from(1.0)).abs() <= tolerance
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn scalar(&self) -> P::S {
         match self {
             Self::Inside(s) | Self::OutsideSrc(s) | Self::OutsideDst(s) => *s,
@@ -106,12 +106,12 @@ impl<P: Point2> Line2DIntersectionKind<P> {
     }
 
     /// Returns true if the intersection touches the line segment (including endpoints).
-    #[inline(always)]
+    #[inline]
     pub fn touches_linesegment(&self) -> bool {
         matches!(self, Self::Inside(_))
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn is_true_intersection(&self) -> bool {
         match self {
             &Self::Inside(s) => s > <P::S>::from(0.0) && s < <P::S>::from(1.0),
@@ -136,7 +136,7 @@ pub enum Line2DIntersection<P: Point2> {
 }
 impl<P: Point2> Line2DIntersection<P> {
     /// Returns true if both line segments have a true intersection.
-    #[inline(always)]
+    #[inline]
     pub fn intersect(&self) -> bool {
         match self {
             Self::Simple(_, a, b) => a.touches_linesegment() && b.touches_linesegment(),
@@ -146,7 +146,7 @@ impl<P: Point2> Line2DIntersection<P> {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn is_true_intersection(&self) -> bool {
         match self {
             Self::Simple(_, a, b) => a.is_true_intersection() && b.is_true_intersection(),
@@ -154,7 +154,7 @@ impl<P: Point2> Line2DIntersection<P> {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn intersect_exclude_endpoints(&self, tolerance: P::S) -> bool {
         match self {
             Self::Simple(
@@ -176,15 +176,13 @@ impl<P: Point2> Line2DIntersection<P> {
 
     /// Returns the position of the true line intersection - if any.
     /// If the lines overlap, returns an arbitrary point of the overlap.
-    #[inline(always)]
+    #[inline]
     pub fn pos(&self) -> Option<P> {
         match self {
             Self::Simple(p, a, b) => {
-                if a.touches_linesegment() && b.touches_linesegment() {
-                    return Some(*p);
-                }
-                None
+                (a.touches_linesegment() && b.touches_linesegment()).then_some(*p)
             }
+
             Self::CollinearOverlap(ls) => Some(ls.center()),
             Self::CollinearTouch(p) => Some(*p),
             _ => None,
