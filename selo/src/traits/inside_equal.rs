@@ -10,18 +10,21 @@ pub trait InsideEqual {
 
 impl<P: Point> InsideEqual for Ring<P> {
     fn inside_eq(&self, other: &Self) -> bool {
-        if self.points_open().len() != other.points_open().len() {
+        let len = self.points_open().len();
+        if len != other.points_open().len() {
             return false;
         }
-        (0..self.points_open().len()).any(|i| {
+        (0..len).any(|i| {
             self.iter_points()
                 .cycle()
-                .eq(other.iter_points().cycle().skip(i))
-        }) || (0..self.points_open().len()).any(|i| {
-            self.iter_points()
-                .rev()
+                .take(len)
+                .eq(other.iter_points().cycle().skip(i).take(len))
+        }) || (0..len).any(|i| {
+            self.iter_points().rev().cycle().take(len).eq(other
+                .iter_points()
                 .cycle()
-                .eq(other.iter_points().cycle().skip(i))
+                .skip(i)
+                .take(len))
         })
     }
 }
@@ -40,5 +43,26 @@ impl<P: Point> InsideEqual for MultiRing<P> {
 impl<P: Point> InsideEqual for Polygon<P> {
     fn inside_eq(&self, other: &Self) -> bool {
         self.exterior().inside_eq(other.exterior()) && self.interior().inside_eq(other.interior())
+    }
+}
+
+#[cfg(test)]
+mod inside_eq_trait {
+    use super::*;
+    use glam::*;
+
+    #[test]
+    fn polygon() {
+        let polygon_1 = Polygon::new(
+            Ring::new(vec![Vec2::ZERO, Vec2::X, Vec2::Y]),
+            MultiRing::empty(),
+        );
+        let polygon_2 = Polygon::new(
+            Ring::new(vec![Vec2::Y, Vec2::X, Vec2::ZERO]),
+            MultiRing::empty(),
+        );
+
+        assert!(polygon_1.inside_eq(&polygon_1));
+        assert!(polygon_1.inside_eq(&polygon_2));
     }
 }
