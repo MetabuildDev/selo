@@ -166,29 +166,6 @@ impl<P: Point> Ring<P> {
             .map(|(a, b)| Line([*a, *b]))
     }
 
-    /// Reverses the winding of the `Ring`.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use selo::prelude::*;
-    ///
-    /// let ring = Ring::new(vec![Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]);
-    /// let rev_ring = ring.reverse();
-    ///
-    /// let mut iter = rev_ring.lines();
-    ///
-    /// assert_eq!(iter.next(), Some(Line([Vec2::Y, Vec2::ONE])));
-    /// assert_eq!(iter.next(), Some(Line([Vec2::ONE, Vec2::X])));
-    /// assert_eq!(iter.next(), Some(Line([Vec2::X, Vec2::ZERO])));
-    /// assert_eq!(iter.next(), Some(Line([Vec2::ZERO, Vec2::Y])));
-    /// assert_eq!(iter.next(), None);
-    /// ```
-    #[inline]
-    pub fn reverse(&self) -> Self {
-        Ring(self.0.iter().copied().rev().collect())
-    }
-
     /// tries to set the value of the `n`th point of the [`Ring`] and returns whether the function
     /// succeeded.
     ///

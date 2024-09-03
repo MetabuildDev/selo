@@ -16,8 +16,5 @@ pub use map::*;
 mod inside_equal;
 pub use inside_equal::*;
 
-mod apply_geo;
-pub use apply_geo::*;
-
 mod flip;
 pub use flip::*;

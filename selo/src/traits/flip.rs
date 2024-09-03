@@ -2,7 +2,24 @@ use crate::{primitives::*, Point};
 
 use super::IterPoints;
 
-/// Flip winding of a primitive
+/// Flips the winding of a primitive.
+///
+/// # Example
+///
+/// ```
+/// # use selo::prelude::*;
+///
+/// let ring = Ring::new(vec![Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]);
+/// let rev_ring = ring.flip();
+///
+/// let mut iter = rev_ring.lines();
+///
+/// assert_eq!(iter.next(), Some(Line([Vec2::Y, Vec2::ONE])));
+/// assert_eq!(iter.next(), Some(Line([Vec2::ONE, Vec2::X])));
+/// assert_eq!(iter.next(), Some(Line([Vec2::X, Vec2::ZERO])));
+/// assert_eq!(iter.next(), Some(Line([Vec2::ZERO, Vec2::Y])));
+/// assert_eq!(iter.next(), None);
+/// ```
 pub trait Flip {
     fn flip(&self) -> Self;
 }
