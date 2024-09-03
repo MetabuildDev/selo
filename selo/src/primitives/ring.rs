@@ -176,6 +176,11 @@ impl<P: Point> Ring<P> {
         Ring(self.0.iter().copied().rev().collect())
     }
 
+    /// tries to set the value of the `n`th point of the [`Ring`] and returns whether the function
+    /// succeeded.
+    ///
+    /// The attempt to set the point fails if it would result in two consecutive and identical
+    /// points.
     pub fn try_set_point(&mut self, i: usize, new: P) -> bool {
         let len = self.0.len();
         if self.0[(i + 1) % len] == new || self.0[(i + len - 1) % len] == new {
