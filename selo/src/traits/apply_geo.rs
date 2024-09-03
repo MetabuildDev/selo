@@ -11,6 +11,7 @@ impl<To: ToSelo, T> ApplyGeo<To> for T
 where
     for<'a> &'a T: ToGeo,
 {
+    #[inline]
     fn apply_geo(&self, f: impl Fn(<&Self as ToGeo>::GeoType) -> To) -> To::SeloType {
         let geo = self.to_geo();
         f(geo).to_selo()

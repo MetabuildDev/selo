@@ -20,6 +20,7 @@ use crate::{SeloScalar, ToGeo, ToSelo};
 pub struct Line<P: Point>(pub [P; 2]);
 
 impl<P: Point> Line<P> {
+    #[inline]
     pub fn new(a: P, b: P) -> Result<Self, GeometryError> {
         if a == b {
             return Err(GeometryError::InvalidGeometry);
@@ -27,42 +28,55 @@ impl<P: Point> Line<P> {
         Ok(Self([a, b]))
     }
 
+    #[inline]
     pub fn src(&self) -> P {
         self.0[0]
     }
+
+    #[inline]
     pub fn dst(&self) -> P {
         self.0[1]
     }
 
+    #[inline]
     pub fn center(&self) -> P {
         (self.0[0] + self.0[1]) / <<P as Point>::S as From<f32>>::from(2f32)
     }
 
+    #[inline]
     pub fn to_dst(&self) -> P {
         self.0[1] - self.0[0]
     }
 
+    #[inline]
     pub fn length(&self) -> P::S {
         let to_dst = self.to_dst();
         to_dst.dot(to_dst).sqrt()
     }
 
+    #[inline]
     pub fn swap_coords(&self) -> Self {
         Self([self.dst(), self.src()])
     }
 
+    #[inline]
     pub fn pos_scaled(&self, t: P::S) -> P {
         self.0[0] + (self.0[1] - self.0[0]) * t
     }
+
+    #[inline]
     pub fn scalar_of(&self, p: P) -> P::S {
         let v = p - self.src();
         let to_dst = self.to_dst();
         to_dst.dot(v) / to_dst.dot(to_dst)
     }
+
+    #[inline]
     pub fn scalar_of_normed(&self, p: P) -> P::S {
         self.scalar_of(p) * self.length()
     }
 
+    #[inline]
     pub fn project(&self, p: P) -> P {
         let d = self.to_dst();
         let v = p - self.src();
@@ -73,12 +87,14 @@ impl<P: Point> Line<P> {
 // Conversions
 
 impl<P: Point2> From<geo::Line<P::S>> for Line<P> {
+    #[inline]
     fn from(ls: geo::Line<P::S>) -> Self {
         Line([coord_to_vec2(ls.start), coord_to_vec2(ls.end)])
     }
 }
 
 impl<P: Point2> From<Line<P>> for geo::Line<P::S> {
+    #[inline]
     fn from(line: Line<P>) -> Self {
         geo::Line::new(vec2_to_coord(line.src()), vec2_to_coord(line.dst()))
     }
@@ -86,6 +102,7 @@ impl<P: Point2> From<Line<P>> for geo::Line<P::S> {
 
 impl<P: Point2> ToGeo for Line<P> {
     type GeoType = geo::Line<P::S>;
+    #[inline]
     fn to_geo(self) -> Self::GeoType {
         self.into()
     }
@@ -93,6 +110,7 @@ impl<P: Point2> ToGeo for Line<P> {
 
 impl<S: SeloScalar> ToSelo for geo::Line<S> {
     type SeloType = Line<S::Point2>;
+    #[inline]
     fn to_selo(self) -> Self::SeloType {
         self.into()
     }

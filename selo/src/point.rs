@@ -29,6 +29,7 @@ pub trait Point:
 {
     type S: SeloScalar;
 
+    #[inline]
     fn abs_diff_eq(self, rhs: Self, max_abs_diff: Self::S) -> bool {
         let diff = self.sub(rhs);
         diff.dot(diff) < max_abs_diff * max_abs_diff
@@ -43,24 +44,32 @@ pub trait Dot {
 
 impl Dot for glam::Vec2 {
     type Output = f32;
+
+    #[inline]
     fn dot(self, rhs: Self) -> Self::Output {
         glam::Vec2::dot(self, rhs)
     }
 }
 impl Dot for glam::DVec2 {
     type Output = f64;
+
+    #[inline]
     fn dot(self, rhs: Self) -> Self::Output {
         glam::DVec2::dot(self, rhs)
     }
 }
 impl Dot for glam::Vec3 {
     type Output = f32;
+
+    #[inline]
     fn dot(self, rhs: Self) -> Self::Output {
         glam::Vec3::dot(self, rhs)
     }
 }
 impl Dot for glam::DVec3 {
     type Output = f64;
+
+    #[inline]
     fn dot(self, rhs: Self) -> Self::Output {
         glam::DVec3::dot(self, rhs)
     }
@@ -85,6 +94,8 @@ pub trait Wedge {
 impl Wedge for glam::Vec2 {
     type Scalar = f32;
     type Output = f32;
+
+    #[inline]
     fn wedge(self, rhs: Self) -> Self::Output {
         self.perp_dot(rhs)
     }
@@ -92,6 +103,8 @@ impl Wedge for glam::Vec2 {
 impl Wedge for glam::DVec2 {
     type Scalar = f64;
     type Output = f64;
+
+    #[inline]
     fn wedge(self, rhs: Self) -> Self::Output {
         self.perp_dot(rhs)
     }
@@ -99,6 +112,8 @@ impl Wedge for glam::DVec2 {
 impl Wedge for glam::Vec3 {
     type Scalar = f32;
     type Output = glam::Vec3;
+
+    #[inline]
     fn wedge(self, rhs: Self) -> Self::Output {
         self.cross(rhs)
     }
@@ -106,6 +121,8 @@ impl Wedge for glam::Vec3 {
 impl Wedge for glam::DVec3 {
     type Scalar = f64;
     type Output = glam::DVec3;
+
+    #[inline]
     fn wedge(self, rhs: Self) -> Self::Output {
         self.cross(rhs)
     }
@@ -136,12 +153,17 @@ pub trait Point2: Point<S = Self::S2> + Wedge<Output = Self::S> {
 impl Point2 for glam::Vec2 {
     type S2 = Self::S;
 
+    #[inline]
     fn x(self) -> Self::S {
         self.x
     }
+
+    #[inline]
     fn y(self) -> Self::S {
         self.y
     }
+
+    #[inline]
     fn new(x: Self::S, y: Self::S) -> Self {
         Self { x, y }
     }
@@ -149,12 +171,17 @@ impl Point2 for glam::Vec2 {
 impl Point2 for glam::DVec2 {
     type S2 = Self::S;
 
+    #[inline]
     fn x(self) -> Self::S {
         self.x
     }
+
+    #[inline]
     fn y(self) -> Self::S {
         self.y
     }
+
+    #[inline]
     fn new(x: Self::S, y: Self::S) -> Self {
         Self { x, y }
     }
@@ -173,16 +200,22 @@ pub trait Point3: Point<S = Self::S3> {
 impl Point3 for glam::Vec3 {
     type S3 = Self::S;
 
+    #[inline]
     fn x(self) -> Self::S3 {
         self.x
     }
+
+    #[inline]
     fn y(self) -> Self::S3 {
         self.y
     }
+
+    #[inline]
     fn z(self) -> Self::S3 {
         self.z
     }
 
+    #[inline]
     fn new(x: Self::S3, y: Self::S3, z: Self::S3) -> Self {
         Self { x, y, z }
     }
@@ -190,17 +223,22 @@ impl Point3 for glam::Vec3 {
 impl Point3 for glam::DVec3 {
     type S3 = Self::S;
 
+    #[inline]
     fn x(self) -> Self::S3 {
         self.x
     }
 
+    #[inline]
     fn y(self) -> Self::S3 {
         self.y
     }
+
+    #[inline]
     fn z(self) -> Self::S3 {
         self.z
     }
 
+    #[inline]
     fn new(x: Self::S3, y: Self::S3, z: Self::S3) -> Self {
         Self { x, y, z }
     }

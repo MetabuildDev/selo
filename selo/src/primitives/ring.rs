@@ -23,6 +23,7 @@ use crate::point::{Point, Point2};
 pub struct Ring<P: Point>(Vec<P>);
 
 impl<P: Point> Default for Ring<P> {
+    #[inline]
     fn default() -> Self {
         Self::new(vec![])
     }
@@ -51,6 +52,7 @@ impl<P: Point> Ring<P> {
     /// assert_eq!(ring_from_closed.points_open(), &expected);
     /// assert_eq!(ring_extremely_deduped.points_open(), &expected);
     /// ```
+    #[inline]
     pub fn new(points: impl Into<Vec<P>>) -> Self {
         let mut points = points.into();
         points.dedup();
@@ -71,6 +73,7 @@ impl<P: Point> Ring<P> {
     ///
     /// assert_eq!(ring.points_open(), &[Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]);
     /// ```
+    #[inline]
     pub fn points_open(&self) -> &[P] {
         &self.0
     }
@@ -93,6 +96,7 @@ impl<P: Point> Ring<P> {
     /// assert_eq!(iter.next(), Some(Vec2::ZERO));
     /// assert_eq!(iter.next(), None);
     /// ```
+    #[inline]
     pub fn iter_points_duplicate_endpoints(&self) -> impl Iterator<Item = P> + '_ {
         self.0.iter().chain(self.0.first()).copied()
     }
@@ -110,6 +114,7 @@ impl<P: Point> Ring<P> {
     ///
     /// assert_eq!(linestring, LineString::new(vec![Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y, Vec2::ZERO]));
     /// ```
+    #[inline]
     pub fn to_linestring(&self) -> LineString<P> {
         LineString::new(self.0.iter().cloned().chain(once(self.0[0])).collect())
     }
@@ -127,6 +132,7 @@ impl<P: Point> Ring<P> {
     ///
     /// assert_eq!(polygon, Polygon::new(Ring::new(vec![Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]), MultiRing::empty()));
     /// ```
+    #[inline]
     pub fn to_polygon(&self) -> Polygon<P> {
         Polygon(self.clone(), Default::default())
     }
@@ -148,6 +154,7 @@ impl<P: Point> Ring<P> {
     /// assert_eq!(iter.next(), Some(Line([Vec2::Y, Vec2::ZERO])));
     /// assert_eq!(iter.next(), None);
     /// ```
+    #[inline]
     pub fn lines(&self) -> impl Iterator<Item = Line<P>> + '_ {
         self.0
             .iter()
@@ -173,6 +180,7 @@ impl<P: Point> Ring<P> {
     /// assert_eq!(iter.next(), Some(Line([Vec2::ZERO, Vec2::Y])));
     /// assert_eq!(iter.next(), None);
     /// ```
+    #[inline]
     pub fn reverse(&self) -> Self {
         Ring(self.0.iter().copied().rev().collect())
     }
@@ -182,6 +190,7 @@ impl<P: Point> Ring<P> {
     ///
     /// The attempt to set the point fails if it would result in two consecutive and identical
     /// points.
+    #[inline]
     pub fn try_set_point(&mut self, i: usize, new: P) -> bool {
         let len = self.0.len();
         if self.0[(i + 1) % len] == new || self.0[(i + len - 1) % len] == new {
@@ -197,6 +206,7 @@ impl<P: Point> Ring<P> {
 pub struct MultiRing<P: Point>(pub Vec<Ring<P>>);
 
 impl<P: Point> Default for MultiRing<P> {
+    #[inline]
     fn default() -> Self {
         Self(vec![])
     }
@@ -214,6 +224,7 @@ impl<P: Point> MultiRing<P> {
     ///
     /// assert!(empty.0.is_empty());
     /// ```
+    #[inline]
     pub fn empty() -> Self {
         Self::default()
     }
@@ -224,6 +235,7 @@ impl<P: Point> MultiRing<P> {
 impl<P: Point> Index<usize> for Ring<P> {
     type Output = P;
 
+    #[inline]
     fn index(&self, index: usize) -> &Self::Output {
         &self.0[index]
     }
@@ -231,6 +243,8 @@ impl<P: Point> Index<usize> for Ring<P> {
 
 impl<P: Point> IterPoints for Ring<P> {
     type P = P;
+
+    #[inline]
     fn iter_points(
         &self,
     ) -> impl Clone + ExactSizeIterator<Item = P> + DoubleEndedIterator<Item = P> {
@@ -240,6 +254,8 @@ impl<P: Point> IterPoints for Ring<P> {
 
 impl<P: Point> IterPoints for MultiRing<P> {
     type P = P;
+
+    #[inline]
     fn iter_points(&self) -> impl Iterator<Item = P> + Clone {
         self.0.iter().flat_map(IterPoints::iter_points)
     }
@@ -247,6 +263,8 @@ impl<P: Point> IterPoints for MultiRing<P> {
 
 impl<P: Point> Area for Ring<P> {
     type P = P;
+
+    #[inline]
     fn area(&self) -> <P as Wedge>::Output {
         self.iter_points()
             .circular_tuple_windows()
@@ -258,6 +276,8 @@ impl<P: Point> Area for Ring<P> {
 
 impl<P: Point> Area for MultiRing<P> {
     type P = P;
+
+    #[inline]
     fn area(&self) -> <P as Wedge>::Output {
         self.0.iter().map(Area::area).sum()
     }
@@ -266,6 +286,7 @@ impl<P: Point> Area for MultiRing<P> {
 // Conversions
 
 impl<P: Point2> From<geo::Triangle<P::S>> for Ring<P> {
+    #[inline]
     fn from(value: geo::Triangle<P::S>) -> Self {
         Self::new(value.to_array().map(|c| coord_to_vec2(c)).to_vec())
     }
@@ -274,23 +295,27 @@ impl<P: Point2> From<geo::Triangle<P::S>> for Ring<P> {
 impl<P: Point2> TryFrom<&geo::LineString<P::S>> for Ring<P> {
     type Error = ();
 
+    #[inline]
     fn try_from(ls: &geo::LineString<P::S>) -> Result<Self, Self::Error> {
         LineString::from(ls).to_ring().ok_or(())
     }
 }
 
 impl<P: Point2> From<&Ring<P>> for geo::LineString<P::S> {
+    #[inline]
     fn from(value: &Ring<P>) -> Self {
         (&value.to_linestring()).into()
     }
 }
 impl<P: Point2> From<Ring<P>> for geo::LineString<P::S> {
+    #[inline]
     fn from(value: Ring<P>) -> Self {
         value.into()
     }
 }
 
 impl<P: Point> From<Triangle<P>> for Ring<P> {
+    #[inline]
     fn from(value: Triangle<P>) -> Self {
         Ring::new(value.0.to_vec())
     }
@@ -298,6 +323,8 @@ impl<P: Point> From<Triangle<P>> for Ring<P> {
 
 impl<'a, P: Point2> ToGeo for &'a Ring<P> {
     type GeoType = geo::LineString<P::S>;
+
+    #[inline]
     fn to_geo(self) -> Self::GeoType {
         self.into()
     }
@@ -305,6 +332,8 @@ impl<'a, P: Point2> ToGeo for &'a Ring<P> {
 
 impl<'a, P: Point2> ToGeo for Ring<P> {
     type GeoType = geo::LineString<P::S>;
+
+    #[inline]
     fn to_geo(self) -> Self::GeoType {
         self.into()
     }

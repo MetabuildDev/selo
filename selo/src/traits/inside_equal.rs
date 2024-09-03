@@ -9,6 +9,7 @@ pub trait InsideEqual {
 }
 
 impl<P: Point> InsideEqual for Ring<P> {
+    #[inline]
     fn inside_eq(&self, other: &Self) -> bool {
         let len = self.points_open().len();
         if len != other.points_open().len() {
@@ -30,6 +31,7 @@ impl<P: Point> InsideEqual for Ring<P> {
 }
 
 impl<P: Point> InsideEqual for MultiRing<P> {
+    #[inline]
     fn inside_eq(&self, other: &Self) -> bool {
         if self.0.len() != other.0.len() {
             return false;
@@ -41,6 +43,7 @@ impl<P: Point> InsideEqual for MultiRing<P> {
 }
 
 impl<P: Point> InsideEqual for Polygon<P> {
+    #[inline]
     fn inside_eq(&self, other: &Self) -> bool {
         self.exterior().inside_eq(other.exterior()) && self.interior().inside_eq(other.interior())
     }

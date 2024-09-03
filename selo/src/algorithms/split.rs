@@ -2,6 +2,7 @@ use glam::Vec2;
 
 use crate::{Line, MultiPolygon, Polygon, Ring};
 
+#[inline]
 pub fn split_ring_polygon(polygon: &Polygon<Vec2>) -> MultiPolygon<Vec2> {
     MultiPolygon(
         find_double_line(polygon)
@@ -18,6 +19,7 @@ pub fn split_ring_polygon(polygon: &Polygon<Vec2>) -> MultiPolygon<Vec2> {
     )
 }
 
+#[inline]
 fn split_poly(
     polygon: &Polygon<Vec2>,
     point_before: Vec2,
@@ -52,6 +54,7 @@ fn split_poly(
     (make_poly(p1_lines), make_poly(p2_lines))
 }
 
+#[inline]
 fn find_points(polygon: &Polygon<Vec2>, line: Line<Vec2>) -> Option<(Vec2, Vec2)> {
     polygon
         .exterior()
@@ -64,6 +67,7 @@ fn find_points(polygon: &Polygon<Vec2>, line: Line<Vec2>) -> Option<(Vec2, Vec2)
         .map(|(l_before, l_after)| (l_before.src(), l_after.dst()))
 }
 
+#[inline]
 fn find_double_line(polygon: &Polygon<Vec2>) -> Option<Line<Vec2>> {
     polygon
         .exterior()
