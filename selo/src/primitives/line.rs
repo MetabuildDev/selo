@@ -55,11 +55,6 @@ impl<P: Point> Line<P> {
     }
 
     #[inline]
-    pub fn swap_coords(&self) -> Self {
-        Self([self.dst(), self.src()])
-    }
-
-    #[inline]
     pub fn pos_scaled(&self, t: P::S) -> P {
         self.0[0] + (self.0[1] - self.0[0]) * t
     }

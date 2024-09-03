@@ -1,4 +1,4 @@
-use crate::{Point, Wedge};
+use crate::{Normed, Point, Wedge};
 
 /// Generalized area
 /// In 2d, this gives the signed area of the shape
@@ -23,10 +23,6 @@ pub trait Area {
     fn area(&self) -> <Self::P as Wedge>::Output;
 }
 
-/// TODO: Currently unimplemented
-/// This will be the equivalent of normalizing `Area::area`, but making it a
-/// separate trait should allow us to use a faster implementation
-///
 /// Generalized normal:
 ///
 /// In 2d, this is either 1.0 or -1.0 depending on the winding
@@ -35,4 +31,16 @@ pub trait Normal {
     type P: Point;
 
     fn normal(&self) -> <Self::P as Wedge>::Output;
+}
+
+/// TODO: Specialize this implementation for better performance
+///
+/// This trait is equivalent of normalizing `Area::area`, but implementing it
+/// separately should allow us to use a faster implementation
+impl<T: Area> Normal for T {
+    type P = T::P;
+
+    fn normal(&self) -> <Self::P as Wedge>::Output {
+        self.area().normalize()
+    }
 }

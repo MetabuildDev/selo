@@ -1,7 +1,7 @@
 use bevy_math::*;
 use primitives::InfinitePlane3d;
 
-use crate::{Area, Embed, IterPoints, Unembed};
+use crate::{Embed, IterPoints, Normal, Unembed};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
@@ -20,9 +20,9 @@ impl Workplane {
     }
 
     #[inline]
-    pub fn from_primitive<P: IterPoints<P = Vec3> + Area<P = Vec3>>(p: &P) -> Self {
+    pub fn from_primitive<P: IterPoints<P = Vec3> + Normal<P = Vec3>>(p: &P) -> Self {
         Self {
-            plane: InfinitePlane3d::new(p.area().normalize()),
+            plane: InfinitePlane3d::new(p.normal()),
             origin: p.iter_points().next().unwrap(),
         }
     }
@@ -72,8 +72,13 @@ impl Workplane {
     }
 
     #[inline]
+    pub fn xy_projection_rotation(&self) -> Quat {
+        Quat::from_rotation_arc(self.plane.normal.as_vec3(), Vec3::Z)
+    }
+
+    #[inline]
     pub fn xy_projection(&self) -> Affine3A {
-        let rotation = Quat::from_rotation_arc(self.plane.normal.as_vec3(), Vec3::Z);
+        let rotation = self.xy_projection_rotation();
         let transformed_origin = rotation * self.origin;
         Affine3A::from_translation(-Vec3::Z * transformed_origin.z) * Affine3A::from_quat(rotation)
     }

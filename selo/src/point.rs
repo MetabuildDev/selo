@@ -8,34 +8,6 @@ use std::{
 use geo::{CoordNum, GeoFloat};
 use num_traits::Float;
 
-// Vector space equipped with a dot & wedge products
-pub trait Point:
-    Debug
-    + Clone
-    + Copy
-    + PartialEq
-    + Add<Output = Self>
-    + AddAssign
-    + Sub<Output = Self>
-    + SubAssign
-    + Sum
-    + Mul<Self::S, Output = Self>
-    + Div<Self::S, Output = Self>
-    + Wedge<Scalar = Self::S>
-    + Dot<Output = Self::S>
-    + Send
-    + Sync
-    + 'static
-{
-    type S: SeloScalar;
-
-    #[inline]
-    fn abs_diff_eq(self, rhs: Self, max_abs_diff: Self::S) -> bool {
-        let diff = self.sub(rhs);
-        diff.dot(diff) < max_abs_diff * max_abs_diff
-    }
-}
-
 // Dot product
 pub trait Dot {
     type Output: Float;
@@ -87,7 +59,8 @@ pub trait Wedge {
         + SubAssign
         + Sum
         + Mul<Self::Scalar, Output = Self::Output>
-        + Div<Self::Scalar, Output = Self::Output>;
+        + Div<Self::Scalar, Output = Self::Output>
+        + Normed<SN = Self::Scalar>;
     fn wedge(self, rhs: Self) -> Self::Output;
 }
 
@@ -125,6 +98,97 @@ impl Wedge for glam::DVec3 {
     #[inline]
     fn wedge(self, rhs: Self) -> Self::Output {
         self.cross(rhs)
+    }
+}
+
+pub trait Normed: Copy + Div<Self::SN, Output = Self> + Sized {
+    type SN: SeloScalar;
+    fn norm(self) -> Self::SN;
+    fn norm_squared(self) -> Self::SN;
+    fn normalize(self) -> Self {
+        self / self.norm()
+    }
+}
+impl Normed for f32 {
+    type SN = f32;
+    fn norm(self) -> Self::SN {
+        self.abs()
+    }
+    fn norm_squared(self) -> Self::SN {
+        self * self
+    }
+}
+impl Normed for f64 {
+    type SN = f64;
+    fn norm(self) -> Self::SN {
+        self.abs()
+    }
+    fn norm_squared(self) -> Self::SN {
+        self * self
+    }
+}
+impl Normed for glam::Vec2 {
+    type SN = f32;
+    fn norm(self) -> Self::SN {
+        self.length()
+    }
+    fn norm_squared(self) -> Self::SN {
+        self.length_squared()
+    }
+}
+impl Normed for glam::Vec3 {
+    type SN = f32;
+    fn norm(self) -> Self::SN {
+        self.length()
+    }
+    fn norm_squared(self) -> Self::SN {
+        self.length_squared()
+    }
+}
+impl Normed for glam::DVec2 {
+    type SN = f64;
+    fn norm(self) -> Self::SN {
+        self.length()
+    }
+    fn norm_squared(self) -> Self::SN {
+        self.length_squared()
+    }
+}
+impl Normed for glam::DVec3 {
+    type SN = f64;
+    fn norm(self) -> Self::SN {
+        self.length()
+    }
+    fn norm_squared(self) -> Self::SN {
+        self.length_squared()
+    }
+}
+
+// Vector space equipped with a dot & wedge products
+pub trait Point:
+    Debug
+    + Clone
+    + Copy
+    + PartialEq
+    + Add<Output = Self>
+    + AddAssign
+    + Sub<Output = Self>
+    + SubAssign
+    + Sum
+    + Mul<Self::S, Output = Self>
+    + Div<Self::S, Output = Self>
+    + Wedge<Scalar = Self::S>
+    + Dot<Output = Self::S>
+    + Send
+    + Sync
+    + 'static
+{
+    type S: SeloScalar;
+
+    #[inline]
+    fn abs_diff_eq(self, rhs: Self, max_abs_diff: Self::S) -> bool {
+        let diff = self.sub(rhs);
+        diff.dot(diff) < max_abs_diff * max_abs_diff
     }
 }
 

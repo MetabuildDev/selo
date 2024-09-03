@@ -18,6 +18,15 @@ impl<PIn, POut, T: Map<PIn, POut>> Map<PIn, POut> for Vec<T> {
     }
 }
 
+impl<PIn: Point, POut: Point> Map<PIn, POut> for PIn {
+    type Output = POut;
+
+    #[inline]
+    fn map(&self, mut f: impl FnMut(PIn) -> POut) -> POut {
+        f(*self)
+    }
+}
+
 impl<PIn: Point, POut: Point> Map<PIn, POut> for Line<PIn> {
     type Output = Line<POut>;
 

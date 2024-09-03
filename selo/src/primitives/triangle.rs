@@ -1,7 +1,9 @@
+use itertools::Itertools;
+
 use crate::utils::{coord_to_vec2, vec2_to_coord};
 
 use crate::point::{Point, Point2};
-use crate::{SeloScalar, ToGeo, ToSelo};
+use crate::{Area, SeloScalar, ToGeo, ToSelo, Wedge};
 
 /// A 2D Triangle
 ///
@@ -12,7 +14,7 @@ use crate::{SeloScalar, ToGeo, ToSelo};
 ///
 /// let triangle = Triangle([Vec2::ZERO, Vec2::X, Vec2::Y]);
 /// ```
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 #[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
 pub struct Triangle<P: Point>(pub [P; 3]);
 
@@ -24,6 +26,22 @@ impl<P: Point> Default for MultiTriangle<P> {
     #[inline]
     fn default() -> Self {
         Self(vec![])
+    }
+}
+
+// Traits
+
+impl<P: Point> Area for Triangle<P> {
+    type P = P;
+
+    #[inline]
+    fn area(&self) -> <P as Wedge>::Output {
+        self.0
+            .into_iter()
+            .circular_tuple_windows()
+            .map(|(a, b)| a.wedge(b))
+            .sum::<<P as Wedge>::Output>()
+            / <<P as Point>::S as From<f32>>::from(2f32)
     }
 }
 

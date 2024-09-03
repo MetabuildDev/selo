@@ -1,6 +1,6 @@
 use glam::Vec2;
 
-use crate::{Line, MultiPolygon, Polygon, Ring};
+use crate::{Flip, Line, MultiPolygon, Polygon, Ring};
 
 #[inline]
 pub fn split_ring_polygon(polygon: &Polygon<Vec2>) -> MultiPolygon<Vec2> {
@@ -78,7 +78,7 @@ fn find_double_line(polygon: &Polygon<Vec2>) -> Option<Line<Vec2>> {
                 .exterior()
                 .lines()
                 .skip(idx + 1)
-                .find(|other_line| other_line.eq(&line) || other_line.eq(&line.swap_coords()))
+                .find(|other_line| other_line.eq(&line) || other_line.eq(&line.flip()))
         })
 }
 

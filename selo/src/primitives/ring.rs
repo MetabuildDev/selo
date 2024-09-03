@@ -116,7 +116,11 @@ impl<P: Point> Ring<P> {
     /// ```
     #[inline]
     pub fn to_linestring(&self) -> LineString<P> {
-        LineString::new(self.0.iter().cloned().chain(once(self.0[0])).collect())
+        if self.0.is_empty() {
+            LineString::empty()
+        } else {
+            LineString::new(self.0.iter().cloned().chain(once(self.0[0])).collect())
+        }
     }
 
     /// Converts the [`Ring`] to a [`Polygon`] without holes.
