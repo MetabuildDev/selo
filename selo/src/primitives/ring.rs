@@ -205,6 +205,14 @@ impl<P: Point> Ring<P> {
 #[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
 pub struct MultiRing<P: Point>(pub Vec<Ring<P>>);
 
+impl<P: Point> std::ops::Deref for MultiRing<P> {
+    type Target = Vec<Ring<P>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 impl<P: Point> Default for MultiRing<P> {
     #[inline]
     fn default() -> Self {
@@ -322,15 +330,6 @@ impl<P: Point> From<Triangle<P>> for Ring<P> {
 }
 
 impl<'a, P: Point2> ToGeo for &'a Ring<P> {
-    type GeoType = geo::LineString<P::S>;
-
-    #[inline]
-    fn to_geo(self) -> Self::GeoType {
-        self.into()
-    }
-}
-
-impl<'a, P: Point2> ToGeo for Ring<P> {
     type GeoType = geo::LineString<P::S>;
 
     #[inline]

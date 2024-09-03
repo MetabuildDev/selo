@@ -4,7 +4,7 @@ use crate::Point2;
 use crate::SeloScalar;
 
 pub trait ToGeo {
-    type GeoType;
+    type GeoType: 'static;
     fn to_geo(self) -> Self::GeoType;
 }
 
@@ -30,7 +30,7 @@ impl<T: ToGeo> ToGeo for Vec<T> {
 }
 
 pub trait ToSelo {
-    type SeloType;
+    type SeloType: 'static;
     fn to_selo(self) -> Self::SeloType;
 }
 
@@ -40,6 +40,13 @@ impl<S: SeloScalar> ToSelo for geo::Coord<S> {
     #[inline]
     fn to_selo(self) -> Self::SeloType {
         <S::Point2>::new(self.x, self.y)
+    }
+}
+
+impl<S: SeloScalar> ToSelo for geo::Point<S> {
+    type SeloType = S::Point2;
+    fn to_selo(self) -> Self::SeloType {
+        <S::Point2>::new(self.x(), self.y())
     }
 }
 
