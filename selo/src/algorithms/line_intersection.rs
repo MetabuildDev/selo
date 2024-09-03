@@ -180,11 +180,9 @@ impl<P: Point2> Line2DIntersection<P> {
     pub fn pos(&self) -> Option<P> {
         match self {
             Self::Simple(p, a, b) => {
-                if a.touches_linesegment() && b.touches_linesegment() {
-                    return Some(*p);
-                }
-                None
+                (a.touches_linesegment() && b.touches_linesegment()).then_some(*p)
             }
+
             Self::CollinearOverlap(ls) => Some(ls.center()),
             Self::CollinearTouch(p) => Some(*p),
             _ => None,
