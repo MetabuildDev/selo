@@ -6,6 +6,8 @@ use super::IterPoints;
 
 pub trait Map<PIn, POut> {
     type Output;
+
+    #[must_use]
     fn map(&self, f: impl FnMut(PIn) -> POut) -> Self::Output;
 }
 
