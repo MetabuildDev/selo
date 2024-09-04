@@ -6,6 +6,7 @@ edition = "2021"
 [features]
 default = []
 wkt = ["dep:serde"]
+bevy_reflect = ["dep:bevy_reflect"]
 
 [dependencies]
 geo.workspace = true
