@@ -86,8 +86,7 @@ pub fn boolops_union_glam<P: Point2>(rings: impl IntoIterator<Item = Ring<P>>) -
     rings
         .clone()
         .into_iter()
-        .map(|ring| MultiPolygon(vec![ring.to_polygon()]))
-        .map(|multi_poly| geo::MultiPolygon::<P::S>::from(&multi_poly))
+        .map(|ring| ring.to_polygon().to_multi().to_geo())
         .try_fold(empty_multipolygon::<P>(), |multi_poly, other| {
             SpadeBoolops::union(&multi_poly, &other)
         })
