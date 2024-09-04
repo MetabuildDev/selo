@@ -22,6 +22,9 @@ pub use point::*;
 
 mod algorithms;
 
+#[cfg(feature = "wkt")]
+pub mod wkt;
+
 use glam::*;
 
 pub mod prelude {

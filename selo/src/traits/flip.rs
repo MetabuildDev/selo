@@ -21,6 +21,7 @@ use super::IterPoints;
 /// assert_eq!(iter.next(), None);
 /// ```
 pub trait Flip {
+    #[must_use]
     fn flip(&self) -> Self;
 }
 
