@@ -1,6 +1,10 @@
-# Controls:
+# Selo
 
-## Drawing Modi:
+[glam](https://github.com/bitshifter/glam-rs)-based 2d and 3d geometric primitives with [geo](https://github.com/georust/geo) interoperability.
+
+# Test app controls:
+
+## Drawing Modes:
 
 - `C` - Place point with left click 
 - `L` - Draw line with left clicks
