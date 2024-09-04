@@ -1,4 +1,4 @@
-use crate::{coord_to_vec2, vec2_to_coord, IterPoints, ToSelo};
+use crate::{coord_to_vec2, vec2_to_coord, IterPoints, SeloScalar, ToGeo, ToSelo};
 
 use super::{Line, Ring};
 use crate::point::{Point, Point2};
@@ -19,6 +19,7 @@ use crate::point::{Point, Point2};
 pub struct LineString<P: Point>(pub Vec<P>);
 
 impl<P: Point> Default for LineString<P> {
+    #[inline]
     fn default() -> Self {
         Self(vec![])
     }
@@ -36,6 +37,7 @@ impl<P: Point> LineString<P> {
     ///
     /// assert!(empty.0.is_empty());
     /// ```
+    #[inline]
     pub fn empty() -> Self {
         Self::default()
     }
@@ -59,6 +61,7 @@ impl<P: Point> LineString<P> {
     /// assert_eq!(&linestring.0, &expected);
     /// assert_eq!(&linestring_deduped.0, &expected);
     /// ```
+    #[inline]
     pub fn new(mut points: Vec<P>) -> Self {
         points.dedup();
         LineString(points)
@@ -78,6 +81,7 @@ impl<P: Point> LineString<P> {
     /// assert!(!open_linestring.closed());
     /// assert!(closed_linestring.closed());
     /// ```
+    #[inline]
     pub fn closed(&self) -> bool {
         self.0.last() == self.0.first()
     }
@@ -95,6 +99,7 @@ impl<P: Point> LineString<P> {
     /// assert!(open_linestring.to_ring().is_none());
     /// assert!(closed_linestring.to_ring().is_some());
     /// ```
+    #[inline]
     pub fn to_ring(&self) -> Option<Ring<P>> {
         self.closed().then(|| Ring::new(self.0.clone()))
     }
@@ -112,6 +117,7 @@ impl<P: Point> LineString<P> {
     /// let closed_ring: Ring<Vec2> = open_linestring.close();
     /// assert!(closed_ring.to_linestring().closed())
     /// ```
+    #[inline]
     pub fn close(self) -> Ring<P> {
         Ring::new(self.0)
     }
@@ -132,6 +138,7 @@ impl<P: Point> LineString<P> {
     /// assert_eq!(lines_iter.next(), Some(Line([Vec2::ONE, Vec2::ONE * 2.0])));
     /// assert_eq!(lines_iter.next(), None);
     /// ```
+    #[inline]
     pub fn lines(&self) -> impl Iterator<Item = Line<P>> + '_ {
         self.0.windows(2).map(|s| Line([s[0], s[1]]))
     }
@@ -142,6 +149,7 @@ impl<P: Point> LineString<P> {
 pub struct MultiLineString<P: Point>(pub Vec<LineString<P>>);
 
 impl<P: Point> Default for MultiLineString<P> {
+    #[inline]
     fn default() -> Self {
         Self(vec![])
     }
@@ -151,6 +159,7 @@ impl<P: Point> Default for MultiLineString<P> {
 
 impl<P: Point> IterPoints for LineString<P> {
     type P = P;
+    #[inline]
     fn iter_points(&self) -> impl ExactSizeIterator<Item = P> {
         self.0.iter().copied()
     }
@@ -158,6 +167,7 @@ impl<P: Point> IterPoints for LineString<P> {
 
 impl<P: Point> IterPoints for MultiLineString<P> {
     type P = P;
+    #[inline]
     fn iter_points(&self) -> impl Iterator<Item = P> {
         self.0.iter().flat_map(IterPoints::iter_points)
     }
@@ -166,24 +176,28 @@ impl<P: Point> IterPoints for MultiLineString<P> {
 // Conversions
 
 impl<P: Point> From<&Ring<P>> for LineString<P> {
+    #[inline]
     fn from(r: &Ring<P>) -> Self {
         r.to_linestring()
     }
 }
 
 impl<P: Point2> From<&geo::LineString<P::S>> for LineString<P> {
+    #[inline]
     fn from(ls: &geo::LineString<P::S>) -> Self {
         LineString::new(ls.0.iter().map(|c| coord_to_vec2(*c)).collect())
     }
 }
 
 impl<P: Point2> From<&LineString<P>> for geo::LineString<P::S> {
+    #[inline]
     fn from(r: &LineString<P>) -> Self {
         Self(r.0.iter().map(|c| vec2_to_coord(*c)).collect())
     }
 }
 
 impl<P: Point2, TS: AsRef<[geo::LineString<P::S>]>> From<&TS> for MultiLineString<P> {
+    #[inline]
     fn from(value: &TS) -> Self {
         MultiLineString(
             value
@@ -196,6 +210,7 @@ impl<P: Point2, TS: AsRef<[geo::LineString<P::S>]>> From<&TS> for MultiLineStrin
 }
 
 impl<P: Point2> From<&MultiLineString<P>> for Vec<geo::LineString<P::S>> {
+    #[inline]
     fn from(value: &MultiLineString<P>) -> Self {
         value
             .0
@@ -205,4 +220,18 @@ impl<P: Point2> From<&MultiLineString<P>> for Vec<geo::LineString<P::S>> {
     }
 }
 
-impl<'a, P: Point2> ToSelo<LineString<P>> for &'a geo::LineString<P::S> {}
+impl<'a, P: Point2> ToGeo for &'a LineString<P> {
+    type GeoType = geo::LineString<P::S>;
+
+    #[inline]
+    fn to_geo(self) -> Self::GeoType {
+        self.into()
+    }
+}
+
+impl<'a, S: SeloScalar> ToSelo for &'a geo::LineString<S> {
+    type SeloType = LineString<S::Point2>;
+    fn to_selo(self) -> Self::SeloType {
+        self.into()
+    }
+}

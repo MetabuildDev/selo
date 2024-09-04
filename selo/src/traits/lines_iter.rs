@@ -13,6 +13,8 @@ pub trait LinesIter {
 
 impl<P: Point> LinesIter for Line<P> {
     type P = P;
+
+    #[inline]
     fn iter_lines(&self) -> impl Iterator<Item = Line<Self::P>> {
         once(Line(self.0))
     }
@@ -20,6 +22,8 @@ impl<P: Point> LinesIter for Line<P> {
 
 impl<P: Point> LinesIter for LineString<P> {
     type P = P;
+
+    #[inline]
     fn iter_lines(&self) -> impl Iterator<Item = Line<Self::P>> {
         self.iter_points()
             .tuple_windows()
@@ -29,6 +33,8 @@ impl<P: Point> LinesIter for LineString<P> {
 
 impl<P: Point> LinesIter for MultiLineString<P> {
     type P = P;
+
+    #[inline]
     fn iter_lines(&self) -> impl Iterator<Item = Line<Self::P>> {
         self.0.iter().flat_map(LinesIter::iter_lines)
     }
@@ -36,6 +42,8 @@ impl<P: Point> LinesIter for MultiLineString<P> {
 
 impl<P: Point> LinesIter for Ring<P> {
     type P = P;
+
+    #[inline]
     fn iter_lines(&self) -> impl Iterator<Item = Line<Self::P>> {
         self.iter_points()
             .circular_tuple_windows()
@@ -45,6 +53,8 @@ impl<P: Point> LinesIter for Ring<P> {
 
 impl<P: Point> LinesIter for MultiRing<P> {
     type P = P;
+
+    #[inline]
     fn iter_lines(&self) -> impl Iterator<Item = Line<Self::P>> {
         self.0.iter().flat_map(LinesIter::iter_lines)
     }
@@ -52,6 +62,8 @@ impl<P: Point> LinesIter for MultiRing<P> {
 
 impl<P: Point> LinesIter for Polygon<P> {
     type P = P;
+
+    #[inline]
     fn iter_lines(&self) -> impl Iterator<Item = Line<Self::P>> {
         self.exterior()
             .iter_lines()
@@ -61,6 +73,8 @@ impl<P: Point> LinesIter for Polygon<P> {
 
 impl<P: Point> LinesIter for MultiPolygon<P> {
     type P = P;
+
+    #[inline]
     fn iter_lines(&self) -> impl Iterator<Item = Line<Self::P>> {
         self.0.iter().flat_map(LinesIter::iter_lines)
     }

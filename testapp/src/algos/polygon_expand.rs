@@ -51,7 +51,7 @@ fn render_polygon_expansion(
             group
                 .into_iter()
                 .map(|(ring, _)| ring.embed(wp))
-                .flat_map(|ring| buffer_polygon_glam(ring.to_polygon(), **expansion_factor).0)
+                .flat_map(|ring| buffer_polygon_glam(&ring.to_polygon(), **expansion_factor).0)
                 .for_each(|polygon| {
                     polygon.unembed(wp).lines().for_each(|line| {
                         gizmos.line(line.src(), line.dst(), palettes::basic::RED);

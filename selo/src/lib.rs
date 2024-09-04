@@ -3,6 +3,8 @@
 pub use embedded_primitive::*;
 use geo::{MapCoords as _, SpadeBoolops, StitchTriangles as _, TriangulateSpade as _};
 
+mod errors;
+
 mod embedded_primitive;
 mod workplane;
 
@@ -18,10 +20,14 @@ pub use primitives::*;
 mod point;
 pub use point::*;
 
+mod algorithms;
+
 use glam::*;
 
 pub mod prelude {
+    pub use super::algorithms::*;
     pub use super::embedded_primitive::{Embed, FlatPrimitive, Unembed};
+    pub use super::errors::GeometryError;
     pub use super::point::*;
     pub use super::primitives::*;
     pub use super::traits::*;
@@ -88,8 +94,8 @@ pub fn boolops_union_glam<P: Point2>(rings: impl IntoIterator<Item = Ring<P>>) -
         ))
 }
 
-pub fn buffer_polygon_glam<P: Point2>(polygon: Polygon<P>, expand_by: f64) -> MultiPolygon<P> {
-    let geo_polygon = geo::Polygon::<P::S>::from(&polygon);
+pub fn buffer_polygon_glam<P: Point2>(polygon: &Polygon<P>, expand_by: f64) -> MultiPolygon<P> {
+    let geo_polygon = geo::Polygon::<P::S>::from(polygon);
     let polygon_f64 = geo_polygon.map_coords(cast_coord);
 
     let buffered = geo_buffer::buffer_polygon(&polygon_f64, expand_by);

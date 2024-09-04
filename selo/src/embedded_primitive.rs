@@ -49,6 +49,7 @@ impl<A: Unembed> FlatPrimitive<A> {
     ///
     /// let triangle_2d = FlatPrimitive::<Triangle<Vec2>>::new(Triangle([a,b,c]), plane);
     /// ```
+    #[inline]
     pub fn new(from: A::Type3D, workplane: Workplane) -> Self {
         Self {
             primitive: from.embed(workplane),
@@ -75,6 +76,7 @@ impl<A: Unembed> FlatPrimitive<A> {
     ///
     /// let flipped_triangle = triangle_2d.map_geometry(flip_triangle);
     /// ```
+    #[inline]
     pub fn map_geometry<B: Unembed>(self, f: impl Fn(A) -> B) -> FlatPrimitive<B> {
         FlatPrimitive {
             primitive: f(self.primitive),
@@ -104,6 +106,7 @@ impl<A: Unembed> FlatPrimitive<A> {
     ///
     /// let (Triangle([a,b,c]), plane) = flipped_triangle.unpack();
     /// ```
+    #[inline]
     pub fn unpack(self) -> (A::Type3D, Workplane) {
         (A::unembed(&self.primitive, self.workplane), self.workplane)
     }
@@ -115,6 +118,7 @@ where
 {
     type Type3D = T::Output;
 
+    #[inline]
     fn unembed(&self, workplane: Workplane) -> Self::Type3D {
         let inj = workplane.xy_injection();
         self.map(|p| inj.transform_point3(p.extend(0.0)))
@@ -124,6 +128,7 @@ where
 impl<T: Map<Vec3, Vec2>> Embed for T {
     type Type2D = T::Output;
 
+    #[inline]
     fn embed(&self, workplane: Workplane) -> Self::Type2D {
         let proj = workplane.xy_projection();
         self.map(|p| proj.transform_point3(p).truncate())
