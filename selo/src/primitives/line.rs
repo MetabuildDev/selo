@@ -1,5 +1,3 @@
-use num_traits::Float;
-
 use crate::errors::GeometryError;
 use crate::utils::{coord_to_vec2, vec2_to_coord};
 
@@ -49,9 +47,13 @@ impl<P: Point> Line<P> {
     }
 
     #[inline]
+    pub fn dir(&self) -> P {
+        (self.0[1] - self.0[0]).normalize()
+    }
+
+    #[inline]
     pub fn length(&self) -> P::S {
-        let to_dst = self.to_dst();
-        to_dst.dot(to_dst).sqrt()
+        self.to_dst().norm()
     }
 
     #[inline]

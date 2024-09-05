@@ -179,6 +179,7 @@ pub trait Point:
     + Div<Self::S, Output = Self>
     + Wedge<Scalar = Self::S>
     + Dot<Output = Self::S>
+    + Normed<SN = Self::S>
     + Send
     + Sync
     + 'static
