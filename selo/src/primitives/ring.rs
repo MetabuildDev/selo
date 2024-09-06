@@ -256,6 +256,8 @@ impl<P: Point> Area for Ring<P> {
     #[inline]
     fn area(&self) -> <P as Wedge>::Output {
         self.iter_points()
+            // Recenter the ring to improve numerical accuracy
+            .map(|p| p - self.points_open()[0])
             .circular_tuple_windows()
             .map(|(a, b)| a.wedge(b))
             .sum::<<P as Wedge>::Output>()

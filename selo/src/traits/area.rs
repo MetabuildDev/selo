@@ -44,3 +44,22 @@ impl<T: Area> Normal for T {
         self.area().normalize()
     }
 }
+
+#[cfg(test)]
+mod tests {
+
+    use glam::Vec2;
+
+    use crate::{Area, Ring};
+
+    #[test]
+    fn small_area_not_zero() {
+        let ring = Ring::new([
+            Vec2::new(-695.88074, 517.5617),
+            Vec2::new(-695.88074, 517.38007),
+            Vec2::new(-695.97156, 517.4709),
+        ]);
+
+        assert_eq!(ring.area(), -0.008248329);
+    }
+}
