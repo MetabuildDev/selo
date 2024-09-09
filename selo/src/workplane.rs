@@ -1,7 +1,7 @@
 use bevy_math::*;
 use primitives::InfinitePlane3d;
 
-use crate::{Embed, IterPoints, Normal, Unembed};
+use crate::{errors::GeometryError, Embed, IterPoints, Normal, Unembed};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
@@ -20,11 +20,17 @@ impl Workplane {
     }
 
     #[inline]
-    pub fn from_primitive<P: IterPoints<P = Vec3> + Normal<P = Vec3>>(p: &P) -> Self {
-        Self {
-            plane: InfinitePlane3d::new(p.normal()),
-            origin: p.iter_points().next().unwrap(),
+    pub fn from_primitive<P: IterPoints<P = Vec3> + Normal<P = Vec3>>(
+        p: &P,
+    ) -> Result<Self, GeometryError> {
+        let normal = p.normal();
+        if !normal.is_finite() || normal != Vec3::ZERO {
+            return Err(GeometryError::InvalidGeometry);
         }
+        Ok(Self {
+            plane: InfinitePlane3d::new(normal),
+            origin: p.iter_points().next().unwrap(),
+        })
     }
 
     /// Create a new `Workplane` based on three points and compute the geometric center
