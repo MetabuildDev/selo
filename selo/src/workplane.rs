@@ -24,7 +24,7 @@ impl Workplane {
         p: &P,
     ) -> Result<Self, GeometryError> {
         let normal = p.normal();
-        if !normal.is_finite() || normal != Vec3::ZERO {
+        if !normal.is_finite() || normal == Vec3::ZERO {
             return Err(GeometryError::InvalidGeometry);
         }
         Ok(Self {
