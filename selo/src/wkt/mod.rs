@@ -105,7 +105,7 @@ pub mod ring2_polygon {
     {
         let wkt = String::deserialize(d)?.trim().to_uppercase();
 
-        if !wkt.starts_with("POLYGON Z ((") && !wkt.starts_with("LINESTRING Z (") {
+        if !wkt.starts_with("POLYGON ((") && !wkt.starts_with("LINESTRING (") {
             return Err(de::Error::custom("invalid wkt"))?;
         }
 
@@ -241,7 +241,7 @@ pub mod ring2_linestring {
     {
         let wkt = String::deserialize(d)?.trim().to_uppercase();
 
-        if !wkt.starts_with("POLYGON Z ((") && !wkt.starts_with("LINESTRING Z (") {
+        if !wkt.starts_with("POLYGON ((") && !wkt.starts_with("LINESTRING (") {
             return Err(de::Error::custom("invalid wkt"))?;
         }
 
