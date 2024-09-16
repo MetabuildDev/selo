@@ -205,3 +205,90 @@ fn wkt_linestring_coords_3d<S: SeloScalar>(
         .map(|p| Ok(S::Point3::new(p.x, p.y, p.z.ok_or("missing z coord")?)))
         .collect::<Result<Vec<_>, _>>()
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::prelude::*;
+
+    #[test]
+    fn ring2_polygon() {
+        let ring = Ring::new([Vec2::new(0.0, 0.0), Vec2::X, Vec2::Y]);
+
+        let mut buf = vec![];
+        super::ring2_polygon::serialize(&ring, &mut serde_json::Serializer::new(&mut buf)).unwrap();
+        let s = String::from_utf8_lossy(&buf);
+
+        assert_eq!(s, r#""POLYGON ((0 0,1 0,0 1,0 0))""#);
+
+        assert_eq!(
+            ring.points_open(),
+            super::ring2_polygon::deserialize(&mut serde_json::Deserializer::new(
+                serde_json::de::StrRead::new(&s)
+            ))
+            .unwrap()
+            .points_open()
+        );
+    }
+
+    #[test]
+    fn ring3_polygon() {
+        let ring = Ring::new([Vec3::X, Vec3::Y, Vec3::Z]);
+
+        let mut buf = vec![];
+        super::ring3_polygon::serialize(&ring, &mut serde_json::Serializer::new(&mut buf)).unwrap();
+        let s = String::from_utf8_lossy(&buf);
+
+        assert_eq!(s, r#""POLYGON Z ((1 0 0,0 1 0,0 0 1,1 0 0))""#);
+
+        assert_eq!(
+            ring.points_open(),
+            super::ring3_polygon::deserialize(&mut serde_json::Deserializer::new(
+                serde_json::de::StrRead::new(&s)
+            ))
+            .unwrap()
+            .points_open()
+        );
+    }
+
+    #[test]
+    fn ring2_linestring() {
+        let ring = Ring::new([Vec2::new(0.0, 0.0), Vec2::X, Vec2::Y]);
+
+        let mut buf = vec![];
+        super::ring2_linestring::serialize(&ring, &mut serde_json::Serializer::new(&mut buf))
+            .unwrap();
+        let s = String::from_utf8_lossy(&buf);
+
+        assert_eq!(s, r#""LINESTRING (0 0,1 0,0 1,0 0)""#);
+
+        assert_eq!(
+            ring.points_open(),
+            super::ring2_linestring::deserialize(&mut serde_json::Deserializer::new(
+                serde_json::de::StrRead::new(&s)
+            ))
+            .unwrap()
+            .points_open()
+        );
+    }
+
+    #[test]
+    fn ring3_linestring() {
+        let ring = Ring::new([Vec3::X, Vec3::Y, Vec3::Z]);
+
+        let mut buf = vec![];
+        super::ring3_linestring::serialize(&ring, &mut serde_json::Serializer::new(&mut buf))
+            .unwrap();
+        let s = String::from_utf8_lossy(&buf);
+
+        assert_eq!(s, r#""LINESTRING Z (1 0 0,0 1 0,0 0 1,1 0 0)""#);
+
+        assert_eq!(
+            ring.points_open(),
+            super::ring3_linestring::deserialize(&mut serde_json::Deserializer::new(
+                serde_json::de::StrRead::new(&s)
+            ))
+            .unwrap()
+            .points_open()
+        );
+    }
+}
