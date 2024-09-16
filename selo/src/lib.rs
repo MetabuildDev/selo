@@ -63,21 +63,16 @@ pub fn triangulate_glam<P: Point2>(polygon: Polygon<P>) -> Vec<Triangle<P>> {
 
 pub fn stitch_triangles_glam<P: Point2>(
     triangles: impl IntoIterator<Item = Triangle<P>>,
-) -> Vec<Ring<P>> {
+) -> MultiPolygon<P> {
     let geo_triangles = triangles
         .into_iter()
         .map(geo::Triangle::from)
         .collect::<Vec<_>>();
 
-    let polys = geo_triangles
+    geo_triangles
         .stitch_triangulation()
-        .map(|mp| mp.0)
-        .unwrap_or_default();
-
-    polys
-        .into_iter()
-        .map(|poly| Ring::try_from(poly.exterior()).unwrap())
-        .collect::<Vec<_>>()
+        .map(|mp| mp.to_selo())
+        .unwrap_or_default()
 }
 
 pub fn boolops_union_glam<P: Point2>(rings: impl IntoIterator<Item = Ring<P>>) -> MultiPolygon<P> {

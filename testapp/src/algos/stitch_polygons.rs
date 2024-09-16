@@ -36,9 +36,10 @@ fn render_polygon_stitch(mut gizmos: Gizmos, triangles: TriangleParams) {
                 .map(|triangle| triangle.embed(wp))
                 .collect::<Vec<_>>();
             stitch_triangles_glam(triangles_projected)
+                .0
                 .into_iter()
-                .for_each(|ring| {
-                    ring.unembed(wp).lines().for_each(|line| {
+                .for_each(|mp| {
+                    mp.unembed(wp).lines().for_each(|line| {
                         gizmos.line(line.src(), line.dst(), palettes::basic::RED);
                     });
                 });
@@ -63,8 +64,9 @@ fn do_stitching(
                     .map(|triangle| triangle.embed(wp))
                     .collect::<Vec<_>>();
                 stitch_triangles_glam(triangles_projected)
+                    .0
                     .into_iter()
-                    .map(move |ring| SpawnRing(ring.unembed(wp)))
+                    .map(move |mp| SpawnRing(mp.exterior().unembed(wp)))
             }),
     );
 

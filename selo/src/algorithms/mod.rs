@@ -1,3 +1,6 @@
+pub mod grouping;
+pub use grouping::*;
+
 mod line_intersection;
 pub use line_intersection::*;
 
