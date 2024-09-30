@@ -2,7 +2,7 @@ use std::{iter::once, ops::Index};
 
 use itertools::Itertools as _;
 
-use crate::{coord_to_vec2, Area, IterPoints, ToGeo, Wedge};
+use crate::{coord_to_vec2, Area, BufferGeometry, IterPoints, ToGeo, Wedge};
 
 use super::{Line, LineString, Polygon, Triangle};
 use crate::point::{Point, Point2};
@@ -274,6 +274,36 @@ impl<P: Point> Area for MultiRing<P> {
     }
 }
 
+impl<P> BufferGeometry for Ring<P>
+where
+    P: Point,
+    Polygon<P>: BufferGeometry<P = P>,
+{
+    type P = P;
+
+    fn buffer(&self, distance: f64) -> crate::MultiPolygon<<Self as BufferGeometry>::P> {
+        self.to_polygon().buffer(distance)
+    }
+}
+
+impl<P> BufferGeometry for MultiRing<P>
+where
+    P: Point,
+    Polygon<P>: BufferGeometry<P = P>,
+{
+    type P = P;
+
+    fn buffer(&self, distance: f64) -> crate::MultiPolygon<<Self as BufferGeometry>::P> {
+        self.0.iter().map(|ring| ring.buffer(distance)).fold(
+            crate::MultiPolygon::empty(),
+            |mut acc, mp| {
+                acc.0.extend(mp.0);
+                acc
+            },
+        )
+    }
+}
+
 // Conversions
 
 impl<P: Point2> From<geo::Triangle<P::S>> for Ring<P> {
@@ -301,7 +331,7 @@ impl<P: Point2> From<&Ring<P>> for geo::LineString<P::S> {
 impl<P: Point2> From<Ring<P>> for geo::LineString<P::S> {
     #[inline]
     fn from(value: Ring<P>) -> Self {
-        value.into()
+        geo::LineString::from(&value)
     }
 }
 

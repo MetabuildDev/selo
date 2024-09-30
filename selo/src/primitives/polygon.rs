@@ -1,7 +1,8 @@
 use super::{Line, MultiRing, Ring};
 use crate::{
     point::{Point, Point2},
-    Area, IterPoints, SeloScalar, ToGeo, ToSelo, Wedge,
+    prelude::Workplane,
+    Area, BufferGeometry, Embed, IterPoints, Map, SeloScalar, ToGeo, ToSelo, Unembed, Wedge,
 };
 
 /// Represents the inside area of a closed [`LineString`] with an arbitrary number of holes which
@@ -216,6 +217,62 @@ impl<P: Point> Area for MultiPolygon<P> {
     #[inline]
     fn area(&self) -> <P as Wedge>::Output {
         self.0.iter().map(Area::area).sum()
+    }
+}
+
+impl BufferGeometry for Polygon<glam::Vec2> {
+    type P = glam::Vec2;
+
+    fn buffer(&self, distance: f64) -> MultiPolygon<<Self as BufferGeometry>::P> {
+        self.map(|p| p.as_dvec2())
+            .buffer(distance)
+            .map(|p| p.as_vec2())
+    }
+}
+
+impl BufferGeometry for Polygon<glam::DVec2> {
+    type P = glam::DVec2;
+
+    fn buffer(&self, distance: f64) -> MultiPolygon<<Self as BufferGeometry>::P> {
+        geo_buffer::buffer_polygon(&self.to_geo(), distance).to_selo()
+    }
+}
+
+impl BufferGeometry for Polygon<glam::Vec3> {
+    type P = glam::Vec3;
+
+    fn buffer(&self, distance: f64) -> MultiPolygon<<Self as BufferGeometry>::P> {
+        Workplane::from_primitive(self)
+            .map_or(MultiPolygon::<<Self as BufferGeometry>::P>::empty(), |wp| {
+                self.embed(wp).buffer(distance).unembed(wp)
+            })
+    }
+}
+
+impl BufferGeometry for Polygon<glam::DVec3> {
+    type P = glam::DVec3;
+
+    fn buffer(&self, distance: f64) -> MultiPolygon<<Self as BufferGeometry>::P> {
+        self.map(|p| p.as_vec3())
+            .buffer(distance)
+            .map(|p| p.as_dvec3())
+    }
+}
+
+impl<P> BufferGeometry for MultiPolygon<P>
+where
+    P: Point,
+    Polygon<P>: BufferGeometry<P = P>,
+{
+    type P = P;
+    fn buffer(&self, distance: f64) -> MultiPolygon<<Self as BufferGeometry>::P> {
+        self.0.iter().map(|poly| poly.buffer(distance)).fold(
+            MultiPolygon::empty(),
+            |mut acc, mp| {
+                acc.0.extend(mp.0);
+                acc
+            },
+        )
     }
 }
 
