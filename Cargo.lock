@@ -3808,7 +3808,6 @@ dependencies = [
  "bevy_reflect",
  "geo 0.28.0 (git+https://github.com/RobWalt/geo.git?branch=feat/spade-boolops)",
  "geo-buffer",
- "glam",
  "itertools 0.13.0",
  "num-traits",
  "serde",

@@ -31,7 +31,7 @@ impl<P: Point> Default for Ring<P> {
 
 impl<P: Point> Ring<P> {
     /// Creates a new [`Ring`] enforcing its invariants if necessary. This means that the
-    /// constructor accepts both open and closed lists of [`Vec2`](glam::Vec2).
+    /// constructor accepts both open and closed lists of [`Vec2`](bevy_math::Vec2).
     ///
     /// # Example
     ///

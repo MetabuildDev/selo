@@ -4,6 +4,7 @@ use crate::{
     prelude::Workplane,
     Area, BufferGeometry, Embed, IterPoints, Map, SeloScalar, ToGeo, ToSelo, Unembed, Wedge,
 };
+use bevy_math::*;
 
 /// Represents the inside area of a closed [`LineString`] with an arbitrary number of holes which
 /// are excluded from this area.
@@ -220,8 +221,8 @@ impl<P: Point> Area for MultiPolygon<P> {
     }
 }
 
-impl BufferGeometry for Polygon<glam::Vec2> {
-    type P = glam::Vec2;
+impl BufferGeometry for Polygon<Vec2> {
+    type P = Vec2;
 
     fn buffer(&self, distance: f64) -> MultiPolygon<<Self as BufferGeometry>::P> {
         self.map(|p| p.as_dvec2())
@@ -230,16 +231,16 @@ impl BufferGeometry for Polygon<glam::Vec2> {
     }
 }
 
-impl BufferGeometry for Polygon<glam::DVec2> {
-    type P = glam::DVec2;
+impl BufferGeometry for Polygon<DVec2> {
+    type P = DVec2;
 
     fn buffer(&self, distance: f64) -> MultiPolygon<<Self as BufferGeometry>::P> {
         geo_buffer::buffer_polygon(&self.to_geo(), distance).to_selo()
     }
 }
 
-impl BufferGeometry for Polygon<glam::Vec3> {
-    type P = glam::Vec3;
+impl BufferGeometry for Polygon<Vec3> {
+    type P = Vec3;
 
     fn buffer(&self, distance: f64) -> MultiPolygon<<Self as BufferGeometry>::P> {
         Workplane::from_primitive(self)
@@ -249,8 +250,8 @@ impl BufferGeometry for Polygon<glam::Vec3> {
     }
 }
 
-impl BufferGeometry for Polygon<glam::DVec3> {
-    type P = glam::DVec3;
+impl BufferGeometry for Polygon<DVec3> {
+    type P = DVec3;
 
     fn buffer(&self, distance: f64) -> MultiPolygon<<Self as BufferGeometry>::P> {
         self.map(|p| p.as_vec3())

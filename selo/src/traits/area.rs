@@ -48,7 +48,7 @@ impl<T: Area> Normal for T {
 #[cfg(test)]
 mod tests {
 
-    use glam::Vec2;
+    use bevy_math::Vec2;
 
     use crate::{Area, Ring};
 

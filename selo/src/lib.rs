@@ -25,7 +25,7 @@ mod algorithms;
 #[cfg(feature = "wkt")]
 pub mod wkt;
 
-use glam::*;
+use bevy_math::*;
 
 pub mod prelude {
     pub use super::algorithms::*;
@@ -35,7 +35,7 @@ pub mod prelude {
     pub use super::primitives::*;
     pub use super::traits::*;
     pub use super::workplane::Workplane;
-    pub use glam::*;
+    pub use bevy_math::*;
 }
 
 pub fn intersect_line_2d_point<P: Point2>(a: Line<P>, b: Line<P>) -> Option<P> {

@@ -1,4 +1,4 @@
-use glam::{Vec2, Vec3};
+use bevy_math::{Vec2, Vec3};
 
 use crate::{prelude::Workplane, Map};
 
@@ -42,7 +42,7 @@ impl<A: Unembed> FlatPrimitive<A> {
     ///
     /// ```
     /// # use selo::prelude::*;
-    /// # use glam::Vec3;
+    /// # use bevy_math::Vec3;
     ///
     /// let [a,b,c] = [Vec3::X, Vec3::Y, Vec3::Z];
     /// let plane = Workplane::from_three_points([a,b,c]);
@@ -88,7 +88,7 @@ impl<A: Unembed> FlatPrimitive<A> {
     ///
     /// ```
     /// # use selo::prelude::*;
-    /// # use glam::Vec3;
+    /// # use bevy_math::Vec3;
     ///
     /// let [a,b,c] = [Vec3::X, Vec3::Y, Vec3::Z];
     /// let plane = Workplane::from_three_points([a,b,c]);

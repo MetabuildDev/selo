@@ -1,4 +1,4 @@
-use glam::Vec3;
+use bevy_math::Vec3;
 
 use crate::{prelude::Workplane, Embed, IterPoints, Normal};
 

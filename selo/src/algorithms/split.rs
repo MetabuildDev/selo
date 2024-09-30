@@ -1,4 +1,4 @@
-use glam::Vec2;
+use bevy_math::Vec2;
 
 use crate::{Flip, Line, MultiPolygon, Polygon, Ring};
 

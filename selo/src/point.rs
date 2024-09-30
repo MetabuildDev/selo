@@ -5,6 +5,7 @@ use std::{
     str::FromStr,
 };
 
+use bevy_math::*;
 use geo::{CoordNum, GeoFloat};
 use num_traits::Float;
 
@@ -14,36 +15,36 @@ pub trait Dot {
     fn dot(self, rhs: Self) -> Self::Output;
 }
 
-impl Dot for glam::Vec2 {
+impl Dot for Vec2 {
     type Output = f32;
 
     #[inline]
     fn dot(self, rhs: Self) -> Self::Output {
-        glam::Vec2::dot(self, rhs)
+        Vec2::dot(self, rhs)
     }
 }
-impl Dot for glam::DVec2 {
+impl Dot for DVec2 {
     type Output = f64;
 
     #[inline]
     fn dot(self, rhs: Self) -> Self::Output {
-        glam::DVec2::dot(self, rhs)
+        DVec2::dot(self, rhs)
     }
 }
-impl Dot for glam::Vec3 {
+impl Dot for Vec3 {
     type Output = f32;
 
     #[inline]
     fn dot(self, rhs: Self) -> Self::Output {
-        glam::Vec3::dot(self, rhs)
+        Vec3::dot(self, rhs)
     }
 }
-impl Dot for glam::DVec3 {
+impl Dot for DVec3 {
     type Output = f64;
 
     #[inline]
     fn dot(self, rhs: Self) -> Self::Output {
-        glam::DVec3::dot(self, rhs)
+        DVec3::dot(self, rhs)
     }
 }
 
@@ -64,7 +65,7 @@ pub trait Wedge {
     fn wedge(self, rhs: Self) -> Self::Output;
 }
 
-impl Wedge for glam::Vec2 {
+impl Wedge for Vec2 {
     type Scalar = f32;
     type Output = f32;
 
@@ -73,7 +74,7 @@ impl Wedge for glam::Vec2 {
         self.perp_dot(rhs)
     }
 }
-impl Wedge for glam::DVec2 {
+impl Wedge for DVec2 {
     type Scalar = f64;
     type Output = f64;
 
@@ -82,18 +83,18 @@ impl Wedge for glam::DVec2 {
         self.perp_dot(rhs)
     }
 }
-impl Wedge for glam::Vec3 {
+impl Wedge for Vec3 {
     type Scalar = f32;
-    type Output = glam::Vec3;
+    type Output = Vec3;
 
     #[inline]
     fn wedge(self, rhs: Self) -> Self::Output {
         self.cross(rhs)
     }
 }
-impl Wedge for glam::DVec3 {
+impl Wedge for DVec3 {
     type Scalar = f64;
-    type Output = glam::DVec3;
+    type Output = DVec3;
 
     #[inline]
     fn wedge(self, rhs: Self) -> Self::Output {
@@ -127,7 +128,7 @@ impl Normed for f64 {
         self * self
     }
 }
-impl Normed for glam::Vec2 {
+impl Normed for Vec2 {
     type SN = f32;
     fn norm(self) -> Self::SN {
         self.length()
@@ -136,7 +137,7 @@ impl Normed for glam::Vec2 {
         self.length_squared()
     }
 }
-impl Normed for glam::Vec3 {
+impl Normed for Vec3 {
     type SN = f32;
     fn norm(self) -> Self::SN {
         self.length()
@@ -145,7 +146,7 @@ impl Normed for glam::Vec3 {
         self.length_squared()
     }
 }
-impl Normed for glam::DVec2 {
+impl Normed for DVec2 {
     type SN = f64;
     fn norm(self) -> Self::SN {
         self.length()
@@ -154,7 +155,7 @@ impl Normed for glam::DVec2 {
         self.length_squared()
     }
 }
-impl Normed for glam::DVec3 {
+impl Normed for DVec3 {
     type SN = f64;
     fn norm(self) -> Self::SN {
         self.length()
@@ -193,16 +194,16 @@ pub trait Point:
     }
 }
 
-impl Point for glam::Vec2 {
+impl Point for Vec2 {
     type S = f32;
 }
-impl Point for glam::Vec3 {
+impl Point for Vec3 {
     type S = f32;
 }
-impl Point for glam::DVec2 {
+impl Point for DVec2 {
     type S = f64;
 }
-impl Point for glam::DVec3 {
+impl Point for DVec3 {
     type S = f64;
 }
 
@@ -215,7 +216,7 @@ pub trait Point2: Point<S = Self::S2> + Wedge<Output = Self::S> {
     fn y(self) -> Self::S;
     fn new(x: Self::S, y: Self::S) -> Self;
 }
-impl Point2 for glam::Vec2 {
+impl Point2 for Vec2 {
     type S2 = Self::S;
 
     #[inline]
@@ -233,7 +234,7 @@ impl Point2 for glam::Vec2 {
         Self { x, y }
     }
 }
-impl Point2 for glam::DVec2 {
+impl Point2 for DVec2 {
     type S2 = Self::S;
 
     #[inline]
@@ -262,7 +263,7 @@ pub trait Point3: Point<S = Self::S3> {
     fn z(self) -> Self::S;
     fn new(x: Self::S, y: Self::S, z: Self::S) -> Self;
 }
-impl Point3 for glam::Vec3 {
+impl Point3 for Vec3 {
     type S3 = Self::S;
 
     #[inline]
@@ -285,7 +286,7 @@ impl Point3 for glam::Vec3 {
         Self { x, y, z }
     }
 }
-impl Point3 for glam::DVec3 {
+impl Point3 for DVec3 {
     type S3 = Self::S;
 
     #[inline]
@@ -315,10 +316,10 @@ pub trait SeloScalar: Float + Debug + CoordNum + GeoFloat + FromStr +  /* for sp
 }
 
 impl SeloScalar for f32 {
-    type Point2 = glam::Vec2;
-    type Point3 = glam::Vec3;
+    type Point2 = Vec2;
+    type Point3 = Vec3;
 }
 impl SeloScalar for f64 {
-    type Point2 = glam::DVec2;
-    type Point3 = glam::DVec3;
+    type Point2 = DVec2;
+    type Point3 = DVec3;
 }
