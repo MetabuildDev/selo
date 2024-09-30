@@ -2,6 +2,10 @@
 name = "selo"
 version = "0.1.0"
 edition = "2021"
+license = "MIT OR Apache-2.0"
+homepage = "https://github.com/MetabuildDev/selo.git"
+description = "glam-based 2d and 3d geometric primitives with geo interoperability"
+
 
 [features]
 default = []
