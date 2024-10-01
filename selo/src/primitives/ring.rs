@@ -191,10 +191,10 @@ impl<P: Point> Ring<P> {
 pub struct MultiRing<P: Point>(pub Vec<Ring<P>>);
 
 impl<P: Point> std::ops::Deref for MultiRing<P> {
-    type Target = Vec<Ring<P>>;
+    type Target = [Ring<P>];
 
     fn deref(&self) -> &Self::Target {
-        &self.0
+        self.rings()
     }
 }
 
@@ -220,6 +220,11 @@ impl<P: Point> MultiRing<P> {
     #[inline]
     pub fn empty() -> Self {
         Self::default()
+    }
+
+    #[inline]
+    pub fn rings(&self) -> &[Ring<P>] {
+        &self.0
     }
 }
 

@@ -1,6 +1,7 @@
 use crate::utils::{coord_to_vec2, vec2_to_coord};
 
 use crate::point::{Point, Point2};
+use crate::{MultiRing, Ring};
 
 /// A 2D Triangle
 ///
@@ -15,9 +16,26 @@ use crate::point::{Point, Point2};
 #[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
 pub struct Triangle<P: Point>(pub [P; 3]);
 
+impl<P: Point> Triangle<P> {
+    /// converts the [`Triangle`] to [`Ring`]. This is mainly useful since the
+    /// [`Ring`] is more general and implements more algorithms
+    pub fn as_ring(self) -> Ring<P> {
+        Ring::new(self.0)
+    }
+}
+
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
 pub struct MultiTriangle<P: Point>(pub Vec<Triangle<P>>);
+
+impl<P: Point> MultiTriangle<P> {
+    /// converts the [`MultiTriangle`] to [`MultiRing`]. This is mainly useful since the
+    /// [`MultiRing`] is more general and implements more algorithms
+    #[inline]
+    pub fn as_multi_ring(&self) -> MultiRing<P> {
+        MultiRing(self.0.iter().map(|tri| tri.as_ring()).collect::<Vec<_>>())
+    }
+}
 
 impl<P: Point> Default for MultiTriangle<P> {
     #[inline]

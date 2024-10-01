@@ -132,9 +132,17 @@ impl<P: Point> Polygon<P> {
             .chain(self.1 .0.iter().flat_map(|ring| ring.lines()))
     }
 
+    /// Converts the [`Polygon`] to [`MultiPolygon`]. This is mainly useful for comparison or other
+    /// situation where a single-polygon-multipolygon is required.
     #[inline]
     pub fn to_multi(&self) -> MultiPolygon<P> {
         MultiPolygon(vec![self.clone()])
+    }
+
+    /// An iterator over all the [`Ring`]s of the [`Polygon`]. The exterior always comes first but
+    /// if you need exclusive access to it, then consider using [`Polygon::exterior`] instead.
+    pub fn iter_rings(&self) -> impl Iterator<Item = &Ring<P>> {
+        std::iter::once(self.exterior()).chain(self.interior().iter().chain())
     }
 }
 
@@ -173,6 +181,11 @@ impl<P: Point> MultiPolygon<P> {
     #[inline]
     pub fn empty() -> Self {
         Self::default()
+    }
+
+    /// An iterator over all [`Ring`]s of the [`MultiPolygon`].
+    pub fn iter_rings(&self) -> impl Iterator<Item = &Ring<P>> {
+        self.iter().flat_map(|polygon| polygon.iter_rings())
     }
 }
 
