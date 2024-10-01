@@ -18,7 +18,7 @@ use crate::point::{Point, Point2};
 /// ```
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
-pub struct Ring<P: Point>(Vec<P>);
+pub struct Ring<P: Point>(pub(crate) Vec<P>);
 
 impl<P: Point> Default for Ring<P> {
     #[inline]
