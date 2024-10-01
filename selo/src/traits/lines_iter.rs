@@ -1,5 +1,3 @@
-use std::iter::once;
-
 use itertools::Itertools;
 
 use crate::{Line, LineString, MultiLineString, MultiPolygon, MultiRing, Point, Polygon, Ring};
@@ -16,7 +14,7 @@ impl<P: Point> LinesIter for Line<P> {
 
     #[inline]
     fn iter_lines(&self) -> impl Iterator<Item = Line<Self::P>> {
-        once(Line(self.0))
+        std::iter::once(Line(self.0))
     }
 }
 

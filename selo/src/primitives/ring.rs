@@ -1,5 +1,3 @@
-use std::{iter::once, ops::Index};
-
 use itertools::Itertools as _;
 
 use crate::coord_to_vec2;
@@ -119,7 +117,13 @@ impl<P: Point> Ring<P> {
         if self.0.is_empty() {
             LineString::empty()
         } else {
-            LineString::new(self.0.iter().cloned().chain(once(self.0[0])).collect())
+            LineString::new(
+                self.0
+                    .iter()
+                    .cloned()
+                    .chain(std::iter::once(self.0[0]))
+                    .collect(),
+            )
         }
     }
 
@@ -221,7 +225,7 @@ impl<P: Point> MultiRing<P> {
 
 // Traits
 
-impl<P: Point> Index<usize> for Ring<P> {
+impl<P: Point> std::ops::Index<usize> for Ring<P> {
     type Output = P;
 
     #[inline]
