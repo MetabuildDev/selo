@@ -21,12 +21,16 @@ impl<P: Point> InsideEqual for Ring<P> {
         if len != other.points_open().len() {
             return false;
         }
-        (0..len).any(|i| {
-            self.iter_points()
-                .cycle()
-                .take(len)
-                .eq(other.iter_points().cycle().skip(i).take(len))
-        })
+        let first = self.points_open().first();
+        (0..len)
+            .filter(|&i| other.points_open().get(i) == first)
+            .any(|i| {
+                self.iter_points().cycle().take(len).eq(other
+                    .iter_points()
+                    .cycle()
+                    .skip(i)
+                    .take(len))
+            })
     }
 
     fn inside_abs_diff_eq(&self, other: &Self, epsilon: P::S) -> bool {
@@ -34,13 +38,16 @@ impl<P: Point> InsideEqual for Ring<P> {
         if len != other.points_open().len() {
             return false;
         }
-        (0..len).any(|i| {
-            self.iter_points()
-                .cycle()
-                .take(len)
-                .zip(other.iter_points().cycle().skip(i).take(len))
-                .all(|(a, b)| a.abs_diff_eq(b, epsilon))
-        })
+        let first = self.points_open().first();
+        (0..len)
+            .filter(|&i| other.points_open().get(i) == first)
+            .any(|i| {
+                self.iter_points()
+                    .cycle()
+                    .take(len)
+                    .zip(other.iter_points().cycle().skip(i).take(len))
+                    .all(|(a, b)| a.abs_diff_eq(b, epsilon))
+            })
     }
 }
 
