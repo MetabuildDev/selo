@@ -2,7 +2,7 @@ use std::{iter::once, ops::Index};
 
 use itertools::Itertools as _;
 
-use crate::{coord_to_vec2, BufferGeometry, IterPoints};
+use crate::{coord_to_vec2, IterPoints};
 
 use super::{Line, LineString, Polygon, Triangle};
 use crate::point::{Point, Point2};
@@ -247,36 +247,6 @@ impl<P: Point> IterPoints for MultiRing<P> {
     #[inline]
     fn iter_points(&self) -> impl Iterator<Item = P> + Clone {
         self.0.iter().flat_map(IterPoints::iter_points)
-    }
-}
-
-impl<P> BufferGeometry for Ring<P>
-where
-    P: Point,
-    Polygon<P>: BufferGeometry<P = P>,
-{
-    type P = P;
-
-    fn buffer(&self, distance: f64) -> crate::MultiPolygon<<Self as BufferGeometry>::P> {
-        self.to_polygon().buffer(distance)
-    }
-}
-
-impl<P> BufferGeometry for MultiRing<P>
-where
-    P: Point,
-    Polygon<P>: BufferGeometry<P = P>,
-{
-    type P = P;
-
-    fn buffer(&self, distance: f64) -> crate::MultiPolygon<<Self as BufferGeometry>::P> {
-        self.0.iter().map(|ring| ring.buffer(distance)).fold(
-            crate::MultiPolygon::empty(),
-            |mut acc, mp| {
-                acc.0.extend(mp.0);
-                acc
-            },
-        )
     }
 }
 

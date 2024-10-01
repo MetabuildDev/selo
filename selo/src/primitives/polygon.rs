@@ -1,8 +1,7 @@
 use super::{Line, MultiRing, Ring};
 use crate::{
     point::{Point, Point2},
-    prelude::Workplane,
-    BufferGeometry, Embed, IterPoints, Map, ToGeo, ToSelo, Unembed,
+    IterPoints,
 };
 use bevy_math::*;
 
@@ -200,62 +199,6 @@ impl<P: Point> IterPoints for MultiPolygon<P> {
     #[inline]
     fn iter_points(&self) -> impl Iterator<Item = P> + Clone {
         self.iter().flat_map(IterPoints::iter_points)
-    }
-}
-
-impl BufferGeometry for Polygon<Vec2> {
-    type P = Vec2;
-
-    fn buffer(&self, distance: f64) -> MultiPolygon<<Self as BufferGeometry>::P> {
-        self.map(|p| p.as_dvec2())
-            .buffer(distance)
-            .map(|p| p.as_vec2())
-    }
-}
-
-impl BufferGeometry for Polygon<DVec2> {
-    type P = DVec2;
-
-    fn buffer(&self, distance: f64) -> MultiPolygon<<Self as BufferGeometry>::P> {
-        geo_buffer::buffer_polygon(&self.to_geo(), distance).to_selo()
-    }
-}
-
-impl BufferGeometry for Polygon<Vec3> {
-    type P = Vec3;
-
-    fn buffer(&self, distance: f64) -> MultiPolygon<<Self as BufferGeometry>::P> {
-        Workplane::from_primitive(self)
-            .map_or(MultiPolygon::<<Self as BufferGeometry>::P>::empty(), |wp| {
-                self.embed(wp).buffer(distance).unembed(wp)
-            })
-    }
-}
-
-impl BufferGeometry for Polygon<DVec3> {
-    type P = DVec3;
-
-    fn buffer(&self, distance: f64) -> MultiPolygon<<Self as BufferGeometry>::P> {
-        self.map(|p| p.as_vec3())
-            .buffer(distance)
-            .map(|p| p.as_dvec3())
-    }
-}
-
-impl<P> BufferGeometry for MultiPolygon<P>
-where
-    P: Point,
-    Polygon<P>: BufferGeometry<P = P>,
-{
-    type P = P;
-    fn buffer(&self, distance: f64) -> MultiPolygon<<Self as BufferGeometry>::P> {
-        self.0.iter().map(|poly| poly.buffer(distance)).fold(
-            MultiPolygon::empty(),
-            |mut acc, mp| {
-                acc.0.extend(mp.0);
-                acc
-            },
-        )
     }
 }
 

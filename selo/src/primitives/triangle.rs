@@ -26,8 +26,6 @@ impl<P: Point> Default for MultiTriangle<P> {
     }
 }
 
-// Traits
-
 // Conversions
 
 impl<P: Point2> From<geo::Triangle<P::S>> for Triangle<P> {
