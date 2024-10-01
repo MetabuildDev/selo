@@ -2,7 +2,7 @@ use std::{iter::once, ops::Index};
 
 use itertools::Itertools as _;
 
-use crate::{coord_to_vec2, Area, BufferGeometry, IterPoints, ToGeo, Wedge};
+use crate::{coord_to_vec2, BufferGeometry, IterPoints};
 
 use super::{Line, LineString, Polygon, Triangle};
 use crate::point::{Point, Point2};
@@ -250,30 +250,6 @@ impl<P: Point> IterPoints for MultiRing<P> {
     }
 }
 
-impl<P: Point> Area for Ring<P> {
-    type P = P;
-
-    #[inline]
-    fn area(&self) -> <P as Wedge>::Output {
-        self.iter_points()
-            // Recenter the ring to improve numerical accuracy
-            .map(|p| p - self.points_open()[0])
-            .circular_tuple_windows()
-            .map(|(a, b)| a.wedge(b))
-            .sum::<<P as Wedge>::Output>()
-            / <<P as Point>::S as From<f32>>::from(2f32)
-    }
-}
-
-impl<P: Point> Area for MultiRing<P> {
-    type P = P;
-
-    #[inline]
-    fn area(&self) -> <P as Wedge>::Output {
-        self.0.iter().map(Area::area).sum()
-    }
-}
-
 impl<P> BufferGeometry for Ring<P>
 where
     P: Point,
@@ -339,14 +315,5 @@ impl<P: Point> From<Triangle<P>> for Ring<P> {
     #[inline]
     fn from(value: Triangle<P>) -> Self {
         Ring::new(value.0.to_vec())
-    }
-}
-
-impl<'a, P: Point2> ToGeo for &'a Ring<P> {
-    type GeoType = geo::LineString<P::S>;
-
-    #[inline]
-    fn to_geo(self) -> Self::GeoType {
-        self.into()
     }
 }

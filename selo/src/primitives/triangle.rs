@@ -1,9 +1,7 @@
-use itertools::Itertools;
-
 use crate::utils::{coord_to_vec2, vec2_to_coord};
 
 use crate::point::{Point, Point2};
-use crate::{Area, SeloScalar, ToGeo, ToSelo, Wedge};
+use crate::{SeloScalar, ToSelo};
 
 /// A 2D Triangle
 ///
@@ -30,20 +28,6 @@ impl<P: Point> Default for MultiTriangle<P> {
 }
 
 // Traits
-
-impl<P: Point> Area for Triangle<P> {
-    type P = P;
-
-    #[inline]
-    fn area(&self) -> <P as Wedge>::Output {
-        self.0
-            .into_iter()
-            .circular_tuple_windows()
-            .map(|(a, b)| a.wedge(b))
-            .sum::<<P as Wedge>::Output>()
-            / <<P as Point>::S as From<f32>>::from(2f32)
-    }
-}
 
 // Conversions
 
@@ -84,15 +68,6 @@ impl<P: Point2> From<&MultiTriangle<P>> for Vec<geo::Triangle<P::S>> {
             .copied()
             .map(|triangle| triangle.into())
             .collect::<Vec<_>>()
-    }
-}
-
-impl<P: Point2> ToGeo for Triangle<P> {
-    type GeoType = geo::Triangle<P::S>;
-
-    #[inline]
-    fn to_geo(self) -> Self::GeoType {
-        self.into()
     }
 }
 

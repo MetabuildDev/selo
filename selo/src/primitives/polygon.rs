@@ -2,7 +2,7 @@ use super::{Line, MultiRing, Ring};
 use crate::{
     point::{Point, Point2},
     prelude::Workplane,
-    Area, BufferGeometry, Embed, IterPoints, Map, SeloScalar, ToGeo, ToSelo, Unembed, Wedge,
+    BufferGeometry, Embed, IterPoints, Map, SeloScalar, ToGeo, ToSelo, Unembed,
 };
 use bevy_math::*;
 
@@ -203,24 +203,6 @@ impl<P: Point> IterPoints for MultiPolygon<P> {
     }
 }
 
-impl<P: Point> Area for Polygon<P> {
-    type P = P;
-
-    #[inline]
-    fn area(&self) -> <P as Wedge>::Output {
-        self.exterior().area() - self.interior().area()
-    }
-}
-
-impl<P: Point> Area for MultiPolygon<P> {
-    type P = P;
-
-    #[inline]
-    fn area(&self) -> <P as Wedge>::Output {
-        self.0.iter().map(Area::area).sum()
-    }
-}
-
 impl BufferGeometry for Polygon<Vec2> {
     type P = Vec2;
 
@@ -316,24 +298,6 @@ impl<P: Point2> From<&MultiPolygon<P>> for geo::MultiPolygon<P::S> {
     #[inline]
     fn from(value: &MultiPolygon<P>) -> Self {
         geo::MultiPolygon::new(value.0.iter().map(|poly| poly.into()).collect())
-    }
-}
-
-impl<'a, P: Point2> ToGeo for &'a Polygon<P> {
-    type GeoType = geo::Polygon<P::S>;
-
-    #[inline]
-    fn to_geo(self) -> Self::GeoType {
-        self.into()
-    }
-}
-
-impl<'a, P: Point2> ToGeo for &'a MultiPolygon<P> {
-    type GeoType = geo::MultiPolygon<P::S>;
-
-    #[inline]
-    fn to_geo(self) -> Self::GeoType {
-        self.into()
     }
 }
 
