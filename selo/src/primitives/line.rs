@@ -2,7 +2,6 @@ use crate::errors::GeometryError;
 use crate::utils::{coord_to_vec2, vec2_to_coord};
 
 use crate::point::{Point, Point2};
-use crate::{SeloScalar, ToSelo};
 
 /// A 2D Line
 ///
@@ -94,13 +93,5 @@ impl<P: Point2> From<Line<P>> for geo::Line<P::S> {
     #[inline]
     fn from(line: Line<P>) -> Self {
         geo::Line::new(vec2_to_coord(line.src()), vec2_to_coord(line.dst()))
-    }
-}
-
-impl<S: SeloScalar> ToSelo for geo::Line<S> {
-    type SeloType = Line<S::Point2>;
-    #[inline]
-    fn to_selo(self) -> Self::SeloType {
-        self.into()
     }
 }

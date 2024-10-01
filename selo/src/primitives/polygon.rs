@@ -2,7 +2,7 @@ use super::{Line, MultiRing, Ring};
 use crate::{
     point::{Point, Point2},
     prelude::Workplane,
-    BufferGeometry, Embed, IterPoints, Map, SeloScalar, ToGeo, ToSelo, Unembed,
+    BufferGeometry, Embed, IterPoints, Map, ToGeo, ToSelo, Unembed,
 };
 use bevy_math::*;
 
@@ -298,22 +298,5 @@ impl<P: Point2> From<&MultiPolygon<P>> for geo::MultiPolygon<P::S> {
     #[inline]
     fn from(value: &MultiPolygon<P>) -> Self {
         geo::MultiPolygon::new(value.0.iter().map(|poly| poly.into()).collect())
-    }
-}
-
-impl<'a, S: SeloScalar> ToSelo for &'a geo::Polygon<S> {
-    type SeloType = Polygon<S::Point2>;
-
-    #[inline]
-    fn to_selo(self) -> Self::SeloType {
-        self.into()
-    }
-}
-impl<'a, S: SeloScalar> ToSelo for &'a geo::MultiPolygon<S> {
-    type SeloType = MultiPolygon<S::Point2>;
-
-    #[inline]
-    fn to_selo(self) -> Self::SeloType {
-        self.into()
     }
 }

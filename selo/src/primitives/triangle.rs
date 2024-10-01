@@ -1,7 +1,6 @@
 use crate::utils::{coord_to_vec2, vec2_to_coord};
 
 use crate::point::{Point, Point2};
-use crate::{SeloScalar, ToSelo};
 
 /// A 2D Triangle
 ///
@@ -68,14 +67,5 @@ impl<P: Point2> From<&MultiTriangle<P>> for Vec<geo::Triangle<P::S>> {
             .copied()
             .map(|triangle| triangle.into())
             .collect::<Vec<_>>()
-    }
-}
-
-impl<S: SeloScalar> ToSelo for geo::Triangle<S> {
-    type SeloType = Triangle<S::Point2>;
-
-    #[inline]
-    fn to_selo(self) -> Self::SeloType {
-        self.into()
     }
 }
