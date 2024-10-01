@@ -24,3 +24,6 @@ pub use buffer::*;
 
 mod contains;
 pub use contains::*;
+
+mod intersection;
+pub use intersection::*;
