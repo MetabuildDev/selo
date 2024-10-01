@@ -23,6 +23,14 @@ pub trait IterPoints {
     fn iter_points(&self) -> impl Iterator<Item = Self::P>;
 }
 
+impl<P: Point> IterPoints for Triangle<P> {
+    type P = P;
+    #[inline]
+    fn iter_points(&self) -> impl Iterator<Item = Self::P> {
+        self.0.iter().copied()
+    }
+}
+
 impl<P: Point> IterPoints for LineString<P> {
     type P = P;
     #[inline]
