@@ -21,3 +21,6 @@ pub use flip::*;
 
 mod buffer;
 pub use buffer::*;
+
+mod contains;
+pub use contains::*;
