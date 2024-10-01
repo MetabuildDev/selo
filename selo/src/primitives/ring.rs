@@ -170,6 +170,13 @@ impl<P: Point> Ring<P> {
             .map(|(a, b)| Line([*a, *b]))
     }
 
+    /// converts this [`Ring`] into a [`MultiRing`]. This can be useful if you need a
+    /// single-ring-multiring
+    #[inline]
+    pub fn to_multi(self) -> MultiRing<P> {
+        MultiRing(vec![self])
+    }
+
     /// tries to set the value of the `n`th point of the [`Ring`] and returns whether the function
     /// succeeded.
     ///
