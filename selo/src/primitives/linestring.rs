@@ -1,4 +1,4 @@
-use crate::{coord_to_vec2, vec2_to_coord, IterPoints};
+use crate::{coord_to_vec2, vec2_to_coord};
 
 use super::{Line, Ring};
 use crate::point::{Point, Point2};
@@ -152,24 +152,6 @@ impl<P: Point> Default for MultiLineString<P> {
     #[inline]
     fn default() -> Self {
         Self(vec![])
-    }
-}
-
-// Traits
-
-impl<P: Point> IterPoints for LineString<P> {
-    type P = P;
-    #[inline]
-    fn iter_points(&self) -> impl ExactSizeIterator<Item = P> {
-        self.0.iter().copied()
-    }
-}
-
-impl<P: Point> IterPoints for MultiLineString<P> {
-    type P = P;
-    #[inline]
-    fn iter_points(&self) -> impl Iterator<Item = P> {
-        self.0.iter().flat_map(IterPoints::iter_points)
     }
 }
 

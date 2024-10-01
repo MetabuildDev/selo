@@ -2,7 +2,7 @@ use std::{iter::once, ops::Index};
 
 use itertools::Itertools as _;
 
-use crate::{coord_to_vec2, IterPoints};
+use crate::coord_to_vec2;
 
 use super::{Line, LineString, Polygon, Triangle};
 use crate::point::{Point, Point2};
@@ -227,26 +227,6 @@ impl<P: Point> Index<usize> for Ring<P> {
     #[inline]
     fn index(&self, index: usize) -> &Self::Output {
         &self.0[index]
-    }
-}
-
-impl<P: Point> IterPoints for Ring<P> {
-    type P = P;
-
-    #[inline]
-    fn iter_points(
-        &self,
-    ) -> impl Clone + ExactSizeIterator<Item = P> + DoubleEndedIterator<Item = P> {
-        self.0.iter().copied()
-    }
-}
-
-impl<P: Point> IterPoints for MultiRing<P> {
-    type P = P;
-
-    #[inline]
-    fn iter_points(&self) -> impl Iterator<Item = P> + Clone {
-        self.0.iter().flat_map(IterPoints::iter_points)
     }
 }
 

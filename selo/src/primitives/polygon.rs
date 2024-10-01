@@ -1,8 +1,5 @@
 use super::{Line, MultiRing, Ring};
-use crate::{
-    point::{Point, Point2},
-    IterPoints,
-};
+use crate::point::{Point, Point2};
 
 /// Represents the inside area of a closed [`LineString`] with an arbitrary number of holes which
 /// are excluded from this area.
@@ -176,28 +173,6 @@ impl<P: Point> MultiPolygon<P> {
     #[inline]
     pub fn empty() -> Self {
         Self::default()
-    }
-}
-
-// Traits
-
-impl<P: Point> IterPoints for Polygon<P> {
-    type P = P;
-
-    #[inline]
-    fn iter_points(&self) -> impl Iterator<Item = P> + Clone {
-        self.exterior()
-            .iter_points()
-            .chain(self.interior().iter_points())
-    }
-}
-
-impl<P: Point> IterPoints for MultiPolygon<P> {
-    type P = P;
-
-    #[inline]
-    fn iter_points(&self) -> impl Iterator<Item = P> + Clone {
-        self.iter().flat_map(IterPoints::iter_points)
     }
 }
 
