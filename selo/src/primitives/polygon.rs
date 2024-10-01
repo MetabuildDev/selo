@@ -3,7 +3,6 @@ use crate::{
     point::{Point, Point2},
     IterPoints,
 };
-use bevy_math::*;
 
 /// Represents the inside area of a closed [`LineString`] with an arbitrary number of holes which
 /// are excluded from this area.
