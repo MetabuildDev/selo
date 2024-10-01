@@ -1,4 +1,4 @@
-use crate::{coord_to_vec2, vec2_to_coord, IterPoints, SeloScalar, ToGeo, ToSelo};
+use crate::{coord_to_vec2, vec2_to_coord};
 
 use super::{Line, Ring};
 use crate::point::{Point, Point2};
@@ -155,24 +155,6 @@ impl<P: Point> Default for MultiLineString<P> {
     }
 }
 
-// Traits
-
-impl<P: Point> IterPoints for LineString<P> {
-    type P = P;
-    #[inline]
-    fn iter_points(&self) -> impl ExactSizeIterator<Item = P> {
-        self.0.iter().copied()
-    }
-}
-
-impl<P: Point> IterPoints for MultiLineString<P> {
-    type P = P;
-    #[inline]
-    fn iter_points(&self) -> impl Iterator<Item = P> {
-        self.0.iter().flat_map(IterPoints::iter_points)
-    }
-}
-
 // Conversions
 
 impl<P: Point> From<&Ring<P>> for LineString<P> {
@@ -217,21 +199,5 @@ impl<P: Point2> From<&MultiLineString<P>> for Vec<geo::LineString<P::S>> {
             .iter()
             .map(|linestring| linestring.into())
             .collect::<Vec<_>>()
-    }
-}
-
-impl<'a, P: Point2> ToGeo for &'a LineString<P> {
-    type GeoType = geo::LineString<P::S>;
-
-    #[inline]
-    fn to_geo(self) -> Self::GeoType {
-        self.into()
-    }
-}
-
-impl<'a, S: SeloScalar> ToSelo for &'a geo::LineString<S> {
-    type SeloType = LineString<S::Point2>;
-    fn to_selo(self) -> Self::SeloType {
-        self.into()
     }
 }

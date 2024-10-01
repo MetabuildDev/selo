@@ -1,8 +1,6 @@
-use std::{iter::once, ops::Index};
-
 use itertools::Itertools as _;
 
-use crate::{coord_to_vec2, Area, BufferGeometry, IterPoints, ToGeo, Wedge};
+use crate::coord_to_vec2;
 
 use super::{Line, LineString, Polygon, Triangle};
 use crate::point::{Point, Point2};
@@ -20,7 +18,7 @@ use crate::point::{Point, Point2};
 /// ```
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
-pub struct Ring<P: Point>(Vec<P>);
+pub struct Ring<P: Point>(pub(crate) Vec<P>);
 
 impl<P: Point> Default for Ring<P> {
     #[inline]
@@ -119,7 +117,13 @@ impl<P: Point> Ring<P> {
         if self.0.is_empty() {
             LineString::empty()
         } else {
-            LineString::new(self.0.iter().cloned().chain(once(self.0[0])).collect())
+            LineString::new(
+                self.0
+                    .iter()
+                    .cloned()
+                    .chain(std::iter::once(self.0[0]))
+                    .collect(),
+            )
         }
     }
 
@@ -166,6 +170,13 @@ impl<P: Point> Ring<P> {
             .map(|(a, b)| Line([*a, *b]))
     }
 
+    /// converts this [`Ring`] into a [`MultiRing`]. This can be useful if you need a
+    /// single-ring-multiring
+    #[inline]
+    pub fn to_multi(self) -> MultiRing<P> {
+        MultiRing(vec![self])
+    }
+
     /// tries to set the value of the `n`th point of the [`Ring`] and returns whether the function
     /// succeeded.
     ///
@@ -187,10 +198,10 @@ impl<P: Point> Ring<P> {
 pub struct MultiRing<P: Point>(pub Vec<Ring<P>>);
 
 impl<P: Point> std::ops::Deref for MultiRing<P> {
-    type Target = Vec<Ring<P>>;
+    type Target = [Ring<P>];
 
     fn deref(&self) -> &Self::Target {
-        &self.0
+        self.rings()
     }
 }
 
@@ -217,90 +228,21 @@ impl<P: Point> MultiRing<P> {
     pub fn empty() -> Self {
         Self::default()
     }
+
+    #[inline]
+    pub fn rings(&self) -> &[Ring<P>] {
+        &self.0
+    }
 }
 
 // Traits
 
-impl<P: Point> Index<usize> for Ring<P> {
+impl<P: Point> std::ops::Index<usize> for Ring<P> {
     type Output = P;
 
     #[inline]
     fn index(&self, index: usize) -> &Self::Output {
         &self.0[index]
-    }
-}
-
-impl<P: Point> IterPoints for Ring<P> {
-    type P = P;
-
-    #[inline]
-    fn iter_points(
-        &self,
-    ) -> impl Clone + ExactSizeIterator<Item = P> + DoubleEndedIterator<Item = P> {
-        self.0.iter().copied()
-    }
-}
-
-impl<P: Point> IterPoints for MultiRing<P> {
-    type P = P;
-
-    #[inline]
-    fn iter_points(&self) -> impl Iterator<Item = P> + Clone {
-        self.0.iter().flat_map(IterPoints::iter_points)
-    }
-}
-
-impl<P: Point> Area for Ring<P> {
-    type P = P;
-
-    #[inline]
-    fn area(&self) -> <P as Wedge>::Output {
-        self.iter_points()
-            // Recenter the ring to improve numerical accuracy
-            .map(|p| p - self.points_open()[0])
-            .circular_tuple_windows()
-            .map(|(a, b)| a.wedge(b))
-            .sum::<<P as Wedge>::Output>()
-            / <<P as Point>::S as From<f32>>::from(2f32)
-    }
-}
-
-impl<P: Point> Area for MultiRing<P> {
-    type P = P;
-
-    #[inline]
-    fn area(&self) -> <P as Wedge>::Output {
-        self.0.iter().map(Area::area).sum()
-    }
-}
-
-impl<P> BufferGeometry for Ring<P>
-where
-    P: Point,
-    Polygon<P>: BufferGeometry<P = P>,
-{
-    type P = P;
-
-    fn buffer(&self, distance: f64) -> crate::MultiPolygon<<Self as BufferGeometry>::P> {
-        self.to_polygon().buffer(distance)
-    }
-}
-
-impl<P> BufferGeometry for MultiRing<P>
-where
-    P: Point,
-    Polygon<P>: BufferGeometry<P = P>,
-{
-    type P = P;
-
-    fn buffer(&self, distance: f64) -> crate::MultiPolygon<<Self as BufferGeometry>::P> {
-        self.0.iter().map(|ring| ring.buffer(distance)).fold(
-            crate::MultiPolygon::empty(),
-            |mut acc, mp| {
-                acc.0.extend(mp.0);
-                acc
-            },
-        )
     }
 }
 
@@ -339,14 +281,5 @@ impl<P: Point> From<Triangle<P>> for Ring<P> {
     #[inline]
     fn from(value: Triangle<P>) -> Self {
         Ring::new(value.0.to_vec())
-    }
-}
-
-impl<'a, P: Point2> ToGeo for &'a Ring<P> {
-    type GeoType = geo::LineString<P::S>;
-
-    #[inline]
-    fn to_geo(self) -> Self::GeoType {
-        self.into()
     }
 }

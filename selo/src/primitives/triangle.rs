@@ -1,9 +1,7 @@
-use itertools::Itertools;
-
 use crate::utils::{coord_to_vec2, vec2_to_coord};
 
 use crate::point::{Point, Point2};
-use crate::{Area, SeloScalar, ToGeo, ToSelo, Wedge};
+use crate::{MultiRing, Ring};
 
 /// A 2D Triangle
 ///
@@ -18,30 +16,31 @@ use crate::{Area, SeloScalar, ToGeo, ToSelo, Wedge};
 #[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
 pub struct Triangle<P: Point>(pub [P; 3]);
 
+impl<P: Point> Triangle<P> {
+    /// converts the [`Triangle`] to [`Ring`]. This is mainly useful since the
+    /// [`Ring`] is more general and implements more algorithms
+    pub fn as_ring(self) -> Ring<P> {
+        Ring::new(self.0)
+    }
+}
+
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
 pub struct MultiTriangle<P: Point>(pub Vec<Triangle<P>>);
+
+impl<P: Point> MultiTriangle<P> {
+    /// converts the [`MultiTriangle`] to [`MultiRing`]. This is mainly useful since the
+    /// [`MultiRing`] is more general and implements more algorithms
+    #[inline]
+    pub fn as_multi_ring(&self) -> MultiRing<P> {
+        MultiRing(self.0.iter().map(|tri| tri.as_ring()).collect::<Vec<_>>())
+    }
+}
 
 impl<P: Point> Default for MultiTriangle<P> {
     #[inline]
     fn default() -> Self {
         Self(vec![])
-    }
-}
-
-// Traits
-
-impl<P: Point> Area for Triangle<P> {
-    type P = P;
-
-    #[inline]
-    fn area(&self) -> <P as Wedge>::Output {
-        self.0
-            .into_iter()
-            .circular_tuple_windows()
-            .map(|(a, b)| a.wedge(b))
-            .sum::<<P as Wedge>::Output>()
-            / <<P as Point>::S as From<f32>>::from(2f32)
     }
 }
 
@@ -84,23 +83,5 @@ impl<P: Point2> From<&MultiTriangle<P>> for Vec<geo::Triangle<P::S>> {
             .copied()
             .map(|triangle| triangle.into())
             .collect::<Vec<_>>()
-    }
-}
-
-impl<P: Point2> ToGeo for Triangle<P> {
-    type GeoType = geo::Triangle<P::S>;
-
-    #[inline]
-    fn to_geo(self) -> Self::GeoType {
-        self.into()
-    }
-}
-
-impl<S: SeloScalar> ToSelo for geo::Triangle<S> {
-    type SeloType = Triangle<S::Point2>;
-
-    #[inline]
-    fn to_selo(self) -> Self::SeloType {
-        self.into()
     }
 }

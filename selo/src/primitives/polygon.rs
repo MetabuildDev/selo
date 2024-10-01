@@ -1,10 +1,5 @@
 use super::{Line, MultiRing, Ring};
-use crate::{
-    point::{Point, Point2},
-    prelude::Workplane,
-    Area, BufferGeometry, Embed, IterPoints, Map, SeloScalar, ToGeo, ToSelo, Unembed, Wedge,
-};
-use bevy_math::*;
+use crate::point::{Point, Point2};
 
 /// Represents the inside area of a closed [`LineString`] with an arbitrary number of holes which
 /// are excluded from this area.
@@ -137,9 +132,17 @@ impl<P: Point> Polygon<P> {
             .chain(self.1 .0.iter().flat_map(|ring| ring.lines()))
     }
 
+    /// Converts the [`Polygon`] to [`MultiPolygon`]. This is mainly useful for comparison or other
+    /// situation where a single-polygon-multipolygon is required.
     #[inline]
     pub fn to_multi(&self) -> MultiPolygon<P> {
         MultiPolygon(vec![self.clone()])
+    }
+
+    /// An iterator over all the [`Ring`]s of the [`Polygon`]. The exterior always comes first but
+    /// if you need exclusive access to it, then consider using [`Polygon::exterior`] instead.
+    pub fn iter_rings(&self) -> impl Iterator<Item = &Ring<P>> {
+        std::iter::once(self.exterior()).chain(self.interior().iter())
     }
 }
 
@@ -179,101 +182,10 @@ impl<P: Point> MultiPolygon<P> {
     pub fn empty() -> Self {
         Self::default()
     }
-}
 
-// Traits
-
-impl<P: Point> IterPoints for Polygon<P> {
-    type P = P;
-
-    #[inline]
-    fn iter_points(&self) -> impl Iterator<Item = P> + Clone {
-        self.exterior()
-            .iter_points()
-            .chain(self.interior().iter_points())
-    }
-}
-
-impl<P: Point> IterPoints for MultiPolygon<P> {
-    type P = P;
-
-    #[inline]
-    fn iter_points(&self) -> impl Iterator<Item = P> + Clone {
-        self.iter().flat_map(IterPoints::iter_points)
-    }
-}
-
-impl<P: Point> Area for Polygon<P> {
-    type P = P;
-
-    #[inline]
-    fn area(&self) -> <P as Wedge>::Output {
-        self.exterior().area() - self.interior().area()
-    }
-}
-
-impl<P: Point> Area for MultiPolygon<P> {
-    type P = P;
-
-    #[inline]
-    fn area(&self) -> <P as Wedge>::Output {
-        self.0.iter().map(Area::area).sum()
-    }
-}
-
-impl BufferGeometry for Polygon<Vec2> {
-    type P = Vec2;
-
-    fn buffer(&self, distance: f64) -> MultiPolygon<<Self as BufferGeometry>::P> {
-        self.map(|p| p.as_dvec2())
-            .buffer(distance)
-            .map(|p| p.as_vec2())
-    }
-}
-
-impl BufferGeometry for Polygon<DVec2> {
-    type P = DVec2;
-
-    fn buffer(&self, distance: f64) -> MultiPolygon<<Self as BufferGeometry>::P> {
-        geo_buffer::buffer_polygon(&self.to_geo(), distance).to_selo()
-    }
-}
-
-impl BufferGeometry for Polygon<Vec3> {
-    type P = Vec3;
-
-    fn buffer(&self, distance: f64) -> MultiPolygon<<Self as BufferGeometry>::P> {
-        Workplane::from_primitive(self)
-            .map_or(MultiPolygon::<<Self as BufferGeometry>::P>::empty(), |wp| {
-                self.embed(wp).buffer(distance).unembed(wp)
-            })
-    }
-}
-
-impl BufferGeometry for Polygon<DVec3> {
-    type P = DVec3;
-
-    fn buffer(&self, distance: f64) -> MultiPolygon<<Self as BufferGeometry>::P> {
-        self.map(|p| p.as_vec3())
-            .buffer(distance)
-            .map(|p| p.as_dvec3())
-    }
-}
-
-impl<P> BufferGeometry for MultiPolygon<P>
-where
-    P: Point,
-    Polygon<P>: BufferGeometry<P = P>,
-{
-    type P = P;
-    fn buffer(&self, distance: f64) -> MultiPolygon<<Self as BufferGeometry>::P> {
-        self.0.iter().map(|poly| poly.buffer(distance)).fold(
-            MultiPolygon::empty(),
-            |mut acc, mp| {
-                acc.0.extend(mp.0);
-                acc
-            },
-        )
+    /// An iterator over all [`Ring`]s of the [`MultiPolygon`].
+    pub fn iter_rings(&self) -> impl Iterator<Item = &Ring<P>> {
+        self.iter().flat_map(|polygon| polygon.iter_rings())
     }
 }
 
@@ -316,40 +228,5 @@ impl<P: Point2> From<&MultiPolygon<P>> for geo::MultiPolygon<P::S> {
     #[inline]
     fn from(value: &MultiPolygon<P>) -> Self {
         geo::MultiPolygon::new(value.0.iter().map(|poly| poly.into()).collect())
-    }
-}
-
-impl<'a, P: Point2> ToGeo for &'a Polygon<P> {
-    type GeoType = geo::Polygon<P::S>;
-
-    #[inline]
-    fn to_geo(self) -> Self::GeoType {
-        self.into()
-    }
-}
-
-impl<'a, P: Point2> ToGeo for &'a MultiPolygon<P> {
-    type GeoType = geo::MultiPolygon<P::S>;
-
-    #[inline]
-    fn to_geo(self) -> Self::GeoType {
-        self.into()
-    }
-}
-
-impl<'a, S: SeloScalar> ToSelo for &'a geo::Polygon<S> {
-    type SeloType = Polygon<S::Point2>;
-
-    #[inline]
-    fn to_selo(self) -> Self::SeloType {
-        self.into()
-    }
-}
-impl<'a, S: SeloScalar> ToSelo for &'a geo::MultiPolygon<S> {
-    type SeloType = MultiPolygon<S::Point2>;
-
-    #[inline]
-    fn to_selo(self) -> Self::SeloType {
-        self.into()
     }
 }

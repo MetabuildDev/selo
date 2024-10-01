@@ -1,8 +1,6 @@
-use std::iter::once;
-
 use itertools::Itertools;
 
-use crate::{Line, LineString, MultiLineString, MultiPolygon, MultiRing, Point, Polygon, Ring};
+use crate::{primitives::*, Point};
 
 use super::IterPoints;
 
@@ -16,7 +14,7 @@ impl<P: Point> LinesIter for Line<P> {
 
     #[inline]
     fn iter_lines(&self) -> impl Iterator<Item = Line<Self::P>> {
-        once(Line(self.0))
+        std::iter::once(Line(self.0))
     }
 }
 
@@ -28,6 +26,18 @@ impl<P: Point> LinesIter for LineString<P> {
         self.iter_points()
             .tuple_windows()
             .map(|(a, b)| Line([a, b]))
+    }
+}
+
+impl<P: Point> LinesIter for Triangle<P> {
+    type P = P;
+
+    #[inline]
+    fn iter_lines(&self) -> impl Iterator<Item = Line<Self::P>> {
+        let [a, b, c] = self.0;
+        [(a, b), (b, c), (c, a)]
+            .map(|(start, end)| Line([start, end]))
+            .into_iter()
     }
 }
 

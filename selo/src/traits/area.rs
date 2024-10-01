@@ -45,6 +45,69 @@ impl<T: Area> Normal for T {
     }
 }
 
+mod impls {
+    use itertools::Itertools as _;
+
+    use super::*;
+    use crate::{primitives::*, IterPoints as _};
+
+    impl<P: Point> Area for Polygon<P> {
+        type P = P;
+
+        #[inline]
+        fn area(&self) -> <P as Wedge>::Output {
+            self.exterior().area() - self.interior().area()
+        }
+    }
+
+    impl<P: Point> Area for MultiPolygon<P> {
+        type P = P;
+
+        #[inline]
+        fn area(&self) -> <P as Wedge>::Output {
+            self.0.iter().map(Area::area).sum()
+        }
+    }
+
+    impl<P: Point> Area for Ring<P> {
+        type P = P;
+
+        #[inline]
+        fn area(&self) -> <P as Wedge>::Output {
+            self.iter_points()
+                // Recenter the ring to improve numerical accuracy
+                .map(|p| p - self.points_open()[0])
+                .circular_tuple_windows()
+                .map(|(a, b)| a.wedge(b))
+                .sum::<<P as Wedge>::Output>()
+                / <<P as Point>::S as From<f32>>::from(2f32)
+        }
+    }
+
+    impl<P: Point> Area for MultiRing<P> {
+        type P = P;
+
+        #[inline]
+        fn area(&self) -> <P as Wedge>::Output {
+            self.0.iter().map(Area::area).sum()
+        }
+    }
+
+    impl<P: Point> Area for Triangle<P> {
+        type P = P;
+
+        #[inline]
+        fn area(&self) -> <P as Wedge>::Output {
+            self.0
+                .into_iter()
+                .circular_tuple_windows()
+                .map(|(a, b)| a.wedge(b))
+                .sum::<<P as Wedge>::Output>()
+                / <<P as Point>::S as From<f32>>::from(2f32)
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
 
