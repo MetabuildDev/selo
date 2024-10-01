@@ -142,7 +142,7 @@ impl<P: Point> Polygon<P> {
     /// An iterator over all the [`Ring`]s of the [`Polygon`]. The exterior always comes first but
     /// if you need exclusive access to it, then consider using [`Polygon::exterior`] instead.
     pub fn iter_rings(&self) -> impl Iterator<Item = &Ring<P>> {
-        std::iter::once(self.exterior()).chain(self.interior().iter().chain())
+        std::iter::once(self.exterior()).chain(self.interior().iter())
     }
 }
 
