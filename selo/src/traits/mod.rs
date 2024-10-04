@@ -27,3 +27,9 @@ pub use contains::*;
 
 mod intersection;
 pub use intersection::*;
+
+mod center;
+pub use center::*;
+
+mod orientation;
+pub use orientation::*;

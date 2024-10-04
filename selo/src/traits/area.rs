@@ -16,7 +16,6 @@ use crate::{Normed, Point, Wedge};
 /// ]);
 /// assert_eq!(polygon.area(), 9.0)
 /// ```
-///
 pub trait Area {
     type P: Point;
 
