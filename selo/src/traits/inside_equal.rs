@@ -21,16 +21,12 @@ impl<P: Point> InsideEqual for Ring<P> {
         if len != other.points_open().len() {
             return false;
         }
-        let first = self.points_open().first();
-        (0..len)
-            .filter(|&i| other.points_open().get(i) == first)
-            .any(|i| {
-                self.iter_points().cycle().take(len).eq(other
-                    .iter_points()
-                    .cycle()
-                    .skip(i)
-                    .take(len))
-            })
+        (0..len).any(|i| {
+            self.iter_points()
+                .cycle()
+                .take(len)
+                .eq(other.iter_points().cycle().skip(i).take(len))
+        })
     }
 
     fn inside_abs_diff_eq(&self, other: &Self, epsilon: P::S) -> bool {
@@ -38,16 +34,13 @@ impl<P: Point> InsideEqual for Ring<P> {
         if len != other.points_open().len() {
             return false;
         }
-        let first = self.points_open().first();
-        (0..len)
-            .filter(|&i| other.points_open().get(i) == first)
-            .any(|i| {
-                self.iter_points()
-                    .cycle()
-                    .take(len)
-                    .zip(other.iter_points().cycle().skip(i).take(len))
-                    .all(|(a, b)| a.abs_diff_eq(b, epsilon))
-            })
+        (0..len).any(|i| {
+            self.iter_points()
+                .cycle()
+                .take(len)
+                .zip(other.iter_points().cycle().skip(i).take(len))
+                .all(|(a, b)| a.abs_diff_eq(b, epsilon))
+        })
     }
 }
 
@@ -117,7 +110,7 @@ impl<P: Point> InsideEqual for MultiPolygon<P> {
 #[cfg(test)]
 mod inside_eq_trait {
     use super::*;
-    use bevy_math::*;
+    use glam::*;
 
     #[test]
     fn polygon() {
