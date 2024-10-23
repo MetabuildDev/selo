@@ -5,7 +5,8 @@ members = ["selo", "testapp"]
 [workspace.dependencies]
 geo = { git = "https://github.com/RobWalt/geo.git", branch = "feat/spade-boolops" }
 bevy_math = "0.14"
-geo-buffer = { git = "https://github.com/RobWalt/geo-buffer.git", branch = "update" }
+# TODO: update RobWalt's repo to point to patched geo in geo-buffer
+geo-buffer = { git = "https://github.com/no-materials/geo-buffer.git" }
 bevy_reflect = "0.14"
 
 strum = "0.26"
