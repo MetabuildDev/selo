@@ -1,3 +1,6 @@
+mod boolops;
+pub use boolops::*;
+
 mod area;
 pub use area::*;
 
