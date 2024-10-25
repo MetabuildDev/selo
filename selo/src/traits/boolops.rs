@@ -27,7 +27,7 @@ impl BoolOps for MultiPolygon<Vec2> {
         for b in rhs.iter().map(poly_to_paths) {
             overlay.add_paths(b, ShapeType::Clip);
         }
-        let graph = overlay.into_graph(FillRule::Positive);
+        let graph = overlay.into_graph(FillRule::EvenOdd);
         let shapes = graph.extract_shapes(OverlayRule::Union);
         MultiPolygon(shapes.iter().map(paths_to_poly).collect())
     }
@@ -39,7 +39,7 @@ impl BoolOps for MultiPolygon<Vec2> {
         for b in rhs.iter().map(poly_to_paths) {
             overlay.add_paths(b, ShapeType::Clip);
         }
-        let graph = overlay.into_graph(FillRule::Positive);
+        let graph = overlay.into_graph(FillRule::EvenOdd);
         let shapes = graph.extract_shapes(OverlayRule::Intersect);
         MultiPolygon(shapes.iter().map(paths_to_poly).collect())
     }
