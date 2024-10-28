@@ -12,14 +12,24 @@ use crate::{MultiPolygon, MultiRing, Point2, Polygon, Ring};
 
 pub trait BoolOps {
     type P: Point2;
-    fn union(&self, rhs: &Self) -> MultiPolygon<Self::P>;
-    fn intersection(&self, rhs: &Self) -> MultiPolygon<Self::P>;
-    fn difference(&self, rhs: &Self) -> MultiPolygon<Self::P>;
+
+    fn boolop(&self, rhs: &Self, overlay_rule: OverlayRule) -> MultiPolygon<Self::P>;
+
+    fn union(&self, rhs: &Self) -> MultiPolygon<Self::P> {
+        self.boolop(rhs, OverlayRule::Union)
+    }
+    fn intersection(&self, rhs: &Self) -> MultiPolygon<Self::P> {
+        self.boolop(rhs, OverlayRule::Intersect)
+    }
+    fn difference(&self, rhs: &Self) -> MultiPolygon<Self::P> {
+        self.boolop(rhs, OverlayRule::Difference)
+    }
 }
 
 impl BoolOps for MultiPolygon<Vec2> {
     type P = Vec2;
-    fn union(&self, rhs: &Self) -> Self {
+
+    fn boolop(&self, rhs: &Self, overlay_rule: OverlayRule) -> MultiPolygon<Self::P> {
         let mut overlay = F32Overlay::new();
         for a in self.iter().map(poly_to_paths) {
             overlay.add_paths(a, ShapeType::Subject);
@@ -28,32 +38,8 @@ impl BoolOps for MultiPolygon<Vec2> {
             overlay.add_paths(b, ShapeType::Clip);
         }
         let graph = overlay.into_graph(FillRule::EvenOdd);
-        let shapes = graph.extract_shapes(OverlayRule::Union);
-        MultiPolygon(shapes.iter().map(paths_to_poly).collect())
-    }
-    fn intersection(&self, rhs: &Self) -> Self {
-        let mut overlay = F32Overlay::new();
-        for a in self.iter().map(poly_to_paths) {
-            overlay.add_paths(a, ShapeType::Subject);
-        }
-        for b in rhs.iter().map(poly_to_paths) {
-            overlay.add_paths(b, ShapeType::Clip);
-        }
-        let graph = overlay.into_graph(FillRule::EvenOdd);
-        let shapes = graph.extract_shapes(OverlayRule::Intersect);
-        MultiPolygon(shapes.iter().map(paths_to_poly).collect())
-    }
-    fn difference(&self, rhs: &Self) -> Self {
-        let mut overlay = F32Overlay::new();
-        for a in self.iter().map(poly_to_paths) {
-            overlay.add_paths(a, ShapeType::Subject);
-        }
-        for b in rhs.iter().map(poly_to_paths) {
-            overlay.add_paths(b, ShapeType::Clip);
-        }
-        let graph = overlay.into_graph(FillRule::EvenOdd);
-        let shapes = graph.extract_shapes(OverlayRule::Difference);
-        MultiPolygon(shapes.iter().map(paths_to_poly).collect())
+        let shapes = graph.extract_shapes(overlay_rule);
+        MultiPolygon(shapes.into_iter().flat_map(paths_to_poly).collect())
     }
 }
 
@@ -96,15 +82,16 @@ fn ring_to_path<P: IntoIOverlayPoint + Point2>(ring: &Ring<P>) -> Vec<P::IPoint>
     ring.0.iter().map(|p| p.to_ipoint()).collect()
 }
 
-fn paths_to_poly<P: IntoIOverlayPoint + Point2>(paths: &Vec<Vec<P::IPoint>>) -> Polygon<P> {
-    let exterior = &paths[0];
-    let interiors = &paths[1..];
-    Polygon::new(
+fn paths_to_poly<P: IntoIOverlayPoint + Point2>(paths: Vec<Vec<P::IPoint>>) -> Option<Polygon<P>> {
+    let mut iter = paths.into_iter();
+    let exterior = iter.next()?;
+    let interiors = iter;
+    Some(Polygon::new(
         path_to_ring(exterior),
-        MultiRing(interiors.into_iter().map(path_to_ring).collect()),
-    )
+        MultiRing(interiors.map(path_to_ring).collect()),
+    ))
 }
 
-fn path_to_ring<P: IntoIOverlayPoint + Point2>(path: &Vec<P::IPoint>) -> Ring<P> {
+fn path_to_ring<P: IntoIOverlayPoint + Point2>(path: Vec<P::IPoint>) -> Ring<P> {
     Ring::new(path.iter().map(|p| P::from_ipoint(*p)).collect::<Vec<_>>())
 }
