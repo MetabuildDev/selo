@@ -10,6 +10,8 @@ use i_overlay::{
 
 use crate::{MultiPolygon, MultiRing, Point2, Polygon, Ring};
 
+type BoolOpsPath<P> = Vec<<P as IntoIOverlayPoint>::IPoint>;
+
 pub trait BoolOps {
     type P: Point2;
 
