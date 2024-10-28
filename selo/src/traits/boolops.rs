@@ -10,7 +10,7 @@ use i_overlay::{
 
 use crate::{MultiPolygon, MultiRing, Point2, Polygon, Ring, Triangle};
 
-type BoolOpsPath<P> = Vec<<P as IntoIOverlayPoint>::IPoint>;
+type BoolOpsPath<P> = Vec<<P as BoolOpsPoint>::IPoint>;
 
 pub trait BoolOps<Rhs> {
     type P: Point2;
@@ -28,94 +28,69 @@ pub trait BoolOps<Rhs> {
     }
 }
 
-impl<Lhs: IntoIOverlayPaths, Rhs: IntoIOverlayPaths<IOverlayPoint = Lhs::IOverlayPoint>>
-    BoolOps<Rhs> for Lhs
-{
-    type P = Lhs::IOverlayPoint;
+impl<Lhs: IntoBoolOpsPath, Rhs: IntoBoolOpsPath<P = Lhs::P>> BoolOps<Rhs> for Lhs {
+    type P = Lhs::P;
 
     fn boolop(&self, rhs: &Rhs, overlay_rule: OverlayRule) -> MultiPolygon<Self::P> {
         Self::P::boolops(self, rhs, overlay_rule)
     }
 }
 
-pub trait IntoIOverlayPaths {
-    type IOverlayPoint: IntoIOverlayPoint;
-    fn add_paths(
-        &self,
-        overlay: &mut <Self::IOverlayPoint as IntoIOverlayPoint>::Overlay,
-        shape_type: ShapeType,
-    );
+pub trait IntoBoolOpsPath {
+    type P: BoolOpsPoint;
+    fn add_paths(&self, overlay: &mut <Self::P as BoolOpsPoint>::Overlay, shape_type: ShapeType);
 }
 
-impl<P: IntoIOverlayPoint> IntoIOverlayPaths for MultiPolygon<P> {
-    type IOverlayPoint = P;
+impl<P: BoolOpsPoint> IntoBoolOpsPath for MultiPolygon<P> {
+    type P = P;
 
-    fn add_paths(
-        &self,
-        overlay: &mut <Self::IOverlayPoint as IntoIOverlayPoint>::Overlay,
-        shape_type: ShapeType,
-    ) {
+    fn add_paths(&self, overlay: &mut <Self::P as BoolOpsPoint>::Overlay, shape_type: ShapeType) {
         for paths in self.iter().flat_map(poly_to_paths) {
             P::add_path(overlay, paths, shape_type);
         }
     }
 }
 
-impl<P: IntoIOverlayPoint> IntoIOverlayPaths for Polygon<P> {
-    type IOverlayPoint = P;
+impl<P: BoolOpsPoint> IntoBoolOpsPath for Polygon<P> {
+    type P = P;
 
-    fn add_paths(
-        &self,
-        overlay: &mut <Self::IOverlayPoint as IntoIOverlayPoint>::Overlay,
-        shape_type: ShapeType,
-    ) {
+    fn add_paths(&self, overlay: &mut <Self::P as BoolOpsPoint>::Overlay, shape_type: ShapeType) {
         for paths in poly_to_paths(self) {
             P::add_path(overlay, paths, shape_type);
         }
     }
 }
 
-impl<P: IntoIOverlayPoint> IntoIOverlayPaths for Ring<P> {
-    type IOverlayPoint = P;
+impl<P: BoolOpsPoint> IntoBoolOpsPath for Ring<P> {
+    type P = P;
 
-    fn add_paths(
-        &self,
-        overlay: &mut <Self::IOverlayPoint as IntoIOverlayPoint>::Overlay,
-        shape_type: ShapeType,
-    ) {
+    fn add_paths(&self, overlay: &mut <Self::P as BoolOpsPoint>::Overlay, shape_type: ShapeType) {
         P::add_path(overlay, ring_to_path(self), shape_type);
     }
 }
 
-impl<P: IntoIOverlayPoint> IntoIOverlayPaths for Triangle<P> {
-    type IOverlayPoint = P;
+impl<P: BoolOpsPoint> IntoBoolOpsPath for Triangle<P> {
+    type P = P;
 
-    fn add_paths(
-        &self,
-        overlay: &mut <Self::IOverlayPoint as IntoIOverlayPoint>::Overlay,
-        shape_type: ShapeType,
-    ) {
+    fn add_paths(&self, overlay: &mut <Self::P as BoolOpsPoint>::Overlay, shape_type: ShapeType) {
         P::add_path(overlay, ring_to_path(&self.as_ring()), shape_type);
     }
 }
 
-pub trait IntoIOverlayPoint: Point2 {
+pub trait BoolOpsPoint: Point2 {
     type IPoint: Copy;
     type Overlay;
     fn to_ipoint(self) -> Self::IPoint;
     fn from_ipoint(p: Self::IPoint) -> Self;
     fn add_path(overlay: &mut Self::Overlay, path: BoolOpsPath<Self>, shape_type: ShapeType);
-    fn boolops<
-        Lhs: IntoIOverlayPaths<IOverlayPoint = Self>,
-        Rhs: IntoIOverlayPaths<IOverlayPoint = Self>,
-    >(
+    fn boolops<Lhs: IntoBoolOpsPath<P = Self>, Rhs: IntoBoolOpsPath<P = Self>>(
         lhs: &Lhs,
         rhs: &Rhs,
         overlay_rule: OverlayRule,
     ) -> MultiPolygon<Self>;
 }
 
-impl IntoIOverlayPoint for Vec2 {
+impl BoolOpsPoint for Vec2 {
     type IPoint = F32Point;
     type Overlay = F32Overlay;
     fn to_ipoint(self) -> Self::IPoint {
@@ -128,10 +103,7 @@ impl IntoIOverlayPoint for Vec2 {
     fn add_path(overlay: &mut Self::Overlay, path: BoolOpsPath<Self>, shape_type: ShapeType) {
         overlay.add_path(path, shape_type);
     }
-    fn boolops<
-        Lhs: IntoIOverlayPaths<IOverlayPoint = Self>,
-        Rhs: IntoIOverlayPaths<IOverlayPoint = Self>,
-    >(
+    fn boolops<Lhs: IntoBoolOpsPath<P = Self>, Rhs: IntoBoolOpsPath<P = Self>>(
         lhs: &Lhs,
         rhs: &Rhs,
         overlay_rule: OverlayRule,
@@ -145,7 +117,7 @@ impl IntoIOverlayPoint for Vec2 {
     }
 }
 
-impl IntoIOverlayPoint for DVec2 {
+impl BoolOpsPoint for DVec2 {
     type IPoint = F64Point;
     type Overlay = F64Overlay;
     fn to_ipoint(self) -> Self::IPoint {
@@ -157,10 +129,7 @@ impl IntoIOverlayPoint for DVec2 {
     fn add_path(overlay: &mut Self::Overlay, path: BoolOpsPath<Self>, shape_type: ShapeType) {
         overlay.add_path(path, shape_type);
     }
-    fn boolops<
-        Lhs: IntoIOverlayPaths<IOverlayPoint = Self>,
-        Rhs: IntoIOverlayPaths<IOverlayPoint = Self>,
-    >(
+    fn boolops<Lhs: IntoBoolOpsPath<P = Self>, Rhs: IntoBoolOpsPath<P = Self>>(
         lhs: &Lhs,
         rhs: &Rhs,
         overlay_rule: OverlayRule,
@@ -174,7 +143,7 @@ impl IntoIOverlayPoint for DVec2 {
     }
 }
 
-fn poly_to_paths<P: IntoIOverlayPoint + Point2>(poly: &Polygon<P>) -> Vec<BoolOpsPath<P>> {
+fn poly_to_paths<P: BoolOpsPoint + Point2>(poly: &Polygon<P>) -> Vec<BoolOpsPath<P>> {
     let exterior = poly.exterior();
     let interiors = poly.interior();
     once(exterior)
@@ -183,11 +152,11 @@ fn poly_to_paths<P: IntoIOverlayPoint + Point2>(poly: &Polygon<P>) -> Vec<BoolOp
         .collect()
 }
 
-fn ring_to_path<P: IntoIOverlayPoint + Point2>(ring: &Ring<P>) -> BoolOpsPath<P> {
+fn ring_to_path<P: BoolOpsPoint + Point2>(ring: &Ring<P>) -> BoolOpsPath<P> {
     ring.0.iter().rev().map(|p| p.to_ipoint()).collect()
 }
 
-fn paths_to_poly<P: IntoIOverlayPoint + Point2>(
+fn paths_to_poly<P: BoolOpsPoint + Point2>(
     paths: impl IntoIterator<Item = Vec<P::IPoint>>,
 ) -> Option<Polygon<P>> {
     let mut paths = paths.into_iter();
@@ -202,7 +171,7 @@ fn paths_to_poly<P: IntoIOverlayPoint + Point2>(
     Some(poly)
 }
 
-fn path_to_ring<P: IntoIOverlayPoint + Point2>(path: BoolOpsPath<P>) -> Ring<P> {
+fn path_to_ring<P: BoolOpsPoint + Point2>(path: BoolOpsPath<P>) -> Ring<P> {
     Ring::new(
         path.iter()
             .rev()
