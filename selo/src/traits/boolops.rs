@@ -91,27 +91,35 @@ impl IntoIOverlayPoint for DVec2 {
     }
 }
 
-fn poly_to_paths<P: IntoIOverlayPoint + Point2>(poly: &Polygon<P>) -> Vec<Vec<P::IPoint>> {
-    once(ring_to_path(poly.exterior()))
-        .chain(poly.interior().iter().map(ring_to_path))
+fn poly_to_paths<P: IntoIOverlayPoint + Point2>(poly: &Polygon<P>) -> Vec<BoolOpsPath<P>> {
+    let exterior = poly.exterior();
+    let interiors = poly.interior();
+    once(exterior)
+        .chain(interiors.iter())
+        .map(ring_to_path)
         .collect()
 }
 
-fn ring_to_path<P: IntoIOverlayPoint + Point2>(ring: &Ring<P>) -> Vec<P::IPoint> {
+fn ring_to_path<P: IntoIOverlayPoint + Point2>(ring: &Ring<P>) -> BoolOpsPath<P> {
     ring.0.iter().map(|p| p.to_ipoint()).collect()
 }
 
-fn paths_to_poly<P: IntoIOverlayPoint + Point2>(paths: Vec<Vec<P::IPoint>>) -> Option<Polygon<P>> {
-    let mut iter = paths.into_iter();
-    let exterior = iter.next()?;
-    let interiors = iter;
-    Some(Polygon::new(
-        path_to_ring(exterior),
-        MultiRing(interiors.map(path_to_ring).collect()),
-    ))
+fn paths_to_poly<P: IntoIOverlayPoint + Point2>(
+    paths: impl IntoIterator<Item = Vec<P::IPoint>>,
+) -> Option<Polygon<P>> {
+    let mut paths = paths.into_iter();
+    // just ignore poly if paths are empty
+    let exterior = paths.next()?;
+    let interiors = paths;
+
+    let outer = path_to_ring(exterior);
+    let inner = MultiRing(interiors.map(path_to_ring).collect());
+    let poly = Polygon::new(outer, inner);
+
+    Some(poly)
 }
 
-fn path_to_ring<P: IntoIOverlayPoint + Point2>(path: Vec<P::IPoint>) -> Ring<P> {
+fn path_to_ring<P: IntoIOverlayPoint + Point2>(path: BoolOpsPath<P>) -> Ring<P> {
     Ring::new(path.iter().map(|p| P::from_ipoint(*p)).collect::<Vec<_>>())
 }
 
