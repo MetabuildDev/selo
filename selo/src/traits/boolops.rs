@@ -10,16 +10,28 @@ use i_overlay::{
 
 use crate::{MultiPolygon, MultiRing, Point2, Polygon, Ring};
 
+type BoolOpsPath<P> = Vec<<P as IntoIOverlayPoint>::IPoint>;
+
 pub trait BoolOps {
     type P: Point2;
-    fn union(&self, rhs: &Self) -> MultiPolygon<Self::P>;
-    fn intersection(&self, rhs: &Self) -> MultiPolygon<Self::P>;
-    fn difference(&self, rhs: &Self) -> MultiPolygon<Self::P>;
+
+    fn boolop(&self, rhs: &Self, overlay_rule: OverlayRule) -> MultiPolygon<Self::P>;
+
+    fn union(&self, rhs: &Self) -> MultiPolygon<Self::P> {
+        self.boolop(rhs, OverlayRule::Union)
+    }
+    fn intersection(&self, rhs: &Self) -> MultiPolygon<Self::P> {
+        self.boolop(rhs, OverlayRule::Intersect)
+    }
+    fn difference(&self, rhs: &Self) -> MultiPolygon<Self::P> {
+        self.boolop(rhs, OverlayRule::Difference)
+    }
 }
 
 impl BoolOps for MultiPolygon<Vec2> {
     type P = Vec2;
-    fn union(&self, rhs: &Self) -> Self {
+
+    fn boolop(&self, rhs: &Self, overlay_rule: OverlayRule) -> MultiPolygon<Self::P> {
         let mut overlay = F32Overlay::new();
         for a in self.iter().map(poly_to_paths) {
             overlay.add_paths(a, ShapeType::Subject);
@@ -28,11 +40,16 @@ impl BoolOps for MultiPolygon<Vec2> {
             overlay.add_paths(b, ShapeType::Clip);
         }
         let graph = overlay.into_graph(FillRule::EvenOdd);
-        let shapes = graph.extract_shapes(OverlayRule::Union);
-        MultiPolygon(shapes.iter().map(paths_to_poly).collect())
+        let shapes = graph.extract_shapes(overlay_rule);
+        MultiPolygon(shapes.into_iter().flat_map(paths_to_poly).collect())
     }
-    fn intersection(&self, rhs: &Self) -> Self {
-        let mut overlay = F32Overlay::new();
+}
+
+impl BoolOps for MultiPolygon<DVec2> {
+    type P = DVec2;
+
+    fn boolop(&self, rhs: &Self, overlay_rule: OverlayRule) -> MultiPolygon<Self::P> {
+        let mut overlay = F64Overlay::new();
         for a in self.iter().map(poly_to_paths) {
             overlay.add_paths(a, ShapeType::Subject);
         }
@@ -40,20 +57,8 @@ impl BoolOps for MultiPolygon<Vec2> {
             overlay.add_paths(b, ShapeType::Clip);
         }
         let graph = overlay.into_graph(FillRule::EvenOdd);
-        let shapes = graph.extract_shapes(OverlayRule::Intersect);
-        MultiPolygon(shapes.iter().map(paths_to_poly).collect())
-    }
-    fn difference(&self, rhs: &Self) -> Self {
-        let mut overlay = F32Overlay::new();
-        for a in self.iter().map(poly_to_paths) {
-            overlay.add_paths(a, ShapeType::Subject);
-        }
-        for b in rhs.iter().map(poly_to_paths) {
-            overlay.add_paths(b, ShapeType::Clip);
-        }
-        let graph = overlay.into_graph(FillRule::EvenOdd);
-        let shapes = graph.extract_shapes(OverlayRule::Difference);
-        MultiPolygon(shapes.iter().map(paths_to_poly).collect())
+        let shapes = graph.extract_shapes(overlay_rule);
+        MultiPolygon(shapes.into_iter().flat_map(paths_to_poly).collect())
     }
 }
 
@@ -86,25 +91,68 @@ impl IntoIOverlayPoint for DVec2 {
     }
 }
 
-fn poly_to_paths<P: IntoIOverlayPoint + Point2>(poly: &Polygon<P>) -> Vec<Vec<P::IPoint>> {
-    once(ring_to_path(poly.exterior()))
-        .chain(poly.interior().iter().map(ring_to_path))
+fn poly_to_paths<P: IntoIOverlayPoint + Point2>(poly: &Polygon<P>) -> Vec<BoolOpsPath<P>> {
+    let exterior = poly.exterior();
+    let interiors = poly.interior();
+    once(exterior)
+        .chain(interiors.iter())
+        .map(ring_to_path)
         .collect()
 }
 
-fn ring_to_path<P: IntoIOverlayPoint + Point2>(ring: &Ring<P>) -> Vec<P::IPoint> {
-    ring.0.iter().map(|p| p.to_ipoint()).collect()
+fn ring_to_path<P: IntoIOverlayPoint + Point2>(ring: &Ring<P>) -> BoolOpsPath<P> {
+    ring.0.iter().rev().map(|p| p.to_ipoint()).collect()
 }
 
-fn paths_to_poly<P: IntoIOverlayPoint + Point2>(paths: &Vec<Vec<P::IPoint>>) -> Polygon<P> {
-    let exterior = &paths[0];
-    let interiors = &paths[1..];
-    Polygon::new(
-        path_to_ring(exterior),
-        MultiRing(interiors.into_iter().map(path_to_ring).collect()),
+fn paths_to_poly<P: IntoIOverlayPoint + Point2>(
+    paths: impl IntoIterator<Item = Vec<P::IPoint>>,
+) -> Option<Polygon<P>> {
+    let mut paths = paths.into_iter();
+    // just ignore poly if paths are empty
+    let exterior = paths.next()?;
+    let interiors = paths;
+
+    let outer = path_to_ring(exterior);
+    let inner = MultiRing(interiors.map(path_to_ring).collect());
+    let poly = Polygon::new(outer, inner);
+
+    Some(poly)
+}
+
+fn path_to_ring<P: IntoIOverlayPoint + Point2>(path: BoolOpsPath<P>) -> Ring<P> {
+    Ring::new(
+        path.iter()
+            .rev()
+            .map(|p| P::from_ipoint(*p))
+            .collect::<Vec<_>>(),
     )
 }
 
-fn path_to_ring<P: IntoIOverlayPoint + Point2>(path: &Vec<P::IPoint>) -> Ring<P> {
-    Ring::new(path.iter().map(|p| P::from_ipoint(*p)).collect::<Vec<_>>())
+#[cfg(test)]
+mod boolops_tests {
+
+    use crate::Area;
+
+    use super::*;
+
+    #[test]
+    fn verify_fill_rule_invariant_expectation() {
+        let outer_ring = Ring::new(vec![
+            Vec2::ZERO,
+            Vec2::X * 3.0,
+            Vec2::ONE * 3.0,
+            Vec2::Y * 3.0,
+        ]);
+        let inner_ring = Ring::new(
+            [Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]
+                .map(|pos2| pos2 + Vec2::ONE)
+                .to_vec(),
+        );
+        let poly_with_hole = Polygon::new(outer_ring.clone(), MultiRing(vec![inner_ring.clone()]));
+        let solid_poly = Polygon::new(outer_ring, MultiRing::empty());
+
+        let diff = solid_poly.to_multi().difference(&poly_with_hole.to_multi());
+
+        assert_eq!(inner_ring.area(), diff.area());
+    }
 }
