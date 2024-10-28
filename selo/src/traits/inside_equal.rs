@@ -110,7 +110,7 @@ impl<P: Point> InsideEqual for MultiPolygon<P> {
 #[cfg(test)]
 mod inside_eq_trait {
     use super::*;
-    use glam::*;
+    use bevy_math::*;
 
     #[test]
     fn polygon() {
