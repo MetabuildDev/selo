@@ -95,3 +95,33 @@ fn paths_to_poly<P: IntoIOverlayPoint + Point2>(paths: Vec<Vec<P::IPoint>>) -> O
 fn path_to_ring<P: IntoIOverlayPoint + Point2>(path: Vec<P::IPoint>) -> Ring<P> {
     Ring::new(path.iter().map(|p| P::from_ipoint(*p)).collect::<Vec<_>>())
 }
+
+#[cfg(test)]
+mod boolops_tests {
+
+    use crate::Area;
+
+    use super::*;
+
+    #[test]
+    fn verify_fill_rule_invariant_expectation() {
+        let outer_ring = Ring::new(vec![
+            Vec2::ZERO,
+            Vec2::X * 3.0,
+            Vec2::ONE * 3.0,
+            Vec2::Y * 3.0,
+        ]);
+        let inner_ring = Ring::new(
+            [Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]
+                .map(|pos2| pos2 + Vec2::ONE)
+                .to_vec(),
+        );
+        let poly_with_hole = Polygon::new(outer_ring.clone(), MultiRing(vec![inner_ring.clone()]));
+        let solid_poly = Polygon::new(outer_ring, MultiRing::empty());
+
+        let diff = solid_poly.to_multi().difference(&poly_with_hole.to_multi());
+
+        // the diff area is negative here. Should we fix that?
+        assert_eq!(inner_ring.area().abs(), diff.area().abs());
+    }
+}
