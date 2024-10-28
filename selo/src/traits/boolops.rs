@@ -8,65 +8,111 @@ use i_overlay::{
     i_float::{f32_point::F32Point, f64_point::F64Point},
 };
 
-use crate::{MultiPolygon, MultiRing, Point2, Polygon, Ring};
+use crate::{MultiPolygon, MultiRing, Point2, Polygon, Ring, Triangle};
 
 type BoolOpsPath<P> = Vec<<P as IntoIOverlayPoint>::IPoint>;
 
-pub trait BoolOps {
+pub trait BoolOps<Rhs> {
     type P: Point2;
 
-    fn boolop(&self, rhs: &Self, overlay_rule: OverlayRule) -> MultiPolygon<Self::P>;
+    fn boolop(&self, rhs: &Rhs, overlay_rule: OverlayRule) -> MultiPolygon<Self::P>;
 
-    fn union(&self, rhs: &Self) -> MultiPolygon<Self::P> {
+    fn union(&self, rhs: &Rhs) -> MultiPolygon<Self::P> {
         self.boolop(rhs, OverlayRule::Union)
     }
-    fn intersection(&self, rhs: &Self) -> MultiPolygon<Self::P> {
+    fn intersection(&self, rhs: &Rhs) -> MultiPolygon<Self::P> {
         self.boolop(rhs, OverlayRule::Intersect)
     }
-    fn difference(&self, rhs: &Self) -> MultiPolygon<Self::P> {
+    fn difference(&self, rhs: &Rhs) -> MultiPolygon<Self::P> {
         self.boolop(rhs, OverlayRule::Difference)
     }
 }
 
-impl BoolOps for MultiPolygon<Vec2> {
-    type P = Vec2;
+impl<Lhs: IntoIOverlayPaths, Rhs: IntoIOverlayPaths<IOverlayPoint = Lhs::IOverlayPoint>>
+    BoolOps<Rhs> for Lhs
+{
+    type P = Lhs::IOverlayPoint;
 
-    fn boolop(&self, rhs: &Self, overlay_rule: OverlayRule) -> MultiPolygon<Self::P> {
-        let mut overlay = F32Overlay::new();
-        for a in self.iter().map(poly_to_paths) {
-            overlay.add_paths(a, ShapeType::Subject);
-        }
-        for b in rhs.iter().map(poly_to_paths) {
-            overlay.add_paths(b, ShapeType::Clip);
-        }
-        let graph = overlay.into_graph(FillRule::EvenOdd);
-        let shapes = graph.extract_shapes(overlay_rule);
-        MultiPolygon(shapes.into_iter().flat_map(paths_to_poly).collect())
+    fn boolop(&self, rhs: &Rhs, overlay_rule: OverlayRule) -> MultiPolygon<Self::P> {
+        Self::P::boolops(self, rhs, overlay_rule)
     }
 }
 
-impl BoolOps for MultiPolygon<DVec2> {
-    type P = DVec2;
+pub trait IntoIOverlayPaths {
+    type IOverlayPoint: IntoIOverlayPoint;
+    fn add_paths(
+        &self,
+        overlay: &mut <Self::IOverlayPoint as IntoIOverlayPoint>::Overlay,
+        shape_type: ShapeType,
+    );
+}
 
-    fn boolop(&self, rhs: &Self, overlay_rule: OverlayRule) -> MultiPolygon<Self::P> {
-        let mut overlay = F64Overlay::new();
-        for a in self.iter().map(poly_to_paths) {
-            overlay.add_paths(a, ShapeType::Subject);
+impl<P: IntoIOverlayPoint> IntoIOverlayPaths for MultiPolygon<P> {
+    type IOverlayPoint = P;
+
+    fn add_paths(
+        &self,
+        overlay: &mut <Self::IOverlayPoint as IntoIOverlayPoint>::Overlay,
+        shape_type: ShapeType,
+    ) {
+        for paths in self.iter().flat_map(poly_to_paths) {
+            P::add_path(overlay, paths, shape_type);
         }
-        for b in rhs.iter().map(poly_to_paths) {
-            overlay.add_paths(b, ShapeType::Clip);
-        }
-        let graph = overlay.into_graph(FillRule::EvenOdd);
-        let shapes = graph.extract_shapes(overlay_rule);
-        MultiPolygon(shapes.into_iter().flat_map(paths_to_poly).collect())
     }
 }
 
-trait IntoIOverlayPoint {
+impl<P: IntoIOverlayPoint> IntoIOverlayPaths for Polygon<P> {
+    type IOverlayPoint = P;
+
+    fn add_paths(
+        &self,
+        overlay: &mut <Self::IOverlayPoint as IntoIOverlayPoint>::Overlay,
+        shape_type: ShapeType,
+    ) {
+        for paths in poly_to_paths(self) {
+            P::add_path(overlay, paths, shape_type);
+        }
+    }
+}
+
+impl<P: IntoIOverlayPoint> IntoIOverlayPaths for Ring<P> {
+    type IOverlayPoint = P;
+
+    fn add_paths(
+        &self,
+        overlay: &mut <Self::IOverlayPoint as IntoIOverlayPoint>::Overlay,
+        shape_type: ShapeType,
+    ) {
+        P::add_path(overlay, ring_to_path(self), shape_type);
+    }
+}
+
+impl<P: IntoIOverlayPoint> IntoIOverlayPaths for Triangle<P> {
+    type IOverlayPoint = P;
+
+    fn add_paths(
+        &self,
+        overlay: &mut <Self::IOverlayPoint as IntoIOverlayPoint>::Overlay,
+        shape_type: ShapeType,
+    ) {
+        P::add_path(overlay, ring_to_path(&self.as_ring()), shape_type);
+    }
+}
+
+pub trait IntoIOverlayPoint: Point2 {
     type IPoint: Copy;
     type Overlay;
     fn to_ipoint(self) -> Self::IPoint;
     fn from_ipoint(p: Self::IPoint) -> Self;
+    fn add_path(overlay: &mut Self::Overlay, path: BoolOpsPath<Self>, shape_type: ShapeType);
+    fn boolops<
+        Lhs: IntoIOverlayPaths<IOverlayPoint = Self>,
+        Rhs: IntoIOverlayPaths<IOverlayPoint = Self>,
+    >(
+        lhs: &Lhs,
+        rhs: &Rhs,
+        overlay_rule: OverlayRule,
+    ) -> MultiPolygon<Self>;
 }
 
 impl IntoIOverlayPoint for Vec2 {
@@ -78,6 +124,25 @@ impl IntoIOverlayPoint for Vec2 {
     fn from_ipoint(p: Self::IPoint) -> Self {
         Vec2::new(p.x, p.y)
     }
+
+    fn add_path(overlay: &mut Self::Overlay, path: BoolOpsPath<Self>, shape_type: ShapeType) {
+        overlay.add_path(path, shape_type);
+    }
+    fn boolops<
+        Lhs: IntoIOverlayPaths<IOverlayPoint = Self>,
+        Rhs: IntoIOverlayPaths<IOverlayPoint = Self>,
+    >(
+        lhs: &Lhs,
+        rhs: &Rhs,
+        overlay_rule: OverlayRule,
+    ) -> MultiPolygon<Self> {
+        let mut overlay = F32Overlay::new();
+        lhs.add_paths(&mut overlay, ShapeType::Subject);
+        rhs.add_paths(&mut overlay, ShapeType::Clip);
+        let graph = overlay.into_graph(FillRule::EvenOdd);
+        let shapes = graph.extract_shapes(overlay_rule);
+        MultiPolygon(shapes.into_iter().flat_map(paths_to_poly).collect())
+    }
 }
 
 impl IntoIOverlayPoint for DVec2 {
@@ -88,6 +153,24 @@ impl IntoIOverlayPoint for DVec2 {
     }
     fn from_ipoint(p: Self::IPoint) -> Self {
         DVec2::new(p.x, p.y)
+    }
+    fn add_path(overlay: &mut Self::Overlay, path: BoolOpsPath<Self>, shape_type: ShapeType) {
+        overlay.add_path(path, shape_type);
+    }
+    fn boolops<
+        Lhs: IntoIOverlayPaths<IOverlayPoint = Self>,
+        Rhs: IntoIOverlayPaths<IOverlayPoint = Self>,
+    >(
+        lhs: &Lhs,
+        rhs: &Rhs,
+        overlay_rule: OverlayRule,
+    ) -> MultiPolygon<Self> {
+        let mut overlay = F64Overlay::new();
+        lhs.add_paths(&mut overlay, ShapeType::Subject);
+        rhs.add_paths(&mut overlay, ShapeType::Clip);
+        let graph = overlay.into_graph(FillRule::EvenOdd);
+        let shapes = graph.extract_shapes(overlay_rule);
+        MultiPolygon(shapes.into_iter().flat_map(paths_to_poly).collect())
     }
 }
 
@@ -151,7 +234,7 @@ mod boolops_tests {
         let poly_with_hole = Polygon::new(outer_ring.clone(), MultiRing(vec![inner_ring.clone()]));
         let solid_poly = Polygon::new(outer_ring, MultiRing::empty());
 
-        let diff = solid_poly.to_multi().difference(&poly_with_hole.to_multi());
+        let diff = solid_poly.difference(&poly_with_hole);
 
         assert_eq!(inner_ring.area(), diff.area());
     }
