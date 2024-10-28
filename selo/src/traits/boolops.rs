@@ -43,6 +43,23 @@ impl BoolOps for MultiPolygon<Vec2> {
     }
 }
 
+impl BoolOps for MultiPolygon<DVec2> {
+    type P = DVec2;
+
+    fn boolop(&self, rhs: &Self, overlay_rule: OverlayRule) -> MultiPolygon<Self::P> {
+        let mut overlay = F64Overlay::new();
+        for a in self.iter().map(poly_to_paths) {
+            overlay.add_paths(a, ShapeType::Subject);
+        }
+        for b in rhs.iter().map(poly_to_paths) {
+            overlay.add_paths(b, ShapeType::Clip);
+        }
+        let graph = overlay.into_graph(FillRule::EvenOdd);
+        let shapes = graph.extract_shapes(overlay_rule);
+        MultiPolygon(shapes.into_iter().flat_map(paths_to_poly).collect())
+    }
+}
+
 trait IntoIOverlayPoint {
     type IPoint: Copy;
     type Overlay;
