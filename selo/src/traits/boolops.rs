@@ -101,7 +101,7 @@ fn poly_to_paths<P: IntoIOverlayPoint + Point2>(poly: &Polygon<P>) -> Vec<BoolOp
 }
 
 fn ring_to_path<P: IntoIOverlayPoint + Point2>(ring: &Ring<P>) -> BoolOpsPath<P> {
-    ring.0.iter().map(|p| p.to_ipoint()).collect()
+    ring.0.iter().rev().map(|p| p.to_ipoint()).collect()
 }
 
 fn paths_to_poly<P: IntoIOverlayPoint + Point2>(
@@ -120,7 +120,12 @@ fn paths_to_poly<P: IntoIOverlayPoint + Point2>(
 }
 
 fn path_to_ring<P: IntoIOverlayPoint + Point2>(path: BoolOpsPath<P>) -> Ring<P> {
-    Ring::new(path.iter().map(|p| P::from_ipoint(*p)).collect::<Vec<_>>())
+    Ring::new(
+        path.iter()
+            .rev()
+            .map(|p| P::from_ipoint(*p))
+            .collect::<Vec<_>>(),
+    )
 }
 
 #[cfg(test)]
@@ -148,7 +153,6 @@ mod boolops_tests {
 
         let diff = solid_poly.to_multi().difference(&poly_with_hole.to_multi());
 
-        // the diff area is negative here. Should we fix that?
-        assert_eq!(inner_ring.area().abs(), diff.area().abs());
+        assert_eq!(inner_ring.area(), diff.area());
     }
 }
