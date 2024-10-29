@@ -1,12 +1,19 @@
-use bevy_math::*;
-use primitives::InfinitePlane3d;
+use crate::prelude::*;
+use bevy_math::primitives::InfinitePlane3d;
 
 use crate::{errors::GeometryError, Embed, IterPoints, Normal, Unembed};
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-#[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
+#[cfg(feature = "bevy_reflect")]
+use bevy_reflect::{ReflectDeserialize, ReflectSerialize};
+
+#[derive(Debug, Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(
+    feature = "bevy_reflect",
+    derive(bevy_reflect::Reflect),
+    reflect(Serialize, Deserialize)
+)]
 pub struct Workplane {
-    pub plane: InfinitePlane3d,
+    pub plane: prelude::InfinitePlane3d,
     pub origin: Vec3,
 }
 

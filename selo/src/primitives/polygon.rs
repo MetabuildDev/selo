@@ -1,6 +1,9 @@
 use super::{Line, MultiRing, Ring};
 use crate::point::{Point, Point2};
 
+#[cfg(feature = "bevy_reflect")]
+use bevy_reflect::{ReflectDeserialize, ReflectSerialize};
+
 /// Represents the inside area of a closed [`LineString`] with an arbitrary number of holes which
 /// are excluded from this area.
 ///
@@ -16,9 +19,16 @@ use crate::point::{Point, Point2};
 ///
 /// let polygon = Polygon::new(exterior, interiors);
 /// ```
-#[derive(Debug, Clone, Default, PartialEq)]
-#[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
-pub struct Polygon<P: Point>(pub Ring<P>, pub MultiRing<P>);
+#[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(
+    feature = "bevy_reflect",
+    derive(bevy_reflect::Reflect),
+    reflect(Serialize, Deserialize)
+)]
+pub struct Polygon<P: Point>(
+    #[serde(bound(deserialize = ""))] pub Ring<P>,
+    #[serde(bound(deserialize = ""))] pub MultiRing<P>,
+);
 
 impl<P: Point> Polygon<P> {
     /// Creates a new [`Polygon`] from a [`Ring`] and a [`MultiRing`]
@@ -146,9 +156,13 @@ impl<P: Point> Polygon<P> {
     }
 }
 
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
-pub struct MultiPolygon<P: Point>(pub Vec<Polygon<P>>);
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(
+    feature = "bevy_reflect",
+    derive(bevy_reflect::Reflect),
+    reflect(Serialize, Deserialize)
+)]
+pub struct MultiPolygon<P: Point>(#[serde(bound(deserialize = ""))] pub Vec<Polygon<P>>);
 
 impl<P: Point> std::ops::Deref for MultiPolygon<P> {
     type Target = Vec<Polygon<P>>;

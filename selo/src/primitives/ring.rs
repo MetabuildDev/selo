@@ -5,6 +5,9 @@ use crate::coord_to_vec2;
 use super::{Line, LineString, Polygon, Triangle};
 use crate::point::{Point, Point2};
 
+#[cfg(feature = "bevy_reflect")]
+use bevy_reflect::{ReflectDeserialize, ReflectSerialize};
+
 /// Represents the inside area of a closed [`LineString`].
 ///
 /// The first coordinate is different from the last, the line connecting them is implied.
@@ -16,9 +19,13 @@ use crate::point::{Point, Point2};
 ///
 /// let ring = Ring::new(vec![Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y]);
 /// ```
-#[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
-pub struct Ring<P: Point>(pub(crate) Vec<P>);
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(
+    feature = "bevy_reflect",
+    derive(bevy_reflect::Reflect),
+    reflect(Serialize, Deserialize)
+)]
+pub struct Ring<P: Point>(#[serde(bound(deserialize = ""))] pub(crate) Vec<P>);
 
 impl<P: Point> Default for Ring<P> {
     #[inline]
@@ -193,9 +200,13 @@ impl<P: Point> Ring<P> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
-pub struct MultiRing<P: Point>(pub Vec<Ring<P>>);
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(
+    feature = "bevy_reflect",
+    derive(bevy_reflect::Reflect),
+    reflect(Serialize, Deserialize)
+)]
+pub struct MultiRing<P: Point>(#[serde(bound(deserialize = ""))] pub Vec<Ring<P>>);
 
 impl<P: Point> std::ops::Deref for MultiRing<P> {
     type Target = [Ring<P>];

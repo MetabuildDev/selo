@@ -3,6 +3,9 @@ use crate::utils::{coord_to_vec2, vec2_to_coord};
 use crate::point::{Point, Point2};
 use crate::{MultiRing, Ring};
 
+#[cfg(feature = "bevy_reflect")]
+use bevy_reflect::{ReflectDeserialize, ReflectSerialize};
+
 /// A 2D Triangle
 ///
 /// # Example
@@ -12,9 +15,13 @@ use crate::{MultiRing, Ring};
 ///
 /// let triangle = Triangle([Vec2::ZERO, Vec2::X, Vec2::Y]);
 /// ```
-#[derive(Debug, Clone, Copy, Default)]
-#[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
-pub struct Triangle<P: Point>(pub [P; 3]);
+#[derive(Debug, Clone, Copy, Default, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(
+    feature = "bevy_reflect",
+    derive(bevy_reflect::Reflect),
+    reflect(Serialize, Deserialize)
+)]
+pub struct Triangle<P: Point>(#[serde(bound(deserialize = ""))] pub [P; 3]);
 
 impl<P: Point> Triangle<P> {
     /// converts the [`Triangle`] to [`Ring`]. This is mainly useful since the
@@ -24,9 +31,13 @@ impl<P: Point> Triangle<P> {
     }
 }
 
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
-pub struct MultiTriangle<P: Point>(pub Vec<Triangle<P>>);
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(
+    feature = "bevy_reflect",
+    derive(bevy_reflect::Reflect),
+    reflect(Serialize, Deserialize)
+)]
+pub struct MultiTriangle<P: Point>(#[serde(bound(deserialize = ""))] pub Vec<Triangle<P>>);
 
 impl<P: Point> MultiTriangle<P> {
     /// converts the [`MultiTriangle`] to [`MultiRing`]. This is mainly useful since the

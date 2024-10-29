@@ -181,6 +181,8 @@ pub trait Point:
     + Wedge<Scalar = Self::S>
     + Dot<Output = Self::S>
     + Normed<SN = Self::S>
+    + serde::Serialize
+    + for<'a> serde::Deserialize<'a>
     + Send
     + Sync
     + 'static

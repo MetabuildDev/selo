@@ -3,6 +3,9 @@ use crate::{coord_to_vec2, vec2_to_coord};
 use super::{Line, Ring};
 use crate::point::{Point, Point2};
 
+#[cfg(feature = "bevy_reflect")]
+use bevy_reflect::{ReflectDeserialize, ReflectSerialize};
+
 /// Represents the set of points in the lines represented by each consecutive pair of points.
 ///
 /// There's no connecting [`Line`] between the first and the last point.
@@ -14,9 +17,13 @@ use crate::point::{Point, Point2};
 ///
 /// let line = LineString(vec![Vec2::X, Vec2::Y, Vec2::ONE, Vec2::ONE * 2.0]);
 /// ```
-#[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
-pub struct LineString<P: Point>(pub Vec<P>);
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(
+    feature = "bevy_reflect",
+    derive(bevy_reflect::Reflect),
+    reflect(Serialize, Deserialize)
+)]
+pub struct LineString<P: Point>(#[serde(bound(deserialize = ""))] pub Vec<P>);
 
 impl<P: Point> Default for LineString<P> {
     #[inline]
@@ -144,9 +151,13 @@ impl<P: Point> LineString<P> {
     }
 }
 
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
-pub struct MultiLineString<P: Point>(pub Vec<LineString<P>>);
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(
+    feature = "bevy_reflect",
+    derive(bevy_reflect::Reflect),
+    reflect(Serialize, Deserialize)
+)]
+pub struct MultiLineString<P: Point>(#[serde(bound(deserialize = ""))] pub Vec<LineString<P>>);
 
 impl<P: Point> Default for MultiLineString<P> {
     #[inline]

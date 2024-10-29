@@ -9,17 +9,17 @@ description = "bevy_math-based 2d and 3d geometric primitives with geo interoper
 
 [features]
 default = []
-wkt = ["dep:serde", "dep:wkt"]
+wkt = ["dep:wkt"]
 bevy_reflect = ["dep:bevy_reflect"]
 
 [dependencies]
 geo.workspace = true
-bevy_math.workspace = true
+bevy_math = { workspace = true, features = [ "bevy_reflect", "serialize" ] }
 geo-buffer.workspace = true
 itertools.workspace = true
 num-traits = "0.2"
 thiserror = "1.0"
-serde = { workspace = true, optional = true }
+serde = { workspace = true, features = [ "derive" ] }
 wkt = { version = "0.11", optional = true }
 i_overlay = "1.7.1"
 

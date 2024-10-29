@@ -3,6 +3,9 @@ use crate::utils::{coord_to_vec2, vec2_to_coord};
 
 use crate::point::{Point, Point2};
 
+#[cfg(feature = "bevy_reflect")]
+use bevy_reflect::{ReflectDeserialize, ReflectSerialize};
+
 /// A 2D Line
 ///
 /// # Example
@@ -12,9 +15,13 @@ use crate::point::{Point, Point2};
 ///
 /// let line = Line([Vec2::X, Vec2::Y]);
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq)]
-#[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
-pub struct Line<P: Point>(pub [P; 2]);
+#[derive(Debug, Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(
+    feature = "bevy_reflect",
+    derive(bevy_reflect::Reflect),
+    reflect(Serialize, Deserialize)
+)]
+pub struct Line<P: Point>(#[serde(bound(deserialize = ""))] pub [P; 2]);
 
 impl<P: Point> Line<P> {
     #[inline]
