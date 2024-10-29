@@ -86,6 +86,7 @@ where
     /// subtracting the overlap of the two input geometries from the first input geometry.
     ///
     /// ```
+    /// # use selo::prelude::*;
     /// let ring_points = [Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y];
     /// let ring1 = Ring::new(ring_points.map(|pos2| pos2 * 2.0));
     /// let ring2 = Ring::new(ring_points);
