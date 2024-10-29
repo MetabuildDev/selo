@@ -13,17 +13,89 @@ use crate::{MultiPolygon, MultiRing, Point2, Polygon, Ring, Triangle};
 type BoolOpsPath<P> = Vec<<P as BoolOpsPoint>::IPoint>;
 const FILL_RULE: FillRule = FillRule::EvenOdd;
 
+/// Boolean Operations trait for geometries. These are basic logical operations but for geometry.
+/// If a geometry is defined by `{ x | x in geometry }`, then these operations allow to combine two
+/// such sets to get a compound set.
+///
+/// ### Example
+///
+/// Let
+///
+/// - `A = { x | x in unit square }`
+/// - `B = { x | x in unit circle }`
+///
+/// then
+///
+/// - `A \ B = { x | x in unit square but not in unit circle }`
+///
+/// The trait currently supports
+///
+/// - `a AND b` = `intersection` = points included in both sets
+/// - `a OR b` = `union` = points included in either set
+/// - `a AND (NOT b)` = `difference` = points included in first set but not the second set
 pub trait BoolOps<Rhs> {
     type P: Point2;
 
     fn boolop(&self, rhs: &Rhs, overlay_rule: OverlayRule) -> MultiPolygon<Self::P>;
 
+    /// Union boolean operation. This creates a combined [`MultiPolygon`] out of the two input
+    /// geometries.
+    ///
+    /// ```
+    /// # use selo::prelude::*;
+    /// let ring_points = [Vec2::ZERO, Vec2::X * 0.5, Vec2::X * 0.5 + Vec2::Y, Vec2::Y];
+    /// let ring1 = Ring::new(ring_points);
+    /// let ring2 = Ring::new(ring_points.map(|pos2| pos2 + Vec2::X * 0.5));
+    ///
+    /// let union = ring1
+    ///     .to_polygon()
+    ///     .to_multi()
+    ///     .union(&ring2.to_polygon().to_multi());
+    ///
+    /// assert_eq!(union.len(), 1);
+    /// assert_eq!(union.area(), 1.0);
+    /// ```
     fn union(&self, rhs: &Rhs) -> MultiPolygon<Self::P> {
         self.boolop(rhs, OverlayRule::Union)
     }
+
+    /// Intersection boolean operation. This creates the overlap [`MultiPolygon`] out of the two input
+    /// geometries.
+    ///
+    /// ```
+    /// # use selo::prelude::*;
+    /// let ring_points = [Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y];
+    /// let ring1 = Ring::new(ring_points);
+    /// let ring2 = Ring::new(ring_points.map(|pos2| pos2 + Vec2::X * 0.5));
+    ///
+    /// let intersection = ring1
+    ///     .to_polygon()
+    ///     .to_multi()
+    ///     .intersection(&ring2.to_polygon().to_multi());
+    ///
+    /// assert_eq!(intersection.len(), 1);
+    /// assert_eq!(intersection.area(), 0.5);
+    /// ```
     fn intersection(&self, rhs: &Rhs) -> MultiPolygon<Self::P> {
         self.boolop(rhs, OverlayRule::Intersect)
     }
+
+    /// Difference boolean operation. This creates the [`MultiPolygon`] that results from
+    /// subtracting the overlap of the two input geometries from the first input geometry.
+    ///
+    /// ```
+    /// let ring_points = [Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y];
+    /// let ring1 = Ring::new(ring_points.map(|pos2| pos2 * 2.0));
+    /// let ring2 = Ring::new(ring_points);
+    ///
+    /// let difference = ring1
+    ///     .to_polygon()
+    ///     .to_multi()
+    ///     .difference(&ring2.to_polygon().to_multi());
+    ///
+    /// assert_eq!(difference.len(), 1);
+    /// assert_eq!(difference.area(), 3.0);
+    /// ```
     fn difference(&self, rhs: &Rhs) -> MultiPolygon<Self::P> {
         self.boolop(rhs, OverlayRule::Difference)
     }
@@ -32,11 +104,18 @@ pub trait BoolOps<Rhs> {
 impl<Lhs: IntoBoolOpsPath, Rhs: IntoBoolOpsPath<P = Lhs::P>> BoolOps<Rhs> for Lhs {
     type P = Lhs::P;
 
+    /// foo
     fn boolop(&self, rhs: &Rhs, overlay_rule: OverlayRule) -> MultiPolygon<Self::P> {
         Self::P::boolops(self, rhs, overlay_rule)
     }
 }
 
+/// Helper trait to integrate [`i-overlay`] with `selo`.
+///
+/// This allows us to directly use the boolops implemented in `i-overlay` with the `selo` types
+/// like [`MultiPolygon`], [`Polygon`], [`Ring`], [`Triangle`].
+///
+/// [`i-overlay`]: https://docs.rs/i_overlay/latest/i_overlay/
 pub trait IntoBoolOpsPath {
     type P: BoolOpsPoint;
     fn add_paths(&self, overlay: &mut <Self::P as BoolOpsPoint>::Overlay, shape_type: ShapeType);
@@ -78,6 +157,9 @@ impl<P: BoolOpsPoint> IntoBoolOpsPath for Triangle<P> {
     }
 }
 
+/// Helper trait to integrate [`i-overlay`] with `selo`.
+///
+/// This allows us to implement BoolOps for different floating point types (`f32`, `f64`)
 pub trait BoolOpsPoint: Point2 {
     type IPoint: Copy;
     type Overlay;
