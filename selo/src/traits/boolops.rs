@@ -11,6 +11,7 @@ use i_overlay::{
 use crate::{MultiPolygon, MultiRing, Point2, Polygon, Ring, Triangle};
 
 type BoolOpsPath<P> = Vec<<P as BoolOpsPoint>::IPoint>;
+const FILL_RULE: FillRule = FillRule::EvenOdd;
 
 pub trait BoolOps<Rhs> {
     type P: Point2;
@@ -111,7 +112,7 @@ impl BoolOpsPoint for Vec2 {
         let mut overlay = F32Overlay::new();
         lhs.add_paths(&mut overlay, ShapeType::Subject);
         rhs.add_paths(&mut overlay, ShapeType::Clip);
-        let graph = overlay.into_graph(FillRule::EvenOdd);
+        let graph = overlay.into_graph(FILL_RULE);
         let shapes = graph.extract_shapes(overlay_rule);
         MultiPolygon(shapes.into_iter().flat_map(paths_to_poly).collect())
     }
@@ -137,7 +138,7 @@ impl BoolOpsPoint for DVec2 {
         let mut overlay = F64Overlay::new();
         lhs.add_paths(&mut overlay, ShapeType::Subject);
         rhs.add_paths(&mut overlay, ShapeType::Clip);
-        let graph = overlay.into_graph(FillRule::EvenOdd);
+        let graph = overlay.into_graph(FILL_RULE);
         let shapes = graph.extract_shapes(overlay_rule);
         MultiPolygon(shapes.into_iter().flat_map(paths_to_poly).collect())
     }
@@ -153,6 +154,8 @@ fn poly_to_paths<P: BoolOpsPoint + Point2>(poly: &Polygon<P>) -> Vec<BoolOpsPath
 }
 
 fn ring_to_path<P: BoolOpsPoint + Point2>(ring: &Ring<P>) -> BoolOpsPath<P> {
+    // unfortunately, i-overlay uses opposite conventions with respect to winding compared to what
+    // we have. This means, we need to flip the winding before and after using i-overlay
     ring.0.iter().rev().map(|p| p.to_ipoint()).collect()
 }
 
@@ -173,6 +176,8 @@ fn paths_to_poly<P: BoolOpsPoint + Point2>(
 
 fn path_to_ring<P: BoolOpsPoint + Point2>(path: BoolOpsPath<P>) -> Ring<P> {
     Ring::new(
+        // unfortunately, i-overlay uses opposite conventions with respect to winding compared to what
+        // we have. This means, we need to flip the winding before and after using i-overlay
         path.iter()
             .rev()
             .map(|p| P::from_ipoint(*p))
@@ -188,7 +193,18 @@ mod boolops_tests {
     use super::*;
 
     #[test]
-    fn verify_fill_rule_invariant_expectation() {
+    fn verify_fill_rule_area_expectation() {
+        // ┌─────────────────┐   ┌─────────────────┐
+        // │                 │   │                 │
+        // │                 │   │                 │
+        // │                 │   │    ┌───────┐    │          ┌───────┐
+        // │                 │   │    │       │    │          │       │
+        // │                 │ - │    │       │    │  ────►   │       │
+        // │                 │   │    │       │    │          │       │
+        // │                 │   │    └───────┘    │          └───────┘
+        // │                 │   │                 │
+        // │                 │   │                 │
+        // └─────────────────┘   └─────────────────┘
         let outer_ring = Ring::new(vec![
             Vec2::ZERO,
             Vec2::X * 3.0,
@@ -205,6 +221,84 @@ mod boolops_tests {
 
         let diff = solid_poly.difference(&poly_with_hole);
 
-        assert_eq!(inner_ring.area(), diff.area());
+        assert_eq!(diff.len(), 1);
+        assert_eq!(diff.area(), inner_ring.area());
+    }
+
+    #[test]
+    fn verify_union_winding_expectation() {
+        // ┌─────────┬─────────┐       ┌───────────────────┐
+        // │         │         │       │                   │
+        // │         │         │       │                   │
+        // │         │         │       │                   │
+        // │         │         │ ────► │                   │
+        // │         │         │       │                   │
+        // │         │         │       │                   │
+        // │         │         │       │                   │
+        // └─────────┴─────────┘       └───────────────────┘
+        let ring_points = [Vec2::ZERO, Vec2::X * 0.5, Vec2::X * 0.5 + Vec2::Y, Vec2::Y];
+        let ring1 = Ring::new(ring_points);
+        let ring2 = Ring::new(ring_points.map(|pos2| pos2 + Vec2::X * 0.5));
+
+        let union = ring1
+            .to_polygon()
+            .to_multi()
+            .union(&ring2.to_polygon().to_multi());
+
+        assert_eq!(union.len(), 1);
+        assert_eq!(union.area(), 1.0);
+    }
+
+    #[test]
+    fn verify_difference_winding_expectation() {
+        // ┌─────────────────────┐                                    ┌─────────────────────┐
+        // │                     │                                    │                     │
+        // │                     │                                    │                     │
+        // │                     │                                    │                     │
+        // │                     │                                    │                     │
+        // │                     │ - ┌──────────┐             ─────►  └──────────┐          │
+        // │                     │   │          │                                │          │
+        // │                     │   │          │                                │          │
+        // │                     │   │          │                                │          │
+        // │                     │   │          │                                │          │
+        // └─────────────────────┘   └──────────┘                                └──────────┘
+        let ring_points = [Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y];
+        let ring1 = Ring::new(ring_points.map(|pos2| pos2 * 2.0));
+        let ring2 = Ring::new(ring_points);
+
+        let difference = ring1
+            .to_polygon()
+            .to_multi()
+            .difference(&ring2.to_polygon().to_multi());
+
+        assert_eq!(difference.len(), 1);
+        assert_eq!(difference.area(), 3.0);
+    }
+
+    #[test]
+    fn verify_intersection_winding_expectation() {
+        // ┌────────┌───────────────┐                   ┌───────┐
+        // │        │.......│       │                   │       │
+        // │        │.......│       │                   │       │
+        // │        │.......│       │                   │       │
+        // │        │.......│       │                   │       │
+        // │        │.......│       │   ───────────►    │       │
+        // │        │.......│       │                   │       │
+        // │        │.......│       │                   │       │
+        // │        │.......│       │                   │       │
+        // │        │.......│       │                   │       │
+        // │        │.......│       │                   │       │
+        // └────────└───────────────┘                   └───────┘
+        let ring_points = [Vec2::ZERO, Vec2::X, Vec2::ONE, Vec2::Y];
+        let ring1 = Ring::new(ring_points);
+        let ring2 = Ring::new(ring_points.map(|pos2| pos2 + Vec2::X * 0.5));
+
+        let intersection = ring1
+            .to_polygon()
+            .to_multi()
+            .intersection(&ring2.to_polygon().to_multi());
+
+        assert_eq!(intersection.len(), 1);
+        assert_eq!(intersection.area(), 0.5);
     }
 }
