@@ -33,10 +33,12 @@ const FILL_RULE: FillRule = FillRule::EvenOdd;
 /// - `a AND b` = `intersection` = points included in both sets
 /// - `a OR b` = `union` = points included in either set
 /// - `a AND (NOT b)` = `difference` = points included in first set but not the second set
-pub trait BoolOps<Rhs> {
+pub trait BoolOps<Rhs>
+where
+    Self: IntoBoolOpsPath + Sized,
+    Rhs: IntoBoolOpsPath<P = <Self as IntoBoolOpsPath>::P>,
+{
     type P: Point2;
-
-    fn boolop(&self, rhs: &Rhs, overlay_rule: OverlayRule) -> MultiPolygon<Self::P>;
 
     /// Union boolean operation. This creates a combined [`MultiPolygon`] out of the two input
     /// geometries.
@@ -55,8 +57,8 @@ pub trait BoolOps<Rhs> {
     /// assert_eq!(union.len(), 1);
     /// assert_eq!(union.area(), 1.0);
     /// ```
-    fn union(&self, rhs: &Rhs) -> MultiPolygon<Self::P> {
-        self.boolop(rhs, OverlayRule::Union)
+    fn union(&self, rhs: &Rhs) -> MultiPolygon<<Self as IntoBoolOpsPath>::P> {
+        <Self as IntoBoolOpsPath>::P::boolops(self, rhs, OverlayRule::Union)
     }
 
     /// Intersection boolean operation. This creates the overlap [`MultiPolygon`] out of the two input
@@ -76,8 +78,8 @@ pub trait BoolOps<Rhs> {
     /// assert_eq!(intersection.len(), 1);
     /// assert_eq!(intersection.area(), 0.5);
     /// ```
-    fn intersection(&self, rhs: &Rhs) -> MultiPolygon<Self::P> {
-        self.boolop(rhs, OverlayRule::Intersect)
+    fn intersection(&self, rhs: &Rhs) -> MultiPolygon<<Self as IntoBoolOpsPath>::P> {
+        <Self as IntoBoolOpsPath>::P::boolops(self, rhs, OverlayRule::Intersect)
     }
 
     /// Difference boolean operation. This creates the [`MultiPolygon`] that results from
@@ -96,133 +98,156 @@ pub trait BoolOps<Rhs> {
     /// assert_eq!(difference.len(), 1);
     /// assert_eq!(difference.area(), 3.0);
     /// ```
-    fn difference(&self, rhs: &Rhs) -> MultiPolygon<Self::P> {
-        self.boolop(rhs, OverlayRule::Difference)
+    fn difference(&self, rhs: &Rhs) -> MultiPolygon<<Self as IntoBoolOpsPath>::P> {
+        <Self as IntoBoolOpsPath>::P::boolops(self, rhs, OverlayRule::Difference)
     }
 }
 
 impl<Lhs: IntoBoolOpsPath, Rhs: IntoBoolOpsPath<P = Lhs::P>> BoolOps<Rhs> for Lhs {
     type P = Lhs::P;
+}
 
-    /// foo
-    fn boolop(&self, rhs: &Rhs, overlay_rule: OverlayRule) -> MultiPolygon<Self::P> {
-        Self::P::boolops(self, rhs, overlay_rule)
+use sealed_helper_traits::*;
+
+// the helper traits should not be accessible by end-users of the library to prevent misuse and to
+// restrict the API size
+mod sealed_helper_traits {
+    use super::*;
+
+    /// Helper trait to integrate [`i-overlay`] with `selo`.
+    ///
+    /// This allows us to directly use the boolops implemented in `i-overlay` with the `selo` types
+    /// like [`MultiPolygon`], [`Polygon`], [`Ring`], [`Triangle`].
+    ///
+    /// [`i-overlay`]: https://docs.rs/i_overlay/latest/i_overlay/
+    pub trait IntoBoolOpsPath {
+        type P: BoolOpsPoint;
+        fn add_paths(
+            &self,
+            overlay: &mut <Self::P as BoolOpsPoint>::Overlay,
+            shape_type: ShapeType,
+        );
     }
-}
 
-/// Helper trait to integrate [`i-overlay`] with `selo`.
-///
-/// This allows us to directly use the boolops implemented in `i-overlay` with the `selo` types
-/// like [`MultiPolygon`], [`Polygon`], [`Ring`], [`Triangle`].
-///
-/// [`i-overlay`]: https://docs.rs/i_overlay/latest/i_overlay/
-pub trait IntoBoolOpsPath {
-    type P: BoolOpsPoint;
-    fn add_paths(&self, overlay: &mut <Self::P as BoolOpsPoint>::Overlay, shape_type: ShapeType);
-}
+    impl<P: BoolOpsPoint> IntoBoolOpsPath for MultiPolygon<P> {
+        type P = P;
 
-impl<P: BoolOpsPoint> IntoBoolOpsPath for MultiPolygon<P> {
-    type P = P;
-
-    fn add_paths(&self, overlay: &mut <Self::P as BoolOpsPoint>::Overlay, shape_type: ShapeType) {
-        for paths in self.iter().flat_map(poly_to_paths) {
-            P::add_path(overlay, paths, shape_type);
+        fn add_paths(
+            &self,
+            overlay: &mut <Self::P as BoolOpsPoint>::Overlay,
+            shape_type: ShapeType,
+        ) {
+            for paths in self.iter().flat_map(poly_to_paths) {
+                P::add_path(overlay, paths, shape_type);
+            }
         }
     }
-}
 
-impl<P: BoolOpsPoint> IntoBoolOpsPath for Polygon<P> {
-    type P = P;
+    impl<P: BoolOpsPoint> IntoBoolOpsPath for Polygon<P> {
+        type P = P;
 
-    fn add_paths(&self, overlay: &mut <Self::P as BoolOpsPoint>::Overlay, shape_type: ShapeType) {
-        for paths in poly_to_paths(self) {
-            P::add_path(overlay, paths, shape_type);
+        fn add_paths(
+            &self,
+            overlay: &mut <Self::P as BoolOpsPoint>::Overlay,
+            shape_type: ShapeType,
+        ) {
+            for paths in poly_to_paths(self) {
+                P::add_path(overlay, paths, shape_type);
+            }
         }
     }
-}
 
-impl<P: BoolOpsPoint> IntoBoolOpsPath for Ring<P> {
-    type P = P;
+    impl<P: BoolOpsPoint> IntoBoolOpsPath for Ring<P> {
+        type P = P;
 
-    fn add_paths(&self, overlay: &mut <Self::P as BoolOpsPoint>::Overlay, shape_type: ShapeType) {
-        P::add_path(overlay, ring_to_path(self), shape_type);
-    }
-}
-
-impl<P: BoolOpsPoint> IntoBoolOpsPath for Triangle<P> {
-    type P = P;
-
-    fn add_paths(&self, overlay: &mut <Self::P as BoolOpsPoint>::Overlay, shape_type: ShapeType) {
-        P::add_path(overlay, ring_to_path(&self.as_ring()), shape_type);
-    }
-}
-
-/// Helper trait to integrate [`i-overlay`] with `selo`.
-///
-/// This allows us to implement BoolOps for different floating point types (`f32`, `f64`)
-pub trait BoolOpsPoint: Point2 {
-    type IPoint: Copy;
-    type Overlay;
-    fn to_ipoint(self) -> Self::IPoint;
-    fn from_ipoint(p: Self::IPoint) -> Self;
-    fn add_path(overlay: &mut Self::Overlay, path: BoolOpsPath<Self>, shape_type: ShapeType);
-    fn boolops<Lhs: IntoBoolOpsPath<P = Self>, Rhs: IntoBoolOpsPath<P = Self>>(
-        lhs: &Lhs,
-        rhs: &Rhs,
-        overlay_rule: OverlayRule,
-    ) -> MultiPolygon<Self>;
-}
-
-impl BoolOpsPoint for Vec2 {
-    type IPoint = F32Point;
-    type Overlay = F32Overlay;
-    fn to_ipoint(self) -> Self::IPoint {
-        F32Point::new(self.x, self.y)
-    }
-    fn from_ipoint(p: Self::IPoint) -> Self {
-        Vec2::new(p.x, p.y)
+        fn add_paths(
+            &self,
+            overlay: &mut <Self::P as BoolOpsPoint>::Overlay,
+            shape_type: ShapeType,
+        ) {
+            P::add_path(overlay, ring_to_path(self), shape_type);
+        }
     }
 
-    fn add_path(overlay: &mut Self::Overlay, path: BoolOpsPath<Self>, shape_type: ShapeType) {
-        overlay.add_path(path, shape_type);
-    }
-    fn boolops<Lhs: IntoBoolOpsPath<P = Self>, Rhs: IntoBoolOpsPath<P = Self>>(
-        lhs: &Lhs,
-        rhs: &Rhs,
-        overlay_rule: OverlayRule,
-    ) -> MultiPolygon<Self> {
-        let mut overlay = F32Overlay::new();
-        lhs.add_paths(&mut overlay, ShapeType::Subject);
-        rhs.add_paths(&mut overlay, ShapeType::Clip);
-        let graph = overlay.into_graph(FILL_RULE);
-        let shapes = graph.extract_shapes(overlay_rule);
-        MultiPolygon(shapes.into_iter().flat_map(paths_to_poly).collect())
-    }
-}
+    impl<P: BoolOpsPoint> IntoBoolOpsPath for Triangle<P> {
+        type P = P;
 
-impl BoolOpsPoint for DVec2 {
-    type IPoint = F64Point;
-    type Overlay = F64Overlay;
-    fn to_ipoint(self) -> Self::IPoint {
-        F64Point::new(self.x, self.y)
+        fn add_paths(
+            &self,
+            overlay: &mut <Self::P as BoolOpsPoint>::Overlay,
+            shape_type: ShapeType,
+        ) {
+            P::add_path(overlay, ring_to_path(&self.as_ring()), shape_type);
+        }
     }
-    fn from_ipoint(p: Self::IPoint) -> Self {
-        DVec2::new(p.x, p.y)
+
+    /// Helper trait to integrate [`i-overlay`] with `selo`.
+    ///
+    /// This allows us to implement BoolOps for different floating point types (`f32`, `f64`)
+    pub trait BoolOpsPoint: Point2 {
+        type IPoint: Copy;
+        type Overlay;
+        fn to_ipoint(self) -> Self::IPoint;
+        fn from_ipoint(p: Self::IPoint) -> Self;
+        fn add_path(overlay: &mut Self::Overlay, path: BoolOpsPath<Self>, shape_type: ShapeType);
+        fn boolops<Lhs: IntoBoolOpsPath<P = Self>, Rhs: IntoBoolOpsPath<P = Self>>(
+            lhs: &Lhs,
+            rhs: &Rhs,
+            overlay_rule: OverlayRule,
+        ) -> MultiPolygon<Self>;
     }
-    fn add_path(overlay: &mut Self::Overlay, path: BoolOpsPath<Self>, shape_type: ShapeType) {
-        overlay.add_path(path, shape_type);
+
+    impl BoolOpsPoint for Vec2 {
+        type IPoint = F32Point;
+        type Overlay = F32Overlay;
+        fn to_ipoint(self) -> Self::IPoint {
+            F32Point::new(self.x, self.y)
+        }
+        fn from_ipoint(p: Self::IPoint) -> Self {
+            Vec2::new(p.x, p.y)
+        }
+
+        fn add_path(overlay: &mut Self::Overlay, path: BoolOpsPath<Self>, shape_type: ShapeType) {
+            overlay.add_path(path, shape_type);
+        }
+        fn boolops<Lhs: IntoBoolOpsPath<P = Self>, Rhs: IntoBoolOpsPath<P = Self>>(
+            lhs: &Lhs,
+            rhs: &Rhs,
+            overlay_rule: OverlayRule,
+        ) -> MultiPolygon<Self> {
+            let mut overlay = F32Overlay::new();
+            lhs.add_paths(&mut overlay, ShapeType::Subject);
+            rhs.add_paths(&mut overlay, ShapeType::Clip);
+            let graph = overlay.into_graph(FILL_RULE);
+            let shapes = graph.extract_shapes(overlay_rule);
+            MultiPolygon(shapes.into_iter().flat_map(paths_to_poly).collect())
+        }
     }
-    fn boolops<Lhs: IntoBoolOpsPath<P = Self>, Rhs: IntoBoolOpsPath<P = Self>>(
-        lhs: &Lhs,
-        rhs: &Rhs,
-        overlay_rule: OverlayRule,
-    ) -> MultiPolygon<Self> {
-        let mut overlay = F64Overlay::new();
-        lhs.add_paths(&mut overlay, ShapeType::Subject);
-        rhs.add_paths(&mut overlay, ShapeType::Clip);
-        let graph = overlay.into_graph(FILL_RULE);
-        let shapes = graph.extract_shapes(overlay_rule);
-        MultiPolygon(shapes.into_iter().flat_map(paths_to_poly).collect())
+
+    impl BoolOpsPoint for DVec2 {
+        type IPoint = F64Point;
+        type Overlay = F64Overlay;
+        fn to_ipoint(self) -> Self::IPoint {
+            F64Point::new(self.x, self.y)
+        }
+        fn from_ipoint(p: Self::IPoint) -> Self {
+            DVec2::new(p.x, p.y)
+        }
+        fn add_path(overlay: &mut Self::Overlay, path: BoolOpsPath<Self>, shape_type: ShapeType) {
+            overlay.add_path(path, shape_type);
+        }
+        fn boolops<Lhs: IntoBoolOpsPath<P = Self>, Rhs: IntoBoolOpsPath<P = Self>>(
+            lhs: &Lhs,
+            rhs: &Rhs,
+            overlay_rule: OverlayRule,
+        ) -> MultiPolygon<Self> {
+            let mut overlay = F64Overlay::new();
+            lhs.add_paths(&mut overlay, ShapeType::Subject);
+            rhs.add_paths(&mut overlay, ShapeType::Clip);
+            let graph = overlay.into_graph(FILL_RULE);
+            let shapes = graph.extract_shapes(overlay_rule);
+            MultiPolygon(shapes.into_iter().flat_map(paths_to_poly).collect())
+        }
     }
 }
 
