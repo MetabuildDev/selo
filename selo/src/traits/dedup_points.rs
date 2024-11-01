@@ -21,6 +21,20 @@ pub trait DedupPoints {
     fn dedup_approx(self, tolerance: Self::S) -> Self;
 }
 
+impl<P: Point> DedupPoints for LineString<P> {
+    type S = P::S;
+
+    fn dedup(mut self) -> Self {
+        self.0.dedup();
+        self
+    }
+
+    fn dedup_approx(mut self, tolerance: P::S) -> Self {
+        self.0.dedup_by(|a, b| a.abs_diff_eq(*b, tolerance));
+        self
+    }
+}
+
 impl<P: Point> DedupPoints for Ring<P> {
     type S = P::S;
 
