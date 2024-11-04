@@ -1,11 +1,14 @@
 use bevy::{color::palettes, ecs::entity::EntityHashSet, prelude::*};
-use selo::IterPoints;
+use bevy_egui::{egui, EguiContexts};
+use selo::{IterPoints, Unembed};
 
 use crate::{
     line::{AttachedLines, Line},
+    parsing::{self, Geometry},
     point::Point,
     ring::{Ring2D, RingLine, RingPoint},
     triangle::{Triangle, TriangleLine, TrianglePoint},
+    workplane::{ActiveWorkplane, StoredWorkplane},
 };
 
 pub struct SpawnerPlugin;
@@ -19,9 +22,98 @@ impl Plugin for SpawnerPlugin {
                 (
                     spawn_triangle.run_if(on_event::<SpawnTriangle>()),
                     spawn_ring.run_if(on_event::<SpawnRing>()),
+                    spawn_ui,
                 ),
             );
     }
+}
+
+fn spawn_ui(
+    mut cmds: Commands,
+    mut ctx: EguiContexts,
+    workplane: Query<&StoredWorkplane, With<ActiveWorkplane>>,
+    q_geometry: Query<
+        Entity,
+        Or<(
+            With<Triangle>,
+            With<Ring2D>,
+            With<RingPoint>,
+            With<RingLine>,
+        )>,
+    >,
+    mut ev_spawn_triangle: EventWriter<SpawnTriangle>,
+    mut ev_spawn_ring: EventWriter<SpawnRing>,
+    mut prompt: Local<String>,
+) {
+    egui::Window::new("spawn_ui").show(ctx.ctx_mut(), |ui| {
+        ui.text_edit_multiline(&mut *prompt);
+
+        ui.horizontal(|ui| {
+            if ui.button("Submit").clicked() {
+                let workplane = workplane.single().0;
+
+                let mut spawn_geometry = |geometry| {
+                    match geometry {
+                        Geometry::Triangle(triangle) => {
+                            ev_spawn_triangle.send(SpawnTriangle(triangle.unembed(workplane)));
+                        }
+                        Geometry::Ring(ring) => {
+                            ev_spawn_ring.send(SpawnRing(ring.unembed(workplane)));
+                        }
+                        Geometry::MultiRing(multi_ring) => {
+                            for ring in multi_ring.0 {
+                                ev_spawn_ring.send(SpawnRing(ring.unembed(workplane)));
+                            }
+                        }
+                        // TODO: Actual polygons
+                        Geometry::Polygon(polygon) => {
+                            for ring in polygon.iter_rings() {
+                                ev_spawn_ring.send(SpawnRing(ring.unembed(workplane)));
+                            }
+                        }
+                        Geometry::MultiPolygon(multi_polygon) => {
+                            for polygon in multi_polygon.0 {
+                                for ring in polygon.iter_rings() {
+                                    ev_spawn_ring.send(SpawnRing(ring.unembed(workplane)));
+                                }
+                            }
+                        }
+                        // TODO: Handle others
+                        _ => {}
+                    }
+                };
+
+                match parsing::parse(&prompt) {
+                    Ok(geometry) => {
+                        *prompt = String::new();
+                        for g in geometry {
+                            spawn_geometry(g)
+                        }
+                    }
+                    Err(e) => {
+                        println!("Failed to parse:\n{e}");
+                    }
+                }
+            }
+
+            if ui.button("Despawn all").clicked() {
+                for e in &q_geometry {
+                    cmds.entity(e).despawn_recursive();
+                }
+            }
+        })
+    });
+    // let mut q = world.query::<&mut EguiContext>();
+    // let ctx = q.single_mut(world).get_mut().clone();
+    // egui::Window::new(
+    //     std::any::type_name::<S>()
+    //         .split("::")
+    //         .last()
+    //         .unwrap_or_default(),
+    // )
+    // .show(&ctx, |ui| {
+    //     ui_for_state::<S>(world, ui);
+    // });
 }
 
 #[derive(Debug, Clone, Event)]

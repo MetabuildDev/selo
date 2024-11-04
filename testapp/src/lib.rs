@@ -2,6 +2,7 @@ mod algos;
 mod camera;
 mod gizmos;
 mod line;
+mod parsing;
 mod point;
 mod pointer;
 mod ring;

@@ -8,6 +8,7 @@ use std::{
 use bevy_math::*;
 use geo::{CoordNum, GeoFloat};
 use num_traits::Float;
+use serde::{de::DeserializeOwned, Serialize};
 
 // Dot product
 pub trait Dot {

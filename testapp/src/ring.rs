@@ -105,10 +105,6 @@ pub struct RingParams<'w, 's> {
 }
 
 impl RingParams<'_, '_> {
-    pub fn iter_just_rings(&self) -> impl Iterator<Item = selo::Ring<Vec3>> + '_ {
-        self.iter_rings().map(|(ring, _)| ring)
-    }
-
     pub fn iter_rings(&self) -> impl Iterator<Item = (selo::Ring<Vec3>, Workplane)> + '_ {
         self.ring.iter().filter_map(|(ring, wp)| {
             let points = selo::Ring::new(
@@ -245,11 +241,18 @@ fn render_rings(mut gizmos: Gizmos, ring: RingParams) {
         // })
         // .collect::<Vec<_>>()
     };
-    ring.iter_just_rings()
+    ring.iter_rings()
         .zip(colors.into_iter().cycle())
-        .for_each(|(ring, color)| {
+        .for_each(|((ring, workplane), color)| {
             ring.lines().for_each(|line| {
                 gizmos.line(line.src(), line.dst(), color);
+                let dir = line.dir();
+                let right = workplane.normal().cross(line.dir());
+                gizmos.line(
+                    line.pos_scaled(0.5) + dir * 0.05,
+                    line.pos_scaled(0.5) + right * 0.1 - dir * 0.05,
+                    color,
+                );
             });
         });
 }
