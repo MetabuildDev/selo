@@ -121,7 +121,7 @@ mod sealed_helper_traits {
     /// like [`MultiPolygon`], [`Polygon`], [`Ring`], [`Triangle`].
     ///
     /// [`i-overlay`]: https://docs.rs/i_overlay/latest/i_overlay/
-    pub trait IntoBoolOpsPath {
+    pub trait IntoBoolOpsPath: std::fmt::Debug {
         type P: BoolOpsPoint;
         fn add_paths(
             &self,
@@ -186,7 +186,7 @@ mod sealed_helper_traits {
     ///
     /// This allows us to implement BoolOps for different floating point types (`f32`, `f64`)
     pub trait BoolOpsPoint: Point2 {
-        type IPoint: Copy;
+        type IPoint: Copy + std::fmt::Debug;
         type Overlay;
         fn to_ipoint(self) -> Self::IPoint;
         fn from_ipoint(p: Self::IPoint) -> Self;

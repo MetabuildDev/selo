@@ -45,7 +45,11 @@ impl<P: Point> DedupPoints for Ring<P> {
     fn dedup_approx(self, tolerance: P::S) -> Self {
         let mut points = self.0;
         points.dedup_by(|a, b| (*a).abs_diff_eq(*b, tolerance));
-        if (*points.last().unwrap()).abs_diff_eq(*points.first().unwrap(), tolerance) {
+        if points
+            .last()
+            .zip(points.first())
+            .is_some_and(|(a, b)| (*a).abs_diff_eq(*b, tolerance))
+        {
             points.pop();
         }
         Ring(points)
