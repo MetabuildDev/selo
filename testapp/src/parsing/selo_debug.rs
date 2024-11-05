@@ -1,32 +1,65 @@
-//! Parse debug logs from geo objects
+//! Parse debug logs from selo objects
 //! Example:
 //! ```
-//! Polygon { exterior: LineString([Coord { x: 173.45856, y: 77.282646 }, Coord { x: 154.34856, y: 119.78603 }, Coord { x: 143.0181, y: 114.67684 }, Coord { x: 161.94347, y: 72.56411 }, Coord { x: 162.9144, y: 70.43421 }, Coord { x: 174.25348, y: 75.52239 }, Coord { x: 173.45856, y: 77.282646 }]), interiors: [] }
+//! Polygon(Ring([Vec2(0.0, 0.0), Vec2(5.0, 0.0), Vec2(5.0, 5.0), Vec2(0.0, 5.0)]), MultiRing([Ring([Vec2(1.0, 1.0), Vec2(2.0, 1.0), Vec2(2.0, 2.0), Vec2(1.0, 2.0)]), Ring([Vec2(3.0, 3.0), Vec2(4.0, 3.0), Vec2(4.0, 4.0), Vec2(3.0, 4.0)])]))
 //! ```
 
 use bevy::math::Vec2;
 use selo::prelude::*;
 use winnow::{
-    ascii::float,
+    ascii::{float, multispace0},
     combinator::{alt, cut_err, delimited, separated, separated_pair},
     prelude::*,
+    token::take_until,
 };
 
 use super::Geometry;
 
-pub fn parse<'s>(input: &mut &'s str) -> PResult<Vec<Geometry>> {
+pub trait ParsablePoint: Point + Sized {
+    fn parse<'s>(input: &mut &'s str) -> PResult<Self>;
+}
+
+impl ParsablePoint for Vec2 {
+    fn parse<'s>(input: &mut &'s str) -> PResult<Self> {
+        delimited(
+            ("Vec2(", multispace0),
+            cut_err(separated_pair(float, (",", multispace0), float)),
+            (multispace0, ")"),
+        )
+        .map(|(x, y)| Vec2::new(x, y))
+        .parse_next(input)
+    }
+}
+
+impl ParsablePoint for Vec3 {
+    fn parse<'s>(input: &mut &'s str) -> PResult<Self> {
+        delimited(
+            ("Vec3(", multispace0),
+            cut_err(separated_pair(
+                separated_pair(float, ", ", float),
+                (",", multispace0),
+                float,
+            )),
+            (multispace0, ")"),
+        )
+        .map(|((x, y), z)| Vec3::new(x, y, z))
+        .parse_next(input)
+    }
+}
+
+pub fn parse<'s, P: ParsablePoint>(input: &mut &'s str) -> PResult<Vec<Geometry<P>>> {
     alt((
-        cut_err(delimited(
-            '[',
-            separated(0.., parse_debug_single, ", "),
-            ']',
-        )),
-        cut_err(parse_debug_single.map(|g| vec![g])),
+        delimited(
+            ('[', multispace0),
+            cut_err(separated(0.., parse_debug_single, (",", multispace0))),
+            (multispace0, ']'),
+        ),
+        parse_debug_single.map(|g| vec![g]),
     ))
     .parse_next(input)
 }
 
-pub fn parse_debug_single<'s>(input: &mut &'s str) -> PResult<Geometry> {
+pub fn parse_debug_single<'s, P: ParsablePoint>(input: &mut &'s str) -> PResult<Geometry<P>> {
     alt((
         parse_debug_multipolygon.map(|g| Geometry::MultiPolygon(g)),
         parse_debug_polygon.map(|g| Geometry::Polygon(g)),
@@ -36,111 +69,46 @@ pub fn parse_debug_single<'s>(input: &mut &'s str) -> PResult<Geometry> {
     .parse_next(input)
 }
 
-// pub fn parse<'a>() -> impl Parser<'a, &'a str, geo::Geometry<f64>, extra::Err<Rich<'a, char, Span>>>
-// {
-//     choice((
-//         parse_debug_multipolygon().map(|g| g.into()),
-//         parse_debug_polygon().map(|g| g.into()),
-//         parse_debug_multi_linestring().map(|g| g.into()),
-//         parse_debug_linestring().map(|g| g.into()),
-//         parse_debug_rect().map(|g| g.into()),
-//         parse_debug_coord().map(|g| geo::Point(g).into()),
-//     ))
-// }
-
-// fn parse_debug_multipolygon<'a>(
-// ) -> impl Parser<'a, &'a str, geo::MultiPolygon<f64>, extra::Err<Rich<'a, char, Span>>> {
-//     parse_debug_polygon()
-//         .separated_by(just(", "))
-//         .collect()
-//         .delimited_by(just("MultiPolygon(["), just("])"))
-//         .map(|polys: Vec<geo::Polygon>| geo::MultiPolygon::new(polys))
-//         .padded()
-// }
-
-// fn parse_debug_polygon<'a>(
-// ) -> impl Parser<'a, &'a str, geo::Polygon<f64>, extra::Err<Rich<'a, char, Span>>> {
-//     just("Polygon { exterior: ")
-//         .ignore_then(parse_debug_linestring())
-//         .then_ignore(just(", interiors: ["))
-//         .then(parse_debug_linestring().separated_by(just(", ")).collect())
-//         .then_ignore(just("] }"))
-//         .map(|(exterior, interiors)| geo::Polygon::new(exterior, interiors))
-//         .padded()
-// }
-
-// fn parse_debug_multi_linestring<'a>(
-// ) -> impl Parser<'a, &'a str, geo::MultiLineString<f64>, extra::Err<Rich<'a, char, Span>>> {
-//     parse_debug_linestring()
-//         .separated_by(just(", "))
-//         .collect()
-//         .delimited_by(just("MultiLineString(["), just("])"))
-//         .map(|ls: Vec<geo::LineString>| geo::MultiLineString::new(ls))
-//         .padded()
-// }
-
-// fn parse_debug_linestring<'a>(
-// ) -> impl Parser<'a, &'a str, geo::LineString<f64>, extra::Err<Rich<'a, char, Span>>> {
-//     parse_debug_coord()
-//         .separated_by(just(", "))
-//         .collect()
-//         .delimited_by(just("LineString(["), just("])"))
-//         .map(|coords: Vec<geo::Coord>| geo::LineString::new(coords))
-//         .padded()
-// }
-
-// fn parse_debug_rect<'a>(
-// ) -> impl Parser<'a, &'a str, geo::Polygon<f64>, extra::Err<Rich<'a, char, Span>>> {
-//     parse_debug_coord()
-//         .then_ignore(just(", max:").padded())
-//         .then(parse_debug_coord())
-//         .delimited_by(just("Rect { min:").padded(), just("}").padded())
-//         .map(|(min, max)| geo::Rect::new(min, max).into())
-//         .padded()
-// }
-
-fn parse_debug_multipolygon<'s>(input: &mut &'s str) -> PResult<MultiPolygon<Vec2>> {
+fn parse_debug_multipolygon<'s, P: ParsablePoint>(input: &mut &'s str) -> PResult<MultiPolygon<P>> {
     delimited(
-        "MultiPolygon([",
-        cut_err(separated(0.., parse_debug_polygon, ", ")),
-        "])",
+        ("MultiPolygon(", multispace0, "[", multispace0),
+        cut_err(separated(0.., parse_debug_polygon, (",", multispace0))),
+        (multispace0, "]", multispace0, ")"),
     )
     .map(|polygons| MultiPolygon(polygons))
     .parse_next(input)
 }
 
-fn parse_debug_polygon<'s>(input: &mut &'s str) -> PResult<Polygon<Vec2>> {
+fn parse_debug_polygon<'s, P: ParsablePoint>(input: &mut &'s str) -> PResult<Polygon<P>> {
     delimited(
-        "Polygon(",
+        ("Polygon(", multispace0),
         cut_err(separated_pair(
             parse_debug_ring,
-            ", ",
+            (",", multispace0),
             parse_debug_multiring,
         )),
-        ")",
+        (multispace0, ")"),
     )
     .map(|(exterior, interiors)| Polygon(exterior, interiors))
     .parse_next(input)
 }
 
-fn parse_debug_multiring<'s>(input: &mut &'s str) -> PResult<MultiRing<Vec2>> {
+fn parse_debug_multiring<'s, P: ParsablePoint>(input: &mut &'s str) -> PResult<MultiRing<P>> {
     delimited(
-        "MultiRing([",
-        cut_err(separated(0.., parse_debug_ring, ", ")),
-        "])",
+        ("MultiRing(", multispace0, "[", multispace0),
+        cut_err(separated(0.., parse_debug_ring, (",", multispace0))),
+        (multispace0, "]", multispace0, ")"),
     )
     .map(|rings| MultiRing(rings))
     .parse_next(input)
 }
 
-fn parse_debug_ring<'s>(input: &mut &'s str) -> PResult<Ring<Vec2>> {
-    delimited("Ring([", cut_err(separated(0.., parse_vec2, ", ")), "])")
-        .map(|points: Vec<_>| Ring::new(points))
-        .parse_next(input)
-}
-
-fn parse_vec2<'s>(input: &mut &'s str) -> PResult<Vec2> {
-    delimited("Vec2(", cut_err(separated_pair(float, ", ", float)), ")")
-        .map(|(x, y)| Vec2::new(x, y))
-        .parse_next(input)
+fn parse_debug_ring<'s, P: ParsablePoint>(input: &mut &'s str) -> PResult<Ring<P>> {
+    delimited(
+        ("Ring(", multispace0, "[", multispace0),
+        cut_err(separated(0.., P::parse, (",", multispace0))),
+        (multispace0, "]", multispace0, ")"),
+    )
+    .map(|points: Vec<_>| Ring::new(points))
+    .parse_next(input)
 }

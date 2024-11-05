@@ -4,7 +4,7 @@ use selo::{IterPoints, Unembed};
 
 use crate::{
     line::{AttachedLines, Line},
-    parsing::{self, Geometry},
+    parsing::{self, DynamicGeometries, Geometry},
     point::Point,
     ring::{Ring2D, RingLine, RingPoint},
     triangle::{Triangle, TriangleLine, TrianglePoint},
@@ -52,29 +52,29 @@ fn spawn_ui(
             if ui.button("Submit").clicked() {
                 let workplane = workplane.single().0;
 
-                let mut spawn_geometry = |geometry| {
+                let mut spawn_geometry = |geometry: Geometry<Vec3>| {
                     match geometry {
                         Geometry::Triangle(triangle) => {
-                            ev_spawn_triangle.send(SpawnTriangle(triangle.unembed(workplane)));
+                            ev_spawn_triangle.send(SpawnTriangle(triangle));
                         }
                         Geometry::Ring(ring) => {
-                            ev_spawn_ring.send(SpawnRing(ring.unembed(workplane)));
+                            ev_spawn_ring.send(SpawnRing(ring));
                         }
                         Geometry::MultiRing(multi_ring) => {
                             for ring in multi_ring.0 {
-                                ev_spawn_ring.send(SpawnRing(ring.unembed(workplane)));
+                                ev_spawn_ring.send(SpawnRing(ring));
                             }
                         }
                         // TODO: Actual polygons
                         Geometry::Polygon(polygon) => {
                             for ring in polygon.iter_rings() {
-                                ev_spawn_ring.send(SpawnRing(ring.unembed(workplane)));
+                                ev_spawn_ring.send(SpawnRing(ring.clone()));
                             }
                         }
                         Geometry::MultiPolygon(multi_polygon) => {
                             for polygon in multi_polygon.0 {
                                 for ring in polygon.iter_rings() {
-                                    ev_spawn_ring.send(SpawnRing(ring.unembed(workplane)));
+                                    ev_spawn_ring.send(SpawnRing(ring.clone()));
                                 }
                             }
                         }
@@ -84,9 +84,39 @@ fn spawn_ui(
                 };
 
                 match parsing::parse(&prompt) {
-                    Ok(geometry) => {
+                    Ok(geometries) => {
                         *prompt = String::new();
-                        for g in geometry {
+                        let geometries = match geometries {
+                            DynamicGeometries::Dim2(g) => g
+                                .into_iter()
+                                .map(|g| match g {
+                                    Geometry::Line(line) => Geometry::Line(line.unembed(workplane)),
+                                    Geometry::LineString(line_string) => {
+                                        Geometry::LineString(line_string.unembed(workplane))
+                                    }
+                                    Geometry::MultiLineString(multi_line_string) => {
+                                        Geometry::MultiLineString(
+                                            multi_line_string.unembed(workplane),
+                                        )
+                                    }
+                                    Geometry::Triangle(triangle) => {
+                                        Geometry::Triangle(triangle.unembed(workplane))
+                                    }
+                                    Geometry::Ring(ring) => Geometry::Ring(ring.unembed(workplane)),
+                                    Geometry::MultiRing(multi_ring) => {
+                                        Geometry::MultiRing(multi_ring.unembed(workplane))
+                                    }
+                                    Geometry::Polygon(polygon) => {
+                                        Geometry::Polygon(polygon.unembed(workplane))
+                                    }
+                                    Geometry::MultiPolygon(multi_polygon) => {
+                                        Geometry::MultiPolygon(multi_polygon.unembed(workplane))
+                                    }
+                                })
+                                .collect(),
+                            DynamicGeometries::Dim3(g) => g,
+                        };
+                        for g in geometries {
                             spawn_geometry(g)
                         }
                     }
@@ -103,17 +133,6 @@ fn spawn_ui(
             }
         })
     });
-    // let mut q = world.query::<&mut EguiContext>();
-    // let ctx = q.single_mut(world).get_mut().clone();
-    // egui::Window::new(
-    //     std::any::type_name::<S>()
-    //         .split("::")
-    //         .last()
-    //         .unwrap_or_default(),
-    // )
-    // .show(&ctx, |ui| {
-    //     ui_for_state::<S>(world, ui);
-    // });
 }
 
 #[derive(Debug, Clone, Event)]
