@@ -7,6 +7,7 @@ use i_overlay::{
     f64::overlay::F64Overlay,
     i_float::{f32_point::F32Point, f64_point::F64Point},
 };
+use num_traits::Float;
 
 use crate::{MultiPolygon, MultiRing, Point2, Polygon, Ring, Triangle};
 
@@ -109,6 +110,8 @@ impl<Lhs: IntoBoolOpsPath, Rhs: IntoBoolOpsPath<P = Lhs::P>> BoolOps<Rhs> for Lh
 }
 
 use sealed_helper_traits::*;
+
+use super::Area;
 
 // the helper traits should not be accessible by end-users of the library to prevent misuse and to
 // restrict the API size
@@ -276,21 +279,24 @@ fn paths_to_poly<P: BoolOpsPoint + Point2>(
     let interiors = paths;
 
     let outer = path_to_ring(exterior);
-    let inner = MultiRing(interiors.map(path_to_ring).collect());
-    let poly = Polygon::new(outer, inner);
+    let inner = MultiRing(interiors.flat_map(path_to_ring).collect());
+    let poly = Polygon::new(outer?, inner);
 
     Some(poly)
 }
 
-fn path_to_ring<P: BoolOpsPoint + Point2>(path: BoolOpsPath<P>) -> Ring<P> {
-    Ring::new(
+fn path_to_ring<P: BoolOpsPoint + Point2>(path: BoolOpsPath<P>) -> Option<Ring<P>> {
+    let ring = Ring::new(
         // unfortunately, i-overlay uses opposite conventions with respect to winding compared to what
         // we have. This means, we need to flip the winding before and after using i-overlay
         path.iter()
             .rev()
             .map(|p| P::from_ipoint(*p))
             .collect::<Vec<_>>(),
-    )
+    );
+    // i-overlay can sometimes produce degenerate geometry, this checks against it
+    // https://github.com/iShape-Rust/iOverlay/issues/11
+    (ring.area().abs() > P::S::epsilon()).then_some(ring)
 }
 
 #[cfg(test)]
