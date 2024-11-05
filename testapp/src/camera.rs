@@ -25,7 +25,7 @@ impl Plugin for CameraPlugin {
                 (
                     move_camera.run_if(input_pressed(KeyCode::Space)),
                     rotate_camera.run_if(input_pressed(MouseButton::Middle)),
-                    really_simple_zoom.run_if(not(input_pressed(KeyCode::ControlLeft))),
+                    zoom_camera.run_if(not(input_pressed(KeyCode::ControlLeft))),
                 )
                     .run_if(in_state(AppState::Algorithms)),
             )
@@ -53,6 +53,8 @@ impl CameraParams<'_, '_> {
             Some(ray.get_point(dist))
         })
     }
+
+    // pub fn world_into_screen
 }
 
 fn setup_cameras(mut cmds: Commands) {
@@ -61,7 +63,11 @@ fn setup_cameras(mut cmds: Commands) {
         MainCamera,
         Camera3dBundle {
             transform: Transform::from_translation(Vec3::Z * 10.0).looking_at(Vec3::ZERO, Vec3::Z),
-            ..Default::default()
+            projection: Projection::Perspective(PerspectiveProjection {
+                near: 0.01,
+                ..default()
+            }),
+            ..default()
         },
     ));
 
@@ -71,9 +77,9 @@ fn setup_cameras(mut cmds: Commands) {
             transform: Transform::from_translation(Vec3::Z * 10.0).looking_at(Vec3::ZERO, Vec3::Z),
             spot_light: SpotLight {
                 intensity: 5_000_000.0,
-                ..Default::default()
+                ..default()
             },
-            ..Default::default()
+            ..default()
         },
     ));
 }
@@ -103,48 +109,79 @@ fn align_camera_with_active_workplane(
 fn move_camera(
     camera: CameraParams,
     pointer: PointerParams,
-    mut mouse: EventReader<MouseMotion>,
     mut cam: Query<&mut Transform, With<MainCamera>>,
     workplane: WorkplaneParams,
+    keys: Res<ButtonInput<KeyCode>>,
+    // Anchor point that will be maintained on the cursor throughout the panning action
+    mut anchor: Local<Option<Vec3>>,
 ) {
-    if let Some(pos) = pointer.screen_position() {
-        let delta = mouse
-            .read()
-            .map(|drag| [pos, pos + drag.delta])
-            .filter_map(|[start, end]| {
-                Some([
-                    camera.screen_ray_onto_plane(start, workplane.current())?,
-                    camera.screen_ray_onto_plane(end, workplane.current())?,
-                ])
-            })
-            .map(|[start, end]| end - start)
-            .sum::<Vec3>();
-        cam.iter_mut().for_each(|mut transform| {
-            transform.translation -= delta;
-        });
+    if keys.just_pressed(KeyCode::Space) {
+        *anchor = pointer
+            .screen_position()
+            .and_then(|pos| camera.screen_ray_onto_plane(pos, workplane.current()));
+    } else {
+        let Some(anchor) = *anchor else {
+            return;
+        };
+        let Some(screen_pos) = pointer.screen_position() else {
+            return;
+        };
+        let Some(current_target) = camera.screen_ray_onto_plane(screen_pos, workplane.current())
+        else {
+            return;
+        };
+        let mut camera_tr = cam.single_mut();
+        let to_camera = camera_tr.translation - current_target;
+        camera_tr.translation = anchor + to_camera;
     }
 }
 
 fn rotate_camera(
+    camera: CameraParams,
+    pointer: PointerParams,
     mut mouse: EventReader<MouseMotion>,
     mut cam: Query<&mut Transform, With<MainCamera>>,
     workplane: WorkplaneParams,
+    buttons: Res<ButtonInput<MouseButton>>,
+    mut pivot: Local<Option<Vec3>>,
 ) {
-    let delta = mouse.read().map(|drag| drag.delta).sum::<Vec2>() * 0.0025;
-    cam.iter_mut().for_each(|mut transform| {
-        let x_rot = Quat::from_axis_angle(transform.local_x().as_vec3(), -delta.y);
-        let z_rot = Quat::from_axis_angle(workplane.current().normal().as_vec3(), -delta.x);
-        transform.rotate_around(workplane.current().origin(), x_rot * z_rot);
-    });
+    if buttons.just_pressed(MouseButton::Middle) {
+        *pivot = pointer
+            .screen_position()
+            .and_then(|pos| camera.screen_ray_onto_plane(pos, workplane.current()));
+    } else {
+        let Some(pivot) = *pivot else {
+            return;
+        };
+        let delta = mouse.read().map(|drag| drag.delta).sum::<Vec2>() * 0.0025;
+        cam.iter_mut().for_each(|mut transform| {
+            let x_rot = Quat::from_axis_angle(transform.local_x().as_vec3(), -delta.y);
+            let z_rot = Quat::from_axis_angle(workplane.current().normal().as_vec3(), -delta.x);
+            transform.rotate_around(pivot, x_rot * z_rot);
+        });
+    }
 }
 
-fn really_simple_zoom(
+fn zoom_camera(
+    camera: CameraParams,
+    pointer: PointerParams,
+    workplane: WorkplaneParams,
     mut mouse: EventReader<MouseWheel>,
     mut cam: Query<&mut Transform, With<MainCamera>>,
 ) {
+    let Some(center) = pointer
+        .screen_position()
+        .and_then(|pos| camera.screen_ray_onto_plane(pos, workplane.current()))
+    else {
+        return;
+    };
     let delta = mouse.read().map(|scroll| scroll.y).sum::<f32>();
     cam.iter_mut().for_each(|mut transform| {
-        let forward = transform.forward().as_vec3();
-        transform.translation += delta * forward;
+        let to_camera = transform.translation - center;
+        let scaling = 2f32.powf(-delta * 0.25);
+        if to_camera.length() * scaling < 0.02 {
+            return;
+        }
+        transform.translation = center + to_camera * scaling;
     });
 }
