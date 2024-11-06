@@ -6,7 +6,7 @@ use winnow::{
     Parser,
 };
 
-/// Parser for comma-separated list "aaa, bbb, ccc"
+/// Parser for comma-separated list: "foo, bar, baz"
 pub fn debug_list<'s, Input, Output, ParseNext, Error>(
     occurrences: impl Into<Range> + Clone,
     mut parser: ParseNext,
@@ -30,7 +30,7 @@ where
     })
 }
 
-/// Parser for array-like list "[foo, bar, baz]"
+/// Parser for array-like list: "[foo, bar, baz]"
 pub fn debug_array<'s, Input, Output, ParseNext, Error>(
     occurrences: impl Into<Range> + Clone,
     mut parser: ParseNext,
