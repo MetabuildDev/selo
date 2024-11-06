@@ -7,21 +7,20 @@
 use bevy::math::Vec2;
 use selo::prelude::*;
 use winnow::{
-    ascii::float,
-    combinator::{alt, cut_err, delimited, separated, separated_pair},
+    ascii::{float, multispace0},
+    combinator::{alt, cut_err, delimited, opt, separated, separated_pair},
     prelude::*,
 };
 
-use super::Geometry;
+use super::{
+    rust_debug::{debug_array, debug_list},
+    Geometry,
+};
 
 pub fn parse<'s>(input: &mut &'s str) -> PResult<Vec<Geometry<Vec2>>> {
     alt((
-        cut_err(delimited(
-            '[',
-            separated(0.., parse_debug_single, ", "),
-            ']',
-        )),
-        cut_err(parse_debug_single.map(|g| vec![g])),
+        debug_array(0.., parse_debug_single),
+        parse_debug_single.map(|g| vec![g]),
     ))
     .parse_next(input)
 }
@@ -32,6 +31,8 @@ pub fn parse_debug_single<'s>(input: &mut &'s str) -> PResult<Geometry<Vec2>> {
         parse_debug_polygon.map(|g| Geometry::Polygon(g)),
         parse_debug_multiring.map(|g| Geometry::MultiRing(g)),
         parse_debug_ring.map(|g| Geometry::Ring(g)),
+        parse_debug_triangle.map(|g| Geometry::Triangle(g)),
+        parse_debug_line.map(|g| Geometry::Line(g)),
     ))
     .parse_next(input)
 }
@@ -62,9 +63,9 @@ fn parse_debug_polygon<'s>(input: &mut &'s str) -> PResult<Polygon<Vec2>> {
 
 fn parse_debug_multiring<'s>(input: &mut &'s str) -> PResult<MultiRing<Vec2>> {
     delimited(
-        "MultiRing([",
-        cut_err(separated(0.., parse_debug_ring, ", ")),
-        "])",
+        ("MultiRing(", multispace0),
+        debug_array(0.., parse_debug_ring),
+        (multispace0, ")"),
     )
     .map(|rings| MultiRing(rings))
     .parse_next(input)
@@ -72,19 +73,51 @@ fn parse_debug_multiring<'s>(input: &mut &'s str) -> PResult<MultiRing<Vec2>> {
 
 fn parse_debug_ring<'s>(input: &mut &'s str) -> PResult<Ring<Vec2>> {
     delimited(
-        "Ring([",
-        cut_err(separated(0.., parse_debug_coord, ", ")),
-        "])",
+        ("LineString(", multispace0),
+        debug_array(0.., parse_debug_coord),
+        (multispace0, ")"),
     )
     .map(|points: Vec<_>| Ring::new(points))
     .parse_next(input)
 }
 
+fn parse_debug_triangle<'s>(input: &mut &'s str) -> PResult<Triangle<Vec2>> {
+    delimited(
+        ("Triangle(", multispace0),
+        cut_err(debug_list(3, parse_debug_coord)),
+        (multispace0, ")"),
+    )
+    .map(|p: Vec<_>| Triangle([p[0], p[1], p[2]]))
+    .parse_next(input)
+}
+
+fn parse_debug_line<'s>(input: &mut &'s str) -> PResult<Line<Vec2>> {
+    delimited(
+        "Line {",
+        cut_err(winnow::combinator::seq!(
+            _: (multispace0, "start:", multispace0),
+            parse_debug_coord,
+            _: (multispace0, ",", multispace0),
+            _: ("end:", multispace0),
+            parse_debug_coord,
+            _: (opt((multispace0, ",")), multispace0))),
+        ("}", opt((multispace0, ","))),
+    )
+    .map(|(src, dst)| Line([src, dst]))
+    .parse_next(input)
+}
+
 fn parse_debug_coord<'s>(input: &mut &'s str) -> PResult<Vec2> {
     delimited(
-        "Coord { x: ",
-        cut_err(separated_pair(float, ", y: ", float)),
-        " }",
+        "Coord {",
+        cut_err(winnow::combinator::seq!(
+            _: (multispace0, "x:", multispace0),
+            float,
+            _: (multispace0, ",", multispace0),
+            _: ("y:", multispace0),
+            float,
+            _: (opt((multispace0, ",")), multispace0))),
+        "}",
     )
     .map(|(x, y)| Vec2::new(x, y))
     .parse_next(input)

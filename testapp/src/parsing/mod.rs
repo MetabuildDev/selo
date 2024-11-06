@@ -26,17 +26,7 @@ pub enum Geometry<P: Point> {
 /// Parse any geometry
 pub fn parse(mut s: &str) -> Result<DynamicGeometries> {
     Ok(match () {
-        _ if (s.starts_with("MultiPolygon")
-            || s.starts_with("Polygon")
-            || s.starts_with("MultiRing")
-            || s.starts_with("Ring")
-            // || s.starts_with("MultiLineString")
-            // || s.starts_with("LineString")
-            // || s.starts_with("Triangle")
-            || s.starts_with("["))
-            && !s.contains("new")
-            && (s.contains("Vec2") || s.contains("Vec3")) =>
-        {
+        _ if (s.contains("Vec2") || s.contains("Vec3")) && !s.contains("new") => {
             if s.contains("Vec2") {
                 info!("detected selo debug (Vec2)");
                 selo_debug::parse

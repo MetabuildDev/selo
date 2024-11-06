@@ -1,59 +1,81 @@
 use winnow::{
     ascii::multispace0,
-    combinator::{separated, trace},
+    combinator::{cut_err, delimited, opt, separated, terminated, trace},
     error::ParserError,
-    stream::{Accumulate, AsChar, Compare, FindSlice, Range, Stream, StreamIsPartial},
-    token::{take_till, take_until},
+    stream::{AsBStr, AsChar, Compare, Range, Stream, StreamIsPartial},
     Parser,
 };
 
-// fn tuple_struct<'s, Input, Literal, Output, Accumulator, Error>(
-//     mut name: &'s str,
-//     nb_fields: usize,
-// ) -> impl Parser<Input, Accumulator, Error> + '_
-// where
-//     Input: Stream<Slice = Output>
-//         + StreamIsPartial
-//         + Compare<&'s str>
-//         + FindSlice<Literal>
-//         + Compare<char>,
-//     Input::Token: AsChar + Clone,
-//     Literal: Clone,
-//     Accumulator: Accumulate<Output>,
-//     Error: ParserError<Input>,
-// {
-//     trace("tuple_struct", move |input: &mut Input| {
-//         let _ = name.parse_next(input)?;
-//         let _ = multispace0.parse_next(input)?;
-//         separated(
-//             nb_fields,
-//             take_till(0.., [',', ' ', '\n', '\t']),
-//             (multispace0, ','),
-//         )
-//         .parse_next(input)
-//     })
-// }
-
-fn debug_list<'s, Input, Literal, Output, Accumulator, Error>(
+pub fn debug_list<'s, Input, Output, ParseNext, Error>(
     occurrences: impl Into<Range> + Clone,
-) -> impl Parser<Input, Accumulator, Error>
+    mut parser: ParseNext,
+) -> impl Parser<Input, Vec<Output>, Error>
 where
-    Input: Stream<Slice = Output>
-        + StreamIsPartial
-        + Compare<&'s str>
-        + FindSlice<Literal>
-        + Compare<char>,
-    Input::Token: AsChar + Clone,
-    Literal: Clone,
-    Accumulator: Accumulate<Output>,
+    Input: StreamIsPartial + Stream + Compare<char> + AsBStr,
+    <Input as Stream>::Token: AsChar + Clone,
+    ParseNext: Parser<Input, Output, Error>,
     Error: ParserError<Input>,
 {
     trace("debug_list", move |input: &mut Input| {
-        separated(
-            occurrences.clone(),
-            take_till(0.., [',', ' ', '\n', '\t']),
-            (multispace0, ','),
+        terminated(
+            separated(
+                occurrences.clone(),
+                parser.by_ref(),
+                (multispace0, ',', multispace0),
+            ),
+            opt((multispace0, ',', multispace0)),
         )
         .parse_next(input)
     })
 }
+
+pub fn debug_array<'s, Input, Output, ParseNext, Error>(
+    occurrences: impl Into<Range> + Clone,
+    mut parser: ParseNext,
+) -> impl Parser<Input, Vec<Output>, Error>
+where
+    Input: StreamIsPartial + Stream + Compare<char> + AsBStr,
+    <Input as Stream>::Token: AsChar + Clone,
+    ParseNext: Parser<Input, Output, Error>,
+    Error: ParserError<Input>,
+{
+    trace("debug_array", move |input: &mut Input| {
+        delimited(
+            ('[', multispace0),
+            cut_err(debug_list(occurrences.clone(), parser.by_ref())),
+            (multispace0, ']'),
+        )
+        .parse_next(input)
+    })
+}
+
+// pub fn debug_tuple_struct<'s, Input, Output, ParseNext, Error>(
+//     name: &str,
+//     occurrences: impl Into<Range> + Clone,
+//     mut parser: ParseNext,
+// ) -> impl Parser<Input, Vec<Output>, Error>
+// where
+//     Input: StreamIsPartial + Stream + Compare<char> + AsBStr,
+//     <Input as Stream>::Token: AsChar + Clone,
+//     ParseNext: Parser<Input, Output, Error>,
+//     Error: ParserError<Input>,
+// {
+//     trace("debug_list", move |input: &mut Input| {
+//         delimited(
+//             (name, '(', multispace0),
+//             debug_list(
+//                 occurrences
+//             ),
+//             (
+//                 separated(
+//                     occurrences.clone(),
+//                     parser.by_ref(),
+//                     (multispace0, ',', multispace0),
+//                 ),
+//                 opt((multispace0, ',', multispace0)),
+//             ),
+//             (multispace0, ']'),
+//         )
+//         .parse_next(input)
+//     })
+// }
