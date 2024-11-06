@@ -6,6 +6,7 @@ use winnow::{
     Parser,
 };
 
+/// Parser for comma-separated list "aaa, bbb, ccc"
 pub fn debug_list<'s, Input, Output, ParseNext, Error>(
     occurrences: impl Into<Range> + Clone,
     mut parser: ParseNext,
@@ -29,6 +30,7 @@ where
     })
 }
 
+/// Parser for array-like list "[foo, bar, baz]"
 pub fn debug_array<'s, Input, Output, ParseNext, Error>(
     occurrences: impl Into<Range> + Clone,
     mut parser: ParseNext,
@@ -48,34 +50,3 @@ where
         .parse_next(input)
     })
 }
-
-// pub fn debug_tuple_struct<'s, Input, Output, ParseNext, Error>(
-//     name: &str,
-//     occurrences: impl Into<Range> + Clone,
-//     mut parser: ParseNext,
-// ) -> impl Parser<Input, Vec<Output>, Error>
-// where
-//     Input: StreamIsPartial + Stream + Compare<char> + AsBStr,
-//     <Input as Stream>::Token: AsChar + Clone,
-//     ParseNext: Parser<Input, Output, Error>,
-//     Error: ParserError<Input>,
-// {
-//     trace("debug_list", move |input: &mut Input| {
-//         delimited(
-//             (name, '(', multispace0),
-//             debug_list(
-//                 occurrences
-//             ),
-//             (
-//                 separated(
-//                     occurrences.clone(),
-//                     parser.by_ref(),
-//                     (multispace0, ',', multispace0),
-//                 ),
-//                 opt((multispace0, ',', multispace0)),
-//             ),
-//             (multispace0, ']'),
-//         )
-//         .parse_next(input)
-//     })
-// }
