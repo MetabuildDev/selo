@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use bevy::prelude::info;
 use selo::prelude::*;
 use winnow::Parser;
@@ -6,6 +6,7 @@ use winnow::Parser;
 mod geo_debug;
 mod rust_debug;
 mod selo_debug;
+mod wkt;
 
 pub enum DynamicGeometries {
     Dim2(Vec<Geometry<Vec2>>),
@@ -48,6 +49,15 @@ pub fn parse(mut s: &str) -> Result<DynamicGeometries> {
                 .map(|g| DynamicGeometries::Dim2(g))
                 .map_err(|e| anyhow::format_err!("{e}"))?
         }
-        _ => Err(anyhow!("unrecognized input"))?,
+        _ if s.contains(" Z") => {
+            // 3d wkt
+            info!("detected 3d wkt");
+            DynamicGeometries::Dim3(wkt::parse_3d(s)?)
+        }
+        _ => {
+            // assume 2d wkt
+            info!("assuming 2d wkt");
+            DynamicGeometries::Dim2(wkt::parse_2d(s)?)
+        }
     })
 }
