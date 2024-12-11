@@ -2250,11 +2250,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "geo"
+version = "0.29.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "009245d261b86621c38d1c4e5a6578d52294e3e5445401d713584dfe42f8ae9c"
+dependencies = [
+ "earcutr",
+ "float_next_after",
+ "geo-types",
+ "geographiclib-rs",
+ "i_overlay",
+ "log",
+ "num-traits",
+ "robust",
+ "rstar",
+ "spade",
+]
+
+[[package]]
 name = "geo-buffer"
 version = "0.2.0"
 source = "git+https://github.com/no-materials/geo-buffer.git#8c24f0328e50fb5783d9cf7311849bd470d05123"
 dependencies = [
- "geo",
+ "geo 0.28.0",
  "geo-types",
 ]
 
@@ -2266,6 +2284,7 @@ checksum = "b6f47c611187777bbca61ea7aba780213f5f3441fd36294ab333e96cfa791b65"
 dependencies = [
  "approx",
  "num-traits",
+ "rayon",
  "rstar",
  "serde",
 ]
@@ -2605,9 +2624,9 @@ checksum = "347c253b4748a1a28baf94c9ce133b6b166f08573157e05afe718812bc599fcd"
 
 [[package]]
 name = "i_overlay"
-version = "1.7.1"
+version = "1.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d1fc58d8b89d5870a37d93a38aaf09b5545213a4878db4723cfeea7f76be9be0"
+checksum = "a469f68cb8a7cef375b2b0f581faf5859b4b50600438c00d46b71acc25ebbd0c"
 dependencies = [
  "i_float",
  "i_key_sort",
@@ -4023,7 +4042,7 @@ version = "0.1.0"
 dependencies = [
  "bevy_math",
  "bevy_reflect",
- "geo",
+ "geo 0.29.2",
  "geo-buffer",
  "i_overlay",
  "itertools 0.13.0",
