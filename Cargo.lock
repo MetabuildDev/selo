@@ -2235,22 +2235,6 @@ dependencies = [
 
 [[package]]
 name = "geo"
-version = "0.28.0"
-source = "git+https://github.com/RobWalt/geo.git?branch=feat%2Fspade-boolops#a50681e1784f13f028d35cc93321512805af53a4"
-dependencies = [
- "earcutr",
- "float_next_after",
- "geo-types",
- "geographiclib-rs",
- "log",
- "num-traits",
- "robust",
- "rstar",
- "spade",
-]
-
-[[package]]
-name = "geo"
 version = "0.29.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "009245d261b86621c38d1c4e5a6578d52294e3e5445401d713584dfe42f8ae9c"
@@ -2270,9 +2254,9 @@ dependencies = [
 [[package]]
 name = "geo-buffer"
 version = "0.2.0"
-source = "git+https://github.com/no-materials/geo-buffer.git#8c24f0328e50fb5783d9cf7311849bd470d05123"
+source = "git+https://github.com/no-materials/geo-buffer.git#270adcbc546a65557b34126c75a58f90035f3c0f"
 dependencies = [
- "geo 0.28.0",
+ "geo",
  "geo-types",
 ]
 
@@ -4042,7 +4026,7 @@ version = "0.1.0"
 dependencies = [
  "bevy_math",
  "bevy_reflect",
- "geo 0.29.2",
+ "geo",
  "geo-buffer",
  "i_overlay",
  "itertools 0.13.0",

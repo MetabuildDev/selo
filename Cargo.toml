@@ -5,7 +5,6 @@ members = ["selo", "testapp"]
 [workspace.dependencies]
 geo = "0.29"
 bevy_math = "0.14"
-# TODO: update RobWalt's repo to point to patched geo in geo-buffer
 geo-buffer = { git = "https://github.com/no-materials/geo-buffer.git" }
 bevy_reflect = "0.14"
 
