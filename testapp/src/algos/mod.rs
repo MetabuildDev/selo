@@ -28,5 +28,5 @@ impl Plugin for AlgoPlugin {
 }
 
 fn draw_origin(mut gizmos: Gizmos) {
-    gizmos.sphere(Vec3::ZERO, Quat::default(), 0.05, palettes::basic::PURPLE);
+    gizmos.sphere(Isometry3d::default(), 0.05, palettes::basic::PURPLE);
 }

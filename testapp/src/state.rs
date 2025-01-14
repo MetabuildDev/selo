@@ -1,7 +1,6 @@
 use bevy::{input::common_conditions::input_just_pressed, prelude::*};
 use bevy_egui::{egui, EguiContext};
 use bevy_inspector_egui::bevy_inspector::ui_for_state;
-use bevy_mod_picking::prelude::*;
 
 pub struct StatePlugin;
 
@@ -59,6 +58,11 @@ pub fn state_ui<S: bevy::state::state::FreelyMutableState + bevy::prelude::Refle
     .show(&ctx, |ui| {
         ui_for_state::<S>(world, ui);
     });
+}
+
+#[derive(Component)]
+pub struct PickSelection {
+    is_selected: bool,
 }
 
 pub fn unselect_everything(mut selected: Query<&mut PickSelection>) {

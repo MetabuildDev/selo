@@ -1,11 +1,12 @@
 #![allow(refining_impl_trait)]
 
-pub use embedded_primitive::*;
 use geo::{MapCoords as _, StitchTriangles as _, TriangulateSpade as _};
 
 mod errors;
 
 mod embedded_primitive;
+pub use embedded_primitive::*;
+
 mod workplane;
 
 mod traits;

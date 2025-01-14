@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use bevy_math::primitives::InfinitePlane3d;
+use bevy_math::{primitives::InfinitePlane3d, Affine3A};
 
 use crate::{errors::GeometryError, Embed, IterPoints, Normal, Unembed};
 
@@ -13,7 +13,7 @@ use bevy_reflect::{ReflectDeserialize, ReflectSerialize};
     reflect(Serialize, Deserialize)
 )]
 pub struct Workplane {
-    pub plane: prelude::InfinitePlane3d,
+    pub plane: InfinitePlane3d,
     pub origin: Vec3,
 }
 

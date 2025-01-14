@@ -1,6 +1,6 @@
 use bevy_math::Vec3;
 
-use crate::{prelude::Workplane, Embed, IterPoints, Normal};
+use crate::{workplane::Workplane, Embed, IterPoints, Normal};
 
 /// Group primitives based on their plane
 pub fn group_primitives<T: IterPoints<P = Vec3> + Normal<P = Vec3> + Embed>(

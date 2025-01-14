@@ -13,16 +13,13 @@ mod workplane;
 
 use bevy::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy_mod_picking::prelude::*;
 
 pub fn run() {
     let mut app = App::new();
 
     // plugins
     app.add_plugins(DefaultPlugins)
-        .add_plugins(WorldInspectorPlugin::default())
-        .add_plugins(DefaultPickingPlugins)
-        .insert_resource(DebugPickingMode::Normal);
+        .add_plugins(WorldInspectorPlugin::default());
 
     app.add_plugins((
         state::StatePlugin,

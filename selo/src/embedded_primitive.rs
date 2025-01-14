@@ -1,6 +1,6 @@
 use bevy_math::{Vec2, Vec3};
 
-use crate::{prelude::Workplane, Map};
+use crate::{workplane::Workplane, Map};
 
 /// A trait to classify 2D geometric types that can be created from points on a 3D workplane and
 /// the plane itself

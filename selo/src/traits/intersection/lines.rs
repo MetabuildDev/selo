@@ -1,4 +1,4 @@
-use crate::{prelude::Line2DIntersection, LinesIter, Point2};
+use crate::{algorithms::Line2DIntersection, LinesIter, Point2};
 
 /// Check if the lines of this kind of geometry are intersecting with any of the lines of the other geometry
 ///

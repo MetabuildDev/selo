@@ -35,7 +35,7 @@ impl Plugin for TrianglePlugin {
                         .pipe(drop_system)
                         .run_if(
                             any_with_component::<TriangleStart>
-                                .and_then(not(any_with_component::<TriangleMid>)),
+                                .and(not(any_with_component::<TriangleMid>)),
                         ),
                     spawn_point
                         .pipe(triangle_point)
@@ -46,8 +46,7 @@ impl Plugin for TrianglePlugin {
                         .run_if(any_with_component::<TriangleMid>),
                 )
                     .run_if(
-                        in_state(AppState::Triangle)
-                            .and_then(input_just_pressed(MouseButton::Left)),
+                        in_state(AppState::Triangle).and(input_just_pressed(MouseButton::Left)),
                     ),
             )
             .add_systems(
@@ -55,7 +54,7 @@ impl Plugin for TrianglePlugin {
                 (
                     render_triangles,
                     render_triangle_construction.run_if(
-                        in_state(AppState::Triangle).and_then(any_with_component::<TriangleStart>),
+                        in_state(AppState::Triangle).and(any_with_component::<TriangleStart>),
                     ),
                 ),
             )
@@ -184,12 +183,7 @@ fn render_triangles(mut gizmos: Gizmos, triangles: TriangleParams) {
     triangles
         .iter_just_triangles()
         .for_each(|selo::Triangle([a, b, c])| {
-            gizmos.primitive_3d(
-                &Triangle3d::new(a, b, c),
-                Vec3::ZERO,
-                Quat::default(),
-                palettes::basic::TEAL,
-            );
+            gizmos.primitive_3d(&Triangle3d::new(a, b, c), Vec3::ZERO, palettes::basic::TEAL);
         })
 }
 

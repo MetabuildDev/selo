@@ -1,4 +1,4 @@
-use crate::{prelude::Workplane, primitives::*, Embed, Map, Point, ToGeo, ToSelo, Unembed};
+use crate::{primitives::*, workplane::Workplane, Embed, Map, Point, ToGeo, ToSelo, Unembed};
 use bevy_math::{DVec2, DVec3, Vec2, Vec3};
 
 /// Expand or shrink geometry in normal direction at every point

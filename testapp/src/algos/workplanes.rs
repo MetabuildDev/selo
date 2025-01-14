@@ -69,13 +69,8 @@ fn render_workplane_normalization(mut gizmos: AnimatedGizmos, points: Res<Workpl
     let plane = Workplane::from_three_points(**points);
     let normalized_plane = plane.hesse_normal_form();
 
-    gizmos.sphere(plane.origin, Quat::default(), 0.025, palettes::basic::BLUE);
-    gizmos.sphere(
-        normalized_plane.origin,
-        Quat::default(),
-        0.025,
-        palettes::basic::YELLOW,
-    );
+    gizmos.sphere(plane.origin, 0.025, palettes::basic::BLUE);
+    gizmos.sphere(normalized_plane.origin, 0.025, palettes::basic::YELLOW);
 
     [
         (plane.origin, normalized_plane.origin),
@@ -104,12 +99,7 @@ fn render_workplane_transform(mut gizmos: AnimatedGizmos, points: Res<WorkplaneP
     let triangle = [Vec2::X, Vec2::Y, Vec2::ONE].map(|p| p.extend(0.0));
     let triangle_in_plane = triangle.map(|p| transform.transform_point3(p));
 
-    gizmos.sphere(
-        normalized_plane.origin,
-        Quat::default(),
-        0.025,
-        palettes::basic::YELLOW,
-    );
+    gizmos.sphere(normalized_plane.origin, 0.025, palettes::basic::YELLOW);
 
     triangle
         .windows(2)

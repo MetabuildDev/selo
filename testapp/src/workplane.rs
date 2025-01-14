@@ -26,11 +26,11 @@ impl Plugin for WorkplanePlugin {
                     .run_if(in_state(AppState::Workplane)),
             )
             .add_systems(Update, render_workplane)
-            .observe(add_workplane::<Point>)
-            .observe(add_workplane::<Line>)
-            .observe(add_workplane::<Triangle>)
-            .observe(add_workplane::<Ring2D>)
-            .observe(keep_active_workplane_unique);
+            .add_observer(add_workplane::<Point>)
+            .add_observer(add_workplane::<Line>)
+            .add_observer(add_workplane::<Triangle>)
+            .add_observer(add_workplane::<Ring2D>)
+            .add_observer(keep_active_workplane_unique);
     }
 }
 
@@ -143,7 +143,7 @@ fn ui_inactive(world: &mut World) {
     match resp {
         Some(o) => match o {
             Outcome::New => {
-                world.run_system_once(spawn_initial_workplane);
+                world.run_system_once(spawn_initial_workplane).ok();
             }
             Outcome::NewActive(e) => {
                 world.commands().entity(e).insert(ActiveWorkplane);

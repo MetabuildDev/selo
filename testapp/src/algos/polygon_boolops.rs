@@ -1,3 +1,4 @@
+#![allow(unused)]
 use bevy::{color::palettes, input::common_conditions::input_just_pressed, prelude::*};
 use itertools::Itertools;
 use selo::{Embed, Unembed};
