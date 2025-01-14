@@ -13,17 +13,6 @@ pub enum DynamicGeometries {
     Dim3(Vec<Geometry<Vec3>>),
 }
 
-pub enum Geometry<P: Point> {
-    Line(Line<P>),
-    LineString(LineString<P>),
-    MultiLineString(MultiLineString<P>),
-    Triangle(Triangle<P>),
-    Ring(Ring<P>),
-    MultiRing(MultiRing<P>),
-    Polygon(Polygon<P>),
-    MultiPolygon(MultiPolygon<P>),
-}
-
 /// Parse any geometry
 pub fn parse(mut s: &str) -> Result<DynamicGeometries> {
     Ok(match () {

@@ -1,10 +1,10 @@
 use bevy::{color::palettes, ecs::entity::EntityHashSet, prelude::*};
 use bevy_egui::{egui, EguiContexts};
-use selo::{IterPoints, Unembed};
+use selo::{Geometry, IterPoints, Unembed};
 
 use crate::{
     line::{AttachedLines, Line},
-    parsing::{self, DynamicGeometries, Geometry},
+    parsing::{self, DynamicGeometries},
     point::Point,
     ring::{Ring2D, RingLine, RingPoint},
     triangle::{Triangle, TriangleLine, TrianglePoint},
@@ -45,7 +45,7 @@ fn spawn_ui(
     mut ev_spawn_ring: EventWriter<SpawnRing>,
     mut prompt: Local<String>,
 ) {
-    egui::Window::new("spawn_ui").show(ctx.ctx_mut(), |ui| {
+    egui::Window::new("Spawn geometry").show(ctx.ctx_mut(), |ui| {
         ui.text_edit_multiline(&mut *prompt);
 
         ui.horizontal(|ui| {

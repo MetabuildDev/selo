@@ -12,3 +12,6 @@ pub use ring::*;
 
 mod triangle;
 pub use triangle::*;
+
+mod geometry;
+pub use geometry::*;
