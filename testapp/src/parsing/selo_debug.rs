@@ -1,6 +1,6 @@
 //! Parse debug logs from selo objects
 //! Example:
-//! ```
+//! ```text
 //! Polygon(Ring([Vec2(0.0, 0.0), Vec2(5.0, 0.0), Vec2(5.0, 5.0), Vec2(0.0, 5.0)]), MultiRing([Ring([Vec2(1.0, 1.0), Vec2(2.0, 1.0), Vec2(2.0, 2.0), Vec2(1.0, 2.0)]), Ring([Vec2(3.0, 3.0), Vec2(4.0, 3.0), Vec2(4.0, 4.0), Vec2(3.0, 4.0)])]))
 //! ```
 

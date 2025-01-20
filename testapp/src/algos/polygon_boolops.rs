@@ -1,3 +1,6 @@
+#![allow(unused)]
+//! FIXME: re-enable
+
 use bevy::{color::palettes, input::common_conditions::input_just_pressed, prelude::*};
 use itertools::Itertools;
 use selo::{Embed, Unembed};
@@ -11,7 +14,6 @@ use super::algostate::AlgorithmState;
 
 pub struct PolygonBoolopsPlugin;
 
-// FIXME: re-enable
 impl Plugin for PolygonBoolopsPlugin {
     fn build(&self, app: &mut App) {
         // app.add_systems(
