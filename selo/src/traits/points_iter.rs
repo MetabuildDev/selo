@@ -26,7 +26,7 @@ pub trait IterPoints {
 impl<P: Point> IterPoints for Triangle<P> {
     type P = P;
     #[inline]
-    fn iter_points(&self) -> impl Iterator<Item = Self::P> {
+    fn iter_points(&self) -> impl Iterator<Item = Self::P> + Clone {
         self.0.iter().copied()
     }
 }
@@ -34,7 +34,7 @@ impl<P: Point> IterPoints for Triangle<P> {
 impl<P: Point> IterPoints for LineString<P> {
     type P = P;
     #[inline]
-    fn iter_points(&self) -> impl ExactSizeIterator<Item = P> {
+    fn iter_points(&self) -> impl ExactSizeIterator<Item = P> + Clone {
         self.0.iter().copied()
     }
 }
@@ -42,7 +42,7 @@ impl<P: Point> IterPoints for LineString<P> {
 impl<P: Point> IterPoints for MultiLineString<P> {
     type P = P;
     #[inline]
-    fn iter_points(&self) -> impl Iterator<Item = P> {
+    fn iter_points(&self) -> impl Iterator<Item = P> + Clone {
         self.0.iter().flat_map(IterPoints::iter_points)
     }
 }
