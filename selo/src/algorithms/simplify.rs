@@ -71,7 +71,7 @@ impl<P: Point> SimplifyGrouped<P> for Polygon<P> {
         Self: Sized,
     {
         let exterior = self.exterior().simplify(eps)?;
-        let interior = self.interior().simplify(eps)?;
+        let interior = self.interior().simplify(eps).unwrap_or_default();
         Some(Polygon::new(exterior, interior))
     }
 }
