@@ -3,7 +3,7 @@ use bevy_egui::{egui, EguiContexts};
 use selo::{Geometry, IterPoints, Unembed};
 
 use crate::{
-    line::{AttachedLines, Line},
+    line::{AttachedLines, Line, LinePoint},
     parsing::{self, DynamicGeometries},
     point::Point,
     ring::{Ring2D, RingLine, RingPoint},
@@ -15,11 +15,13 @@ pub struct SpawnerPlugin;
 
 impl Plugin for SpawnerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<SpawnTriangle>()
+        app.add_event::<SpawnLine>()
+            .add_event::<SpawnTriangle>()
             .add_event::<SpawnRing>()
             .add_systems(
                 Update,
                 (
+                    spawn_line.run_if(on_event::<SpawnLine>()),
                     spawn_triangle.run_if(on_event::<SpawnTriangle>()),
                     spawn_ring.run_if(on_event::<SpawnRing>()),
                     spawn_ui,
@@ -41,6 +43,7 @@ fn spawn_ui(
             With<RingLine>,
         )>,
     >,
+    mut ev_spawn_line: EventWriter<SpawnLine>,
     mut ev_spawn_triangle: EventWriter<SpawnTriangle>,
     mut ev_spawn_ring: EventWriter<SpawnRing>,
     mut prompt: Local<String>,
@@ -54,6 +57,9 @@ fn spawn_ui(
 
                 let mut spawn_geometry = |geometry: Geometry<Vec3>| {
                     match geometry {
+                        Geometry::Line(line) => {
+                            ev_spawn_line.send(SpawnLine(line));
+                        }
                         Geometry::Triangle(triangle) => {
                             ev_spawn_triangle.send(SpawnTriangle(triangle));
                         }
@@ -85,6 +91,7 @@ fn spawn_ui(
 
                 match parsing::parse(&prompt) {
                     Ok(geometries) => {
+                        info!("{:?}", geometries);
                         *prompt = String::new();
                         let geometries = match geometries {
                             DynamicGeometries::Dim2(g) => g
@@ -136,6 +143,37 @@ fn spawn_ui(
 }
 
 #[derive(Debug, Clone, Event)]
+pub struct SpawnLine(pub selo::Line<Vec3>);
+
+fn spawn_line(
+    mut spawn_events: EventReader<SpawnLine>,
+    mut cmds: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut ids: Local<(usize, usize)>,
+    mut attached_lines: Query<&mut AttachedLines, ()>,
+) {
+    spawn_events
+        .read()
+        .for_each(|SpawnLine(selo::Line([a, b]))| {
+            let [a, b] = [a, b].map(|position| {
+                spawn_point_inner(
+                    *position,
+                    &mut cmds,
+                    &mut meshes,
+                    &mut materials,
+                    &mut ids.0,
+                    |_id| LinePoint,
+                )
+            });
+
+            spawn_line_inner(a, b, &mut cmds, &mut attached_lines, &mut ids.1, |_| {
+                TriangleLine
+            });
+        });
+}
+
+#[derive(Debug, Clone, Event)]
 pub struct SpawnTriangle(pub selo::Triangle<Vec3>);
 
 fn spawn_triangle(
@@ -169,7 +207,7 @@ fn spawn_triangle(
                     end,
                     &mut cmds,
                     &mut attached_lines,
-                    &mut ids.2,
+                    &mut ids.1,
                     |_| TriangleLine,
                 )
             });

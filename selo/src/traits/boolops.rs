@@ -11,6 +11,8 @@ use sealed_helper_traits::IntoOverlayResource;
 
 use crate::{MultiPolygon, MultiRing, Point2, Polygon, Ring, Triangle};
 
+use super::BufferGeometry;
+
 const FILL_RULE: FillRule = FillRule::EvenOdd;
 
 /// Boolean Operations trait for geometries. These are basic logical operations but for geometry.
@@ -35,8 +37,11 @@ const FILL_RULE: FillRule = FillRule::EvenOdd;
 /// - `a AND (NOT b)` = `difference` = points included in first set but not the second set
 pub trait BoolOps<Rhs>
 where
-    Self: IntoOverlayResource + Sized,
-    Rhs: IntoOverlayResource<P = Self::P>,
+    Self: BufferGeometry<P = <Self as IntoOverlayResource>::P> + IntoOverlayResource + Sized,
+    Rhs: BufferGeometry<P = <Self as IntoOverlayResource>::P>
+        + IntoOverlayResource<P = <Self as IntoOverlayResource>::P>,
+    MultiPolygon<<Self as IntoOverlayResource>::P>:
+        BufferGeometry<P = <Self as IntoOverlayResource>::P>,
 {
     /// Union boolean operation. This creates a combined [`MultiPolygon`] out of the two input
     /// geometries.
@@ -55,8 +60,45 @@ where
     /// assert_eq!(union.len(), 1);
     /// assert_eq!(union.area(), 1.0);
     /// ```
-    fn union(&self, rhs: &Rhs) -> MultiPolygon<Self::P> {
+    fn union(&self, rhs: &Rhs) -> MultiPolygon<<Self as IntoOverlayResource>::P> {
         boolops(self, rhs, OverlayRule::Union)
+    }
+
+    /// Union boolean operation with a tolerance value. This creates a combined [`MultiPolygon`]
+    /// out of the two input geometries.
+    /// It is equivalent to buffering both polygons outwards by the tolerance, unioning them, and shrinking them back.
+    /// ️⚠️ This will remove any holes smaller than `tolerance` in size.
+    ///
+    /// ```
+    /// # use selo::prelude::*;
+    /// let a = Ring::new([
+    ///     Vec2::new(0.0, 0.0),
+    ///     Vec2::new(0.4999, 0.0),
+    ///     Vec2::new(0.4999, 1.0),
+    ///     Vec2::new(0.0, 1.0),
+    /// ]);
+    /// let b = Ring::new([
+    ///     Vec2::new(0.5, 0.0),
+    ///     Vec2::new(1.0, 0.0),
+    ///     Vec2::new(1.0, 1.0),
+    ///     Vec2::new(0.5, 1.0),
+    /// ]);
+    ///
+    /// let union = a.union_approx(&b, 0.01);
+    ///
+    /// assert_eq!(union.len(), 1);
+    /// ```
+    fn union_approx(
+        &self,
+        rhs: &Rhs,
+        tolerance: f64,
+    ) -> MultiPolygon<<Self as IntoOverlayResource>::P> {
+        boolops(
+            &self.buffer(tolerance),
+            &rhs.buffer(tolerance),
+            OverlayRule::Union,
+        )
+        .buffer(-tolerance)
     }
 
     /// Intersection boolean operation. This creates the overlap [`MultiPolygon`] out of the two input
@@ -76,8 +118,37 @@ where
     /// assert_eq!(intersection.len(), 1);
     /// assert_eq!(intersection.area(), 0.5);
     /// ```
-    fn intersection(&self, rhs: &Rhs) -> MultiPolygon<Self::P> {
+    fn intersection(&self, rhs: &Rhs) -> MultiPolygon<<Self as IntoOverlayResource>::P> {
         boolops(self, rhs, OverlayRule::Intersect)
+    }
+
+    /// Intersection boolean operation. This creates the overlap [`MultiPolygon`]
+    /// out of the two input geometries.
+    /// ⚠️ This will remove any shapes smaller than `tolerance` in size.
+    ///
+    /// ```
+    /// # use selo::prelude::*;
+    /// let ring1 = Ring::new(vec![
+    ///     Vec2::new(0.0, 0.0),
+    ///     Vec2::new(0.5, 0.0),
+    ///     Vec2::new(0.5, 1.0),
+    ///     Vec2::new(0.0, 1.0),
+    /// ]);
+    /// let ring2 = ring1.map(|pos2| pos2 + Vec2::X * 0.4999);
+    ///
+    /// let intersection = ring1
+    ///     .intersection_approx(&ring2, 0.01);
+    ///
+    /// assert_eq!(intersection.len(), 0);
+    /// ```
+    fn intersection_approx(
+        &self,
+        rhs: &Rhs,
+        tolerance: f64,
+    ) -> MultiPolygon<<Self as IntoOverlayResource>::P> {
+        boolops(self, rhs, OverlayRule::Intersect)
+            .buffer(-tolerance)
+            .buffer(tolerance)
     }
 
     /// Difference boolean operation. This creates the [`MultiPolygon`] that results from
@@ -97,8 +168,45 @@ where
     /// assert_eq!(difference.len(), 1);
     /// assert_eq!(difference.area(), 3.0);
     /// ```
-    fn difference(&self, rhs: &Rhs) -> MultiPolygon<Self::P> {
+    fn difference(&self, rhs: &Rhs) -> MultiPolygon<<Self as IntoOverlayResource>::P> {
         boolops(self, rhs, OverlayRule::Difference)
+    }
+
+    /// Difference boolean operation with a tolerance value. This creates the [`MultiPolygon`]
+    /// that results from subtracting the overlap of the two input geometries from the first input geometry.
+    /// It is equivalent to buffering the second polygons inwards by the tolerance, before subtracting it.
+    /// ⚠️ This will remove any shapes smaller than `tolerance` in size.
+    ///
+    /// ```
+    /// # use selo::prelude::*;
+    /// let a = Ring::new([
+    ///     Vec2::new(0.0, 0.0),
+    ///     Vec2::new(1.0, 0.0),
+    ///     Vec2::new(1.0, 1.0),
+    ///     Vec2::new(0.0, 1.0),
+    /// ]);
+    /// let b = Ring::new([
+    ///     Vec2::new(0.5, 0.0),
+    ///     Vec2::new(1.0, 0.0),
+    ///     Vec2::new(1.0, 0.999),
+    ///     Vec2::new(0.5, 0.999),
+    /// ]);
+    ///
+    /// let union = a.difference_approx(&b, 0.01);
+    ///
+    /// assert_eq!(union.iter_points().count(), 4);
+    /// ```
+    fn difference_approx(
+        &self,
+        rhs: &Rhs,
+        tolerance: f64,
+    ) -> MultiPolygon<<Self as IntoOverlayResource>::P> {
+        boolops(
+            &self.buffer(-tolerance),
+            &rhs.buffer(tolerance),
+            OverlayRule::Difference,
+        )
+        .buffer(tolerance)
     }
 }
 
@@ -114,7 +222,16 @@ fn boolops<Lhs: IntoOverlayResource, Rhs: IntoOverlayResource<P = Lhs::P>>(
     MultiPolygon(shapes.into_iter().flat_map(paths_to_poly).collect())
 }
 
-impl<Lhs: IntoOverlayResource, Rhs: IntoOverlayResource<P = Lhs::P>> BoolOps<Rhs> for Lhs {}
+impl<
+        Lhs: BufferGeometry<P = <Lhs as IntoOverlayResource>::P> + IntoOverlayResource,
+        Rhs: BufferGeometry<P = <Lhs as IntoOverlayResource>::P>
+            + IntoOverlayResource<P = <Lhs as IntoOverlayResource>::P>,
+    > BoolOps<Rhs> for Lhs
+where
+    MultiPolygon<<Self as IntoOverlayResource>::P>:
+        BufferGeometry<P = <Self as IntoOverlayResource>::P>,
+{
+}
 
 // the helper traits should not be accessible by end-users of the library to prevent misuse and to
 // restrict the API size
@@ -136,7 +253,7 @@ mod sealed_helper_traits {
     /// [`i-overlay`]: https://docs.rs/i_overlay/latest/i_overlay/
     pub trait IntoOverlayResource: std::fmt::Debug {
         type P: IPoint2;
-        type Resource: OverlayResource<Self::P, <Self::P as Point2>::S2> + Sized;
+        type Resource: OverlayResource<Self::P, <Self::P as Point2>::S2> + Sized + std::fmt::Debug;
         fn to_overlay_resource(&self) -> Self::Resource;
     }
 

@@ -8,6 +8,7 @@ mod rust_debug;
 mod selo_debug;
 mod wkt;
 
+#[derive(Debug)]
 pub enum DynamicGeometries {
     Dim2(Vec<Geometry<Vec2>>),
     Dim3(Vec<Geometry<Vec3>>),
