@@ -297,7 +297,7 @@ mod sealed_helper_traits {
         type P = P;
         type Resource = Vec<P>;
         fn to_overlay_resource(&self) -> Self::Resource {
-            self.as_ring().to_overlay_resource()
+            self.to_ring().to_overlay_resource()
         }
     }
 }

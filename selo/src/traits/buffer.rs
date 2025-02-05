@@ -110,6 +110,18 @@ where
     }
 }
 
+impl<P> BufferGeometry for Triangle<P>
+where
+    P: Point,
+    Polygon<P>: BufferGeometry<P = P>,
+{
+    type P = P;
+
+    fn buffer(&self, distance: f64) -> crate::MultiPolygon<<Self as BufferGeometry>::P> {
+        self.to_ring().buffer(distance)
+    }
+}
+
 impl<P> BufferGeometry for MultiRing<P>
 where
     P: Point,

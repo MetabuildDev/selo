@@ -26,7 +26,7 @@ pub struct Triangle<P: Point>(#[serde(bound(deserialize = ""))] pub [P; 3]);
 impl<P: Point> Triangle<P> {
     /// converts the [`Triangle`] to [`Ring`]. This is mainly useful since the
     /// [`Ring`] is more general and implements more algorithms
-    pub fn as_ring(self) -> Ring<P> {
+    pub fn to_ring(self) -> Ring<P> {
         Ring::new(self.0)
     }
 }
@@ -44,7 +44,7 @@ impl<P: Point> MultiTriangle<P> {
     /// [`MultiRing`] is more general and implements more algorithms
     #[inline]
     pub fn as_multi_ring(&self) -> MultiRing<P> {
-        MultiRing(self.0.iter().map(|tri| tri.as_ring()).collect::<Vec<_>>())
+        MultiRing(self.0.iter().map(|tri| tri.to_ring()).collect::<Vec<_>>())
     }
 }
 
