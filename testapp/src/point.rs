@@ -19,8 +19,18 @@ impl Plugin for PointPlugin {
                     .pipe(drop_system)
                     .run_if(in_state(AppState::Point).and(input_just_pressed(MouseButton::Left))),
             )
-            .add_systems(OnEnter(AppState::Algorithms), insert_drag_observers)
-            .add_systems(OnExit(AppState::Algorithms), remove_drag_observers)
+            .add_systems(
+                OnEnter(AppState::Algorithms),
+                (insert_drag_observers, insert_pickability),
+            )
+            .add_systems(
+                OnExit(AppState::Algorithms),
+                (remove_drag_observers, remove_pickability),
+            )
+            .add_systems(OnEnter(AppState::Triangle), insert_pickability)
+            .add_systems(OnExit(AppState::Triangle), remove_pickability)
+            .add_systems(OnEnter(AppState::Ring), insert_pickability)
+            .add_systems(OnExit(AppState::Ring), remove_pickability)
             .add_systems(
                 Update,
                 apply_dragged_position.run_if(any_with_component::<DraggedPosition>),
@@ -75,24 +85,38 @@ fn just_point(In(entity): In<Entity>, mut cmds: Commands) -> Entity {
 
 fn insert_drag_observers(mut cmds: Commands, points: Query<Entity, With<Point>>) {
     points.iter().for_each(|point| {
-        let mut observer = Observer::new(|drag: Trigger<Pointer<Drag>>, mut cmds: Commands| {
-            let position = drag.pointer_location.position;
-            let rounded_position = (position / 5.0).round() * 5.0;
-            cmds.entity(drag.target).insert(DraggedPosition {
-                position: rounded_position,
-            });
-        });
-        observer.watch_entity(point);
-        cmds.spawn((observer, PointObserver));
+        cmds.spawn((
+            Observer::new(|drag: Trigger<Pointer<Drag>>, mut cmds: Commands| {
+                let position = drag.pointer_location.position;
+                let rounded_position = (position / 5.0).round() * 5.0;
+                cmds.entity(drag.target).insert(DraggedPosition {
+                    position: rounded_position,
+                });
+            })
+            .with_entity(point),
+            DragPointObserver,
+        ));
     });
 }
 
 #[derive(Component)]
-struct PointObserver;
+pub struct DragPointObserver;
 
-fn remove_drag_observers(mut cmds: Commands, observers: Query<Entity, With<PointObserver>>) {
-    observers.iter().for_each(|observer| {
-        cmds.entity(observer).despawn_recursive();
+fn remove_drag_observers(mut cmds: Commands, points: Query<Entity, With<DragPointObserver>>) {
+    points.iter().for_each(|point| {
+        cmds.entity(point).remove::<DragPointObserver>();
+    });
+}
+
+fn insert_pickability(mut cmds: Commands, points: Query<Entity, With<Point>>) {
+    points.iter().for_each(|point| {
+        cmds.entity(point).insert(PickingBehavior::default());
+    });
+}
+
+fn remove_pickability(mut cmds: Commands, points: Query<Entity, With<Point>>) {
+    points.iter().for_each(|point| {
+        cmds.entity(point).insert(PickingBehavior::IGNORE);
     });
 }
 
