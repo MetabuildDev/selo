@@ -2,17 +2,16 @@ use std::iter::once;
 
 use bevy_math::{DVec2, Vec2};
 use i_overlay::{
-    core::{fill_rule::FillRule, overlay_rule::OverlayRule},
-    float::{overlay::FloatOverlay, source::resource::OverlayResource},
-    i_float::float::{compatible::FloatPointCompatible, number::FloatNumber},
-    i_shape::base::data::Contour,
+    core::{fill_rule::FillRule, overlay::ShapeType, overlay_rule::OverlayRule},
+    f32::overlay::F32Overlay,
+    f64::overlay::F64Overlay,
+    i_float::{f32_point::F32Point, f64_point::F64Point},
 };
-use sealed_helper_traits::IntoOverlayResource;
+use num_traits::Float;
 
 use crate::{MultiPolygon, MultiRing, Point2, Polygon, Ring, Triangle};
 
-use super::BufferGeometry;
-
+type BoolOpsPath<P> = Vec<<P as BoolOpsPoint>::IPoint>;
 const FILL_RULE: FillRule = FillRule::EvenOdd;
 
 /// Boolean Operations trait for geometries. These are basic logical operations but for geometry.
@@ -37,12 +36,11 @@ const FILL_RULE: FillRule = FillRule::EvenOdd;
 /// - `a AND (NOT b)` = `difference` = points included in first set but not the second set
 pub trait BoolOps<Rhs>
 where
-    Self: BufferGeometry<P = <Self as IntoOverlayResource>::P> + IntoOverlayResource + Sized,
-    Rhs: BufferGeometry<P = <Self as IntoOverlayResource>::P>
-        + IntoOverlayResource<P = <Self as IntoOverlayResource>::P>,
-    MultiPolygon<<Self as IntoOverlayResource>::P>:
-        BufferGeometry<P = <Self as IntoOverlayResource>::P>,
+    Self: IntoBoolOpsPath + Sized,
+    Rhs: IntoBoolOpsPath<P = <Self as IntoBoolOpsPath>::P>,
 {
+    type P: Point2;
+
     /// Union boolean operation. This creates a combined [`MultiPolygon`] out of the two input
     /// geometries.
     ///
@@ -60,45 +58,8 @@ where
     /// assert_eq!(union.len(), 1);
     /// assert_eq!(union.area(), 1.0);
     /// ```
-    fn union(&self, rhs: &Rhs) -> MultiPolygon<<Self as IntoOverlayResource>::P> {
-        boolops(self, rhs, OverlayRule::Union)
-    }
-
-    /// Union boolean operation with a tolerance value. This creates a combined [`MultiPolygon`]
-    /// out of the two input geometries.
-    /// It is equivalent to buffering both polygons outwards by the tolerance, unioning them, and shrinking them back.
-    /// ️⚠️ This will remove any holes smaller than `tolerance` in size.
-    ///
-    /// ```
-    /// # use selo::prelude::*;
-    /// let a = Ring::new([
-    ///     Vec2::new(0.0, 0.0),
-    ///     Vec2::new(0.4999, 0.0),
-    ///     Vec2::new(0.4999, 1.0),
-    ///     Vec2::new(0.0, 1.0),
-    /// ]);
-    /// let b = Ring::new([
-    ///     Vec2::new(0.5, 0.0),
-    ///     Vec2::new(1.0, 0.0),
-    ///     Vec2::new(1.0, 1.0),
-    ///     Vec2::new(0.5, 1.0),
-    /// ]);
-    ///
-    /// let union = a.union_approx(&b, 0.01);
-    ///
-    /// assert_eq!(union.len(), 1);
-    /// ```
-    fn union_approx(
-        &self,
-        rhs: &Rhs,
-        tolerance: f64,
-    ) -> MultiPolygon<<Self as IntoOverlayResource>::P> {
-        boolops(
-            &self.buffer(tolerance),
-            &rhs.buffer(tolerance),
-            OverlayRule::Union,
-        )
-        .buffer(-tolerance)
+    fn union(&self, rhs: &Rhs) -> MultiPolygon<<Self as IntoBoolOpsPath>::P> {
+        <Self as IntoBoolOpsPath>::P::boolops(self, rhs, OverlayRule::Union)
     }
 
     /// Intersection boolean operation. This creates the overlap [`MultiPolygon`] out of the two input
@@ -118,37 +79,8 @@ where
     /// assert_eq!(intersection.len(), 1);
     /// assert_eq!(intersection.area(), 0.5);
     /// ```
-    fn intersection(&self, rhs: &Rhs) -> MultiPolygon<<Self as IntoOverlayResource>::P> {
-        boolops(self, rhs, OverlayRule::Intersect)
-    }
-
-    /// Intersection boolean operation. This creates the overlap [`MultiPolygon`]
-    /// out of the two input geometries.
-    /// ⚠️ This will remove any shapes smaller than `tolerance` in size.
-    ///
-    /// ```
-    /// # use selo::prelude::*;
-    /// let ring1 = Ring::new(vec![
-    ///     Vec2::new(0.0, 0.0),
-    ///     Vec2::new(0.5, 0.0),
-    ///     Vec2::new(0.5, 1.0),
-    ///     Vec2::new(0.0, 1.0),
-    /// ]);
-    /// let ring2 = ring1.map(|pos2| pos2 + Vec2::X * 0.4999);
-    ///
-    /// let intersection = ring1
-    ///     .intersection_approx(&ring2, 0.01);
-    ///
-    /// assert_eq!(intersection.len(), 0);
-    /// ```
-    fn intersection_approx(
-        &self,
-        rhs: &Rhs,
-        tolerance: f64,
-    ) -> MultiPolygon<<Self as IntoOverlayResource>::P> {
-        boolops(self, rhs, OverlayRule::Intersect)
-            .buffer(-tolerance)
-            .buffer(tolerance)
+    fn intersection(&self, rhs: &Rhs) -> MultiPolygon<<Self as IntoBoolOpsPath>::P> {
+        <Self as IntoBoolOpsPath>::P::boolops(self, rhs, OverlayRule::Intersect)
     }
 
     /// Difference boolean operation. This creates the [`MultiPolygon`] that results from
@@ -168,158 +100,203 @@ where
     /// assert_eq!(difference.len(), 1);
     /// assert_eq!(difference.area(), 3.0);
     /// ```
-    fn difference(&self, rhs: &Rhs) -> MultiPolygon<<Self as IntoOverlayResource>::P> {
-        boolops(self, rhs, OverlayRule::Difference)
-    }
-
-    /// Difference boolean operation with a tolerance value. This creates the [`MultiPolygon`]
-    /// that results from subtracting the overlap of the two input geometries from the first input geometry.
-    /// It is equivalent to buffering the second polygons inwards by the tolerance, before subtracting it.
-    /// ⚠️ This will remove any shapes smaller than `tolerance` in size.
-    ///
-    /// ```
-    /// # use selo::prelude::*;
-    /// let a = Ring::new([
-    ///     Vec2::new(0.0, 0.0),
-    ///     Vec2::new(1.0, 0.0),
-    ///     Vec2::new(1.0, 1.0),
-    ///     Vec2::new(0.0, 1.0),
-    /// ]);
-    /// let b = Ring::new([
-    ///     Vec2::new(0.5, 0.0),
-    ///     Vec2::new(1.0, 0.0),
-    ///     Vec2::new(1.0, 0.999),
-    ///     Vec2::new(0.5, 0.999),
-    /// ]);
-    ///
-    /// let union = a.difference_approx(&b, 0.01);
-    ///
-    /// assert_eq!(union.iter_points().count(), 4);
-    /// ```
-    fn difference_approx(
-        &self,
-        rhs: &Rhs,
-        tolerance: f64,
-    ) -> MultiPolygon<<Self as IntoOverlayResource>::P> {
-        boolops(
-            &self.buffer(-tolerance),
-            &rhs.buffer(tolerance),
-            OverlayRule::Difference,
-        )
-        .buffer(tolerance)
+    fn difference(&self, rhs: &Rhs) -> MultiPolygon<<Self as IntoBoolOpsPath>::P> {
+        <Self as IntoBoolOpsPath>::P::boolops(self, rhs, OverlayRule::Difference)
     }
 }
 
-fn boolops<Lhs: IntoOverlayResource, Rhs: IntoOverlayResource<P = Lhs::P>>(
-    lhs: &Lhs,
-    rhs: &Rhs,
-    overlay_rule: OverlayRule,
-) -> MultiPolygon<Lhs::P> {
-    let shapes =
-        FloatOverlay::with_subj_and_clip(&lhs.to_overlay_resource(), &rhs.to_overlay_resource())
-            .into_graph(FILL_RULE)
-            .extract_shapes(overlay_rule);
-    MultiPolygon(shapes.into_iter().flat_map(paths_to_poly).collect())
+impl<Lhs: IntoBoolOpsPath, Rhs: IntoBoolOpsPath<P = Lhs::P>> BoolOps<Rhs> for Lhs {
+    type P = Lhs::P;
 }
 
-impl<
-        Lhs: BufferGeometry<P = <Lhs as IntoOverlayResource>::P> + IntoOverlayResource,
-        Rhs: BufferGeometry<P = <Lhs as IntoOverlayResource>::P>
-            + IntoOverlayResource<P = <Lhs as IntoOverlayResource>::P>,
-    > BoolOps<Rhs> for Lhs
-where
-    MultiPolygon<<Self as IntoOverlayResource>::P>:
-        BufferGeometry<P = <Self as IntoOverlayResource>::P>,
-{
-}
+use sealed_helper_traits::*;
+
+use super::Area;
 
 // the helper traits should not be accessible by end-users of the library to prevent misuse and to
 // restrict the API size
 mod sealed_helper_traits {
-
     use super::*;
-
-    pub trait IPoint2: Point2<S2: FloatNumber> + FloatPointCompatible<Self::S2> {}
-    impl IPoint2 for Vec2 {}
-    impl IPoint2 for DVec2 {}
 
     /// Helper trait to integrate [`i-overlay`] with `selo`.
     ///
     /// This allows us to directly use the boolops implemented in `i-overlay` with the `selo` types
     /// like [`MultiPolygon`], [`Polygon`], [`Ring`], [`Triangle`].
     ///
-    /// Note: We can't use i-overlay's OverlayResource directly because their winding is the opposite from us
-    ///
     /// [`i-overlay`]: https://docs.rs/i_overlay/latest/i_overlay/
-    pub trait IntoOverlayResource: std::fmt::Debug {
-        type P: IPoint2;
-        type Resource: OverlayResource<Self::P, <Self::P as Point2>::S2> + Sized + std::fmt::Debug;
-        fn to_overlay_resource(&self) -> Self::Resource;
+    pub trait IntoBoolOpsPath: std::fmt::Debug {
+        type P: BoolOpsPoint;
+        fn add_paths(
+            &self,
+            overlay: &mut <Self::P as BoolOpsPoint>::Overlay,
+            shape_type: ShapeType,
+        );
     }
 
-    impl<P: IPoint2> IntoOverlayResource for MultiPolygon<P> {
+    impl<P: BoolOpsPoint> IntoBoolOpsPath for MultiPolygon<P> {
         type P = P;
-        type Resource = Vec<Vec<Vec<P>>>;
 
-        fn to_overlay_resource(&self) -> Self::Resource {
-            self.iter().map(|poly| poly.to_overlay_resource()).collect()
+        fn add_paths(
+            &self,
+            overlay: &mut <Self::P as BoolOpsPoint>::Overlay,
+            shape_type: ShapeType,
+        ) {
+            for paths in self.iter().flat_map(poly_to_paths) {
+                P::add_path(overlay, paths, shape_type);
+            }
         }
     }
 
-    impl<P: IPoint2> IntoOverlayResource for Polygon<P> {
+    impl<P: BoolOpsPoint> IntoBoolOpsPath for Polygon<P> {
         type P = P;
-        type Resource = Vec<Vec<P>>;
 
-        fn to_overlay_resource(&self) -> Self::Resource {
-            once(self.0.to_overlay_resource())
-                .chain(self.1.iter().map(|r| r.to_overlay_resource()))
-                .collect()
+        fn add_paths(
+            &self,
+            overlay: &mut <Self::P as BoolOpsPoint>::Overlay,
+            shape_type: ShapeType,
+        ) {
+            for paths in poly_to_paths(self) {
+                P::add_path(overlay, paths, shape_type);
+            }
         }
     }
 
-    impl<P: IPoint2> IntoOverlayResource for MultiRing<P> {
+    impl<P: BoolOpsPoint> IntoBoolOpsPath for Ring<P> {
         type P = P;
-        type Resource = Vec<Vec<P>>;
-        fn to_overlay_resource(&self) -> Self::Resource {
-            self.iter().map(|r| r.to_overlay_resource()).collect()
+
+        fn add_paths(
+            &self,
+            overlay: &mut <Self::P as BoolOpsPoint>::Overlay,
+            shape_type: ShapeType,
+        ) {
+            P::add_path(overlay, ring_to_path(self), shape_type);
         }
     }
 
-    impl<P: IPoint2> IntoOverlayResource for Ring<P> {
+    impl<P: BoolOpsPoint> IntoBoolOpsPath for Triangle<P> {
         type P = P;
-        type Resource = Vec<P>;
-        fn to_overlay_resource(&self) -> Self::Resource {
-            self.0.iter().rev().cloned().collect()
+
+        fn add_paths(
+            &self,
+            overlay: &mut <Self::P as BoolOpsPoint>::Overlay,
+            shape_type: ShapeType,
+        ) {
+            P::add_path(overlay, ring_to_path(&self.to_ring()), shape_type);
         }
     }
 
-    impl<P: IPoint2> IntoOverlayResource for Triangle<P> {
-        type P = P;
-        type Resource = Vec<P>;
-        fn to_overlay_resource(&self) -> Self::Resource {
-            self.to_ring().to_overlay_resource()
+    /// Helper trait to integrate [`i-overlay`] with `selo`.
+    ///
+    /// This allows us to implement BoolOps for different floating point types (`f32`, `f64`)
+    pub trait BoolOpsPoint: Point2 {
+        type IPoint: Copy + std::fmt::Debug;
+        type Overlay;
+        fn to_ipoint(self) -> Self::IPoint;
+        fn from_ipoint(p: Self::IPoint) -> Self;
+        fn add_path(overlay: &mut Self::Overlay, path: BoolOpsPath<Self>, shape_type: ShapeType);
+        fn boolops<Lhs: IntoBoolOpsPath<P = Self>, Rhs: IntoBoolOpsPath<P = Self>>(
+            lhs: &Lhs,
+            rhs: &Rhs,
+            overlay_rule: OverlayRule,
+        ) -> MultiPolygon<Self>;
+    }
+
+    impl BoolOpsPoint for Vec2 {
+        type IPoint = F32Point;
+        type Overlay = F32Overlay;
+        fn to_ipoint(self) -> Self::IPoint {
+            F32Point::new(self.x, self.y)
+        }
+        fn from_ipoint(p: Self::IPoint) -> Self {
+            Vec2::new(p.x, p.y)
+        }
+
+        fn add_path(overlay: &mut Self::Overlay, path: BoolOpsPath<Self>, shape_type: ShapeType) {
+            overlay.add_path(path, shape_type);
+        }
+        fn boolops<Lhs: IntoBoolOpsPath<P = Self>, Rhs: IntoBoolOpsPath<P = Self>>(
+            lhs: &Lhs,
+            rhs: &Rhs,
+            overlay_rule: OverlayRule,
+        ) -> MultiPolygon<Self> {
+            let mut overlay = F32Overlay::new();
+            lhs.add_paths(&mut overlay, ShapeType::Subject);
+            rhs.add_paths(&mut overlay, ShapeType::Clip);
+            let graph = overlay.into_graph(FILL_RULE);
+            let shapes = graph.extract_shapes(overlay_rule);
+            MultiPolygon(shapes.into_iter().flat_map(paths_to_poly).collect())
+        }
+    }
+
+    impl BoolOpsPoint for DVec2 {
+        type IPoint = F64Point;
+        type Overlay = F64Overlay;
+        fn to_ipoint(self) -> Self::IPoint {
+            F64Point::new(self.x, self.y)
+        }
+        fn from_ipoint(p: Self::IPoint) -> Self {
+            DVec2::new(p.x, p.y)
+        }
+        fn add_path(overlay: &mut Self::Overlay, path: BoolOpsPath<Self>, shape_type: ShapeType) {
+            overlay.add_path(path, shape_type);
+        }
+        fn boolops<Lhs: IntoBoolOpsPath<P = Self>, Rhs: IntoBoolOpsPath<P = Self>>(
+            lhs: &Lhs,
+            rhs: &Rhs,
+            overlay_rule: OverlayRule,
+        ) -> MultiPolygon<Self> {
+            let mut overlay = F64Overlay::new();
+            lhs.add_paths(&mut overlay, ShapeType::Subject);
+            rhs.add_paths(&mut overlay, ShapeType::Clip);
+            let graph = overlay.into_graph(FILL_RULE);
+            let shapes = graph.extract_shapes(overlay_rule);
+            MultiPolygon(shapes.into_iter().flat_map(paths_to_poly).collect())
         }
     }
 }
 
-fn paths_to_poly<P: Point2>(paths: impl IntoIterator<Item = Contour<P>>) -> Option<Polygon<P>> {
+fn poly_to_paths<P: BoolOpsPoint + Point2>(poly: &Polygon<P>) -> Vec<BoolOpsPath<P>> {
+    let exterior = poly.exterior();
+    let interiors = poly.interior();
+    once(exterior)
+        .chain(interiors.iter())
+        .map(ring_to_path)
+        .collect()
+}
+
+fn ring_to_path<P: BoolOpsPoint + Point2>(ring: &Ring<P>) -> BoolOpsPath<P> {
+    // unfortunately, i-overlay uses opposite conventions with respect to winding compared to what
+    // we have. This means, we need to flip the winding before and after using i-overlay
+    ring.0.iter().rev().map(|p| p.to_ipoint()).collect()
+}
+
+fn paths_to_poly<P: BoolOpsPoint + Point2>(
+    paths: impl IntoIterator<Item = Vec<P::IPoint>>,
+) -> Option<Polygon<P>> {
     let mut paths = paths.into_iter();
+    // just ignore poly if paths are empty
     let exterior = paths.next()?;
     let interiors = paths;
 
     let outer = path_to_ring(exterior);
-    let inner = MultiRing(interiors.map(path_to_ring).collect());
-    let poly = Polygon::new(outer, inner);
+    let inner = MultiRing(interiors.flat_map(path_to_ring).collect());
+    let poly = Polygon::new(outer?, inner);
 
     Some(poly)
 }
 
-fn path_to_ring<P: Point2>(path: Contour<P>) -> Ring<P> {
-    Ring::new(
+fn path_to_ring<P: BoolOpsPoint + Point2>(path: BoolOpsPath<P>) -> Option<Ring<P>> {
+    let ring = Ring::new(
         // unfortunately, i-overlay uses opposite conventions with respect to winding compared to what
         // we have. This means, we need to flip the winding before and after using i-overlay
-        path.into_iter().rev().collect::<Vec<_>>(),
-    )
+        path.iter()
+            .rev()
+            .map(|p| P::from_ipoint(*p))
+            .collect::<Vec<_>>(),
+    );
+    // i-overlay can sometimes produce degenerate geometry, this checks against it
+    // https://github.com/iShape-Rust/iOverlay/issues/11
+    (ring.area().abs() > P::S::epsilon()).then_some(ring)
 }
 
 #[cfg(test)]
@@ -439,3 +416,4 @@ mod boolops_tests {
         assert_eq!(intersection.area(), 0.5);
     }
 }
+

@@ -21,7 +21,7 @@ num-traits = "0.2"
 thiserror = "1.0"
 serde = { workspace = true, features = [ "derive" ] }
 wkt = { version = "0.11", optional = true }
-i_overlay = { version = "=1.9.4", features = ["glam"] }
+i_overlay = "=1.7.2" 
 derive_more = { version = "1", features = ["from"] }
 
 bevy_reflect = { workspace = true, optional = true}
