@@ -32,8 +32,10 @@ fn render_intersection_points(mut gizmos: Gizmos, lines: LineParams) {
                 .filter_map(|(a, b)| selo::intersect_line_2d_point(a, b))
                 .for_each(|intersection| {
                     gizmos.sphere(
-                        inj.transform_point(intersection.extend(0.0)),
-                        Quat::default(),
+                        Isometry3d::new(
+                            inj.transform_point(intersection.extend(0.0)),
+                            Quat::default(),
+                        ),
                         0.025,
                         palettes::basic::RED,
                     );

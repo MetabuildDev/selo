@@ -17,8 +17,8 @@ impl Plugin for SpawnerPlugin {
             .add_systems(
                 Update,
                 (
-                    spawn_triangle.run_if(on_event::<SpawnTriangle>()),
-                    spawn_ring.run_if(on_event::<SpawnRing>()),
+                    spawn_triangle.run_if(on_event::<SpawnTriangle>),
+                    spawn_ring.run_if(on_event::<SpawnRing>),
                 ),
             );
     }
@@ -149,12 +149,9 @@ fn spawn_point_inner<C: Component>(
         Point,
         extra_component(*id),
         name,
-        MaterialMeshBundle {
-            mesh,
-            material,
-            transform: Transform::from_translation(position),
-            ..Default::default()
-        },
+        Mesh3d(mesh),
+        MeshMaterial3d(material),
+        Transform::from_translation(position),
     ))
     .id()
 }

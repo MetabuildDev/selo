@@ -36,8 +36,7 @@ fn render_triangulation(mut gizmos: Gizmos, rings: RingParams) {
                 .for_each(|selo::Triangle([a, b, c])| {
                     gizmos.primitive_3d(
                         &Triangle3d::new(a, b, c),
-                        Vec3::ZERO,
-                        Quat::default(),
+                        Isometry3d::new(Vec3::ZERO, Quat::default()),
                         palettes::basic::RED,
                     );
                 });

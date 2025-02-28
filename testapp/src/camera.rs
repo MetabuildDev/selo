@@ -5,6 +5,7 @@ use bevy::{
         mouse::{MouseMotion, MouseWheel},
     },
     prelude::*,
+    render::camera::ViewportConversionError,
 };
 use selo::prelude::Workplane;
 
@@ -42,13 +43,16 @@ pub struct CameraParams<'w, 's> {
 }
 
 impl CameraParams<'_, '_> {
-    pub fn screen_ray_into_world(&self, screen_pos: Vec2) -> Option<Ray3d> {
+    pub fn screen_ray_into_world(
+        &self,
+        screen_pos: Vec2,
+    ) -> Result<Ray3d, ViewportConversionError> {
         let (camera, global) = self.camera.single();
         camera.viewport_to_world(global, screen_pos)
     }
 
     pub fn screen_ray_onto_plane(&self, screen_pos: Vec2, workplane: Workplane) -> Option<Vec3> {
-        self.screen_ray_into_world(screen_pos).and_then(|ray| {
+        self.screen_ray_into_world(screen_pos).ok().and_then(|ray| {
             let dist = ray.intersect_plane(workplane.origin, workplane.plane)?;
             Some(ray.get_point(dist))
         })
@@ -59,22 +63,17 @@ fn setup_cameras(mut cmds: Commands) {
     cmds.spawn((
         Name::new("Camera 3D"),
         MainCamera,
-        Camera3dBundle {
-            transform: Transform::from_translation(Vec3::Z * 10.0).looking_at(Vec3::ZERO, Vec3::Z),
-            ..Default::default()
-        },
+        Camera3d::default(),
+        Transform::from_translation(Vec3::Z * 10.0).looking_at(Vec3::ZERO, Vec3::Z),
     ));
 
     cmds.spawn((
         Name::new("Spotlight"),
-        SpotLightBundle {
-            transform: Transform::from_translation(Vec3::Z * 10.0).looking_at(Vec3::ZERO, Vec3::Z),
-            spot_light: SpotLight {
-                intensity: 5_000_000.0,
-                ..Default::default()
-            },
-            ..Default::default()
+        SpotLight {
+            intensity: 5_000_000.0,
+            ..default()
         },
+        Transform::from_translation(Vec3::Z * 10.0).looking_at(Vec3::ZERO, Vec3::Z),
     ));
 }
 

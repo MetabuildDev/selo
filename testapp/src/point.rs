@@ -1,5 +1,4 @@
 use bevy::{color::palettes, input::common_conditions::input_just_pressed, prelude::*};
-use bevy_mod_picking::prelude::*;
 
 use crate::{
     camera::CameraParams, drop_system, pointer::PointerParams, state::AppState,
@@ -15,22 +14,13 @@ impl Plugin for PointPlugin {
             .register_type::<DraggedPosition>()
             .add_systems(
                 Update,
-                spawn_point.pipe(just_point).pipe(drop_system).run_if(
-                    in_state(AppState::Point).and_then(input_just_pressed(MouseButton::Left)),
-                ),
+                spawn_point
+                    .pipe(just_point)
+                    .pipe(drop_system)
+                    .run_if(in_state(AppState::Point).and(input_just_pressed(MouseButton::Left))),
             )
-            .add_systems(
-                OnEnter(AppState::Algorithms),
-                (insert_drag_observers, insert_pickability),
-            )
-            .add_systems(
-                OnExit(AppState::Algorithms),
-                (remove_drag_observers, remove_pickability),
-            )
-            .add_systems(OnEnter(AppState::Triangle), insert_pickability)
-            .add_systems(OnExit(AppState::Triangle), remove_pickability)
-            .add_systems(OnEnter(AppState::Ring), insert_pickability)
-            .add_systems(OnExit(AppState::Ring), remove_pickability)
+            .add_systems(OnEnter(AppState::Algorithms), insert_drag_observers)
+            .add_systems(OnExit(AppState::Algorithms), remove_drag_observers)
             .add_systems(
                 Update,
                 apply_dragged_position.run_if(any_with_component::<DraggedPosition>),
@@ -72,12 +62,9 @@ pub fn spawn_point(
     cmds.spawn((
         Point,
         name,
-        MaterialMeshBundle {
-            mesh,
-            material,
-            transform: Transform::from_translation(position),
-            ..Default::default()
-        },
+        Mesh3d(mesh),
+        MeshMaterial3d(material),
+        Transform::from_translation(position),
     ))
     .id()
 }
@@ -88,32 +75,24 @@ fn just_point(In(entity): In<Entity>, mut cmds: Commands) -> Entity {
 
 fn insert_drag_observers(mut cmds: Commands, points: Query<Entity, With<Point>>) {
     points.iter().for_each(|point| {
-        cmds.entity(point)
-            .insert(On::<Pointer<Drag>>::commands_mut(|drag, cmds| {
-                let position = drag.pointer_location.position;
-                let rounded_position = (position / 5.0).round() * 5.0;
-                cmds.entity(drag.target).insert(DraggedPosition {
-                    position: rounded_position,
-                });
-            }));
+        let mut observer = Observer::new(|drag: Trigger<Pointer<Drag>>, mut cmds: Commands| {
+            let position = drag.pointer_location.position;
+            let rounded_position = (position / 5.0).round() * 5.0;
+            cmds.entity(drag.target).insert(DraggedPosition {
+                position: rounded_position,
+            });
+        });
+        observer.watch_entity(point);
+        cmds.spawn((observer, PointObserver));
     });
 }
 
-fn remove_drag_observers(mut cmds: Commands, points: Query<Entity, With<Point>>) {
-    points.iter().for_each(|point| {
-        cmds.entity(point).remove::<On<Pointer<Drag>>>();
-    });
-}
+#[derive(Component)]
+struct PointObserver;
 
-fn insert_pickability(mut cmds: Commands, points: Query<Entity, With<Point>>) {
-    points.iter().for_each(|point| {
-        cmds.entity(point).insert(PickableBundle::default());
-    });
-}
-
-fn remove_pickability(mut cmds: Commands, points: Query<Entity, With<Point>>) {
-    points.iter().for_each(|point| {
-        cmds.entity(point).remove::<PickableBundle>();
+fn remove_drag_observers(mut cmds: Commands, observers: Query<Entity, With<PointObserver>>) {
+    observers.iter().for_each(|observer| {
+        cmds.entity(observer).despawn_recursive();
     });
 }
 

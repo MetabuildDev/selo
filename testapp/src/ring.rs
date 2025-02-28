@@ -43,8 +43,7 @@ impl Plugin for RingPlugin {
                             .run_if(any_with_component::<LastRingPoint>),
                     )
                         .run_if(
-                            in_state(AppState::Ring)
-                                .and_then(input_just_pressed(MouseButton::Left)),
+                            in_state(AppState::Ring).and(input_just_pressed(MouseButton::Left)),
                         ),
                     (
                         get_sorted_ring_points
@@ -59,8 +58,8 @@ impl Plugin for RingPlugin {
                     )
                         .run_if(
                             in_state(AppState::Ring)
-                                .and_then(input_just_pressed(MouseButton::Right))
-                                .and_then(ring_finishable),
+                                .and(input_just_pressed(MouseButton::Right))
+                                .and(ring_finishable),
                         ),
                 ),
             )

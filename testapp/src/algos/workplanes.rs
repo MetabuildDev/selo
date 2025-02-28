@@ -1,7 +1,8 @@
 use crate::gizmos::GizmosExt;
 use bevy::{color::palettes, prelude::*};
-use bevy_egui::{egui, EguiContext};
+use bevy_inspector_egui::bevy_egui::EguiContext;
 use bevy_inspector_egui::bevy_inspector::ui_for_resource;
+use bevy_inspector_egui::egui;
 use selo::prelude::Workplane;
 
 use crate::gizmos::AnimatedGizmos;
@@ -69,10 +70,13 @@ fn render_workplane_normalization(mut gizmos: AnimatedGizmos, points: Res<Workpl
     let plane = Workplane::from_three_points(**points);
     let normalized_plane = plane.hesse_normal_form();
 
-    gizmos.sphere(plane.origin, Quat::default(), 0.025, palettes::basic::BLUE);
     gizmos.sphere(
-        normalized_plane.origin,
-        Quat::default(),
+        Isometry3d::new(plane.origin, Quat::default()),
+        0.025,
+        palettes::basic::BLUE,
+    );
+    gizmos.sphere(
+        Isometry3d::new(normalized_plane.origin, Quat::default()),
         0.025,
         palettes::basic::YELLOW,
     );
@@ -105,8 +109,7 @@ fn render_workplane_transform(mut gizmos: AnimatedGizmos, points: Res<WorkplaneP
     let triangle_in_plane = triangle.map(|p| transform.transform_point3(p));
 
     gizmos.sphere(
-        normalized_plane.origin,
-        Quat::default(),
+        Isometry3d::new(normalized_plane.origin, Quat::default()),
         0.025,
         palettes::basic::YELLOW,
     );
