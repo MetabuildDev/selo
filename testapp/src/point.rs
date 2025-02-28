@@ -54,7 +54,7 @@ pub fn spawn_point(
         .world_position_3d(workplane.current())
         .unwrap_or_default();
 
-    let mesh = meshes.add(Circle::new(0.025));
+    let mesh = meshes.add(Circle::new(0.005));
     let material = materials.add(StandardMaterial::from_color(Color::from(
         palettes::basic::WHITE,
     )));

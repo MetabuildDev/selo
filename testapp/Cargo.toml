@@ -12,3 +12,7 @@ strum = { workspace = true, features = ["derive"] }
 itertools.workspace = true
 
 selo = { workspace = true, features = ["bevy_reflect"] }
+
+winnow = "0.6.20"
+anyhow = "1.0"
+wkt = "0.11.1"

@@ -3,7 +3,7 @@ resolver = "2"
 members = ["selo", "testapp"]
 
 [workspace.dependencies]
-geo = { git = "https://github.com/RobWalt/geo.git", branch = "feat/spade-boolops" }
+geo = "0.29"
 bevy_math = "0.15"
 # TODO: update RobWalt's repo to point to patched geo in geo-buffer
 geo-buffer = { git = "https://github.com/no-materials/geo-buffer.git" }
@@ -19,6 +19,7 @@ bevy_egui = "0.33"
 serde = "1.0"
 
 selo = { path = "selo" }
+
 
 # ===========
 # dev profile

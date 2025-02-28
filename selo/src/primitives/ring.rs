@@ -2,7 +2,7 @@ use itertools::Itertools as _;
 
 use crate::coord_to_vec2;
 
-use super::{Line, LineString, Polygon, Triangle};
+use super::{Line, LineString, MultiPolygon, Polygon, Triangle};
 use crate::point::{Point, Point2};
 
 #[cfg(feature = "bevy_reflect")]
@@ -243,6 +243,10 @@ impl<P: Point> MultiRing<P> {
     #[inline]
     pub fn rings(&self) -> &[Ring<P>] {
         &self.0
+    }
+
+    pub fn to_multipolygon(&self) -> MultiPolygon<P> {
+        MultiPolygon(self.iter().map(|r| r.to_polygon()).collect())
     }
 }
 

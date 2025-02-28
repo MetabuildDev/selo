@@ -1,7 +1,7 @@
 #![allow(refining_impl_trait)]
 
 pub use embedded_primitive::*;
-use geo::{MapCoords as _, SpadeBoolops, StitchTriangles as _, TriangulateSpade as _};
+use geo::{MapCoords as _, StitchTriangles as _, TriangulateSpade as _};
 
 mod errors;
 
@@ -73,22 +73,6 @@ pub fn stitch_triangles_glam<P: Point2>(
         .stitch_triangulation()
         .map(|mp| mp.to_selo())
         .unwrap_or_default()
-}
-
-pub fn boolops_union_glam<P: Point2>(rings: impl IntoIterator<Item = Ring<P>>) -> MultiPolygon<P> {
-    let rings = rings.into_iter().collect::<Vec<_>>();
-
-    rings
-        .clone()
-        .into_iter()
-        .map(|ring| ring.to_polygon().to_multi().to_geo())
-        .try_fold(empty_multipolygon::<P>(), |multi_poly, other| {
-            SpadeBoolops::union(&multi_poly, &other)
-        })
-        .map(|multi_poly| multi_poly.to_selo())
-        .unwrap_or(MultiPolygon(
-            rings.into_iter().map(|ring| ring.to_polygon()).collect(),
-        ))
 }
 
 pub fn buffer_polygon_glam<P: Point2>(polygon: &Polygon<P>, expand_by: f64) -> MultiPolygon<P> {

@@ -6,3 +6,6 @@ pub use line_intersection::*;
 
 mod split;
 pub use split::*;
+
+mod simplify;
+pub use simplify::*;

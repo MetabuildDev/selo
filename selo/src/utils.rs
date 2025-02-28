@@ -22,8 +22,3 @@ pub(crate) fn vec2_to_coord<P: Point2>(vec2: P) -> geo::Coord<P::S> {
         y: vec2.y(),
     }
 }
-
-#[inline]
-pub(crate) fn empty_multipolygon<P: Point2>() -> MultiPolygon<P::S> {
-    MultiPolygon::new(vec![])
-}
