@@ -161,6 +161,20 @@ mod sealed_helper_traits {
         }
     }
 
+    impl<P: BoolOpsPoint> IntoBoolOpsPath for MultiRing<P> {
+        type P = P;
+
+        fn add_paths(
+            &self,
+            overlay: &mut <Self::P as BoolOpsPoint>::Overlay,
+            shape_type: ShapeType,
+        ) {
+            for path in self.iter().map(ring_to_path) {
+                P::add_path(overlay, path, shape_type);
+            }
+        }
+    }
+
     impl<P: BoolOpsPoint> IntoBoolOpsPath for Ring<P> {
         type P = P;
 
@@ -416,4 +430,3 @@ mod boolops_tests {
         assert_eq!(intersection.area(), 0.5);
     }
 }
-
