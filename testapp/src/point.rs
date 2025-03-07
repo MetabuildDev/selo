@@ -1,5 +1,4 @@
 use bevy::{color::palettes, input::common_conditions::input_just_pressed, prelude::*};
-use bevy_mod_picking::prelude::*;
 
 use crate::{
     camera::CameraParams, drop_system, pointer::PointerParams, state::AppState,
@@ -15,9 +14,10 @@ impl Plugin for PointPlugin {
             .register_type::<DraggedPosition>()
             .add_systems(
                 Update,
-                spawn_point.pipe(just_point).pipe(drop_system).run_if(
-                    in_state(AppState::Point).and_then(input_just_pressed(MouseButton::Left)),
-                ),
+                spawn_point
+                    .pipe(just_point)
+                    .pipe(drop_system)
+                    .run_if(in_state(AppState::Point).and(input_just_pressed(MouseButton::Left))),
             )
             .add_systems(
                 OnEnter(AppState::Algorithms),
@@ -72,12 +72,9 @@ pub fn spawn_point(
     cmds.spawn((
         Point,
         name,
-        MaterialMeshBundle {
-            mesh,
-            material,
-            transform: Transform::from_translation(position),
-            ..Default::default()
-        },
+        Mesh3d(mesh),
+        MeshMaterial3d(material),
+        Transform::from_translation(position),
     ))
     .id()
 }
@@ -88,32 +85,38 @@ fn just_point(In(entity): In<Entity>, mut cmds: Commands) -> Entity {
 
 fn insert_drag_observers(mut cmds: Commands, points: Query<Entity, With<Point>>) {
     points.iter().for_each(|point| {
-        cmds.entity(point)
-            .insert(On::<Pointer<Drag>>::commands_mut(|drag, cmds| {
+        cmds.spawn((
+            Observer::new(|drag: Trigger<Pointer<Drag>>, mut cmds: Commands| {
                 let position = drag.pointer_location.position;
                 let rounded_position = (position / 5.0).round() * 5.0;
                 cmds.entity(drag.target).insert(DraggedPosition {
                     position: rounded_position,
                 });
-            }));
+            })
+            .with_entity(point),
+            DragPointObserver,
+        ));
     });
 }
 
-fn remove_drag_observers(mut cmds: Commands, points: Query<Entity, With<Point>>) {
+#[derive(Component)]
+pub struct DragPointObserver;
+
+fn remove_drag_observers(mut cmds: Commands, points: Query<Entity, With<DragPointObserver>>) {
     points.iter().for_each(|point| {
-        cmds.entity(point).remove::<On<Pointer<Drag>>>();
+        cmds.entity(point).remove::<DragPointObserver>();
     });
 }
 
 fn insert_pickability(mut cmds: Commands, points: Query<Entity, With<Point>>) {
     points.iter().for_each(|point| {
-        cmds.entity(point).insert(PickableBundle::default());
+        cmds.entity(point).insert(PickingBehavior::default());
     });
 }
 
 fn remove_pickability(mut cmds: Commands, points: Query<Entity, With<Point>>) {
     points.iter().for_each(|point| {
-        cmds.entity(point).remove::<PickableBundle>();
+        cmds.entity(point).insert(PickingBehavior::IGNORE);
     });
 }
 

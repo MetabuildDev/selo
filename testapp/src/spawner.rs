@@ -1,5 +1,5 @@
 use bevy::{color::palettes, ecs::entity::EntityHashSet, prelude::*};
-use bevy_egui::{egui, EguiContexts};
+use bevy_inspector_egui::{bevy_egui::EguiContexts, egui};
 use selo::{Geometry, IterPoints, Unembed};
 
 use crate::{
@@ -21,9 +21,9 @@ impl Plugin for SpawnerPlugin {
             .add_systems(
                 Update,
                 (
-                    spawn_line.run_if(on_event::<SpawnLine>()),
-                    spawn_triangle.run_if(on_event::<SpawnTriangle>()),
-                    spawn_ring.run_if(on_event::<SpawnRing>()),
+                    spawn_line.run_if(on_event::<SpawnLine>),
+                    spawn_triangle.run_if(on_event::<SpawnTriangle>),
+                    spawn_ring.run_if(on_event::<SpawnRing>),
                     spawn_ui,
                 ),
             );
@@ -298,12 +298,9 @@ fn spawn_point_inner<C: Component>(
         Point,
         extra_component(*id),
         name,
-        MaterialMeshBundle {
-            mesh,
-            material,
-            transform: Transform::from_translation(position),
-            ..Default::default()
-        },
+        Mesh3d(mesh),
+        MeshMaterial3d(material),
+        Transform::from_translation(position),
     ))
     .id()
 }

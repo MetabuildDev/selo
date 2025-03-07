@@ -13,7 +13,12 @@ where
         let color = color.into();
         self.arrow(origin, origin + normal.as_vec3(), color);
         let rotation = Quat::from_rotation_arc(Vec3::Z, normal.as_vec3());
-        self.grid(origin, rotation, UVec2::splat(100), Vec2::splat(1.0), color);
+        self.grid(
+            Isometry3d::new(origin, rotation),
+            UVec2::splat(100),
+            Vec2::splat(1.0),
+            color,
+        );
     }
 }
 
@@ -33,7 +38,7 @@ impl AnimatedGizmos<'_, '_> {
         speed: f32,
         segments: usize,
     ) {
-        let delta_t = self.time.elapsed_seconds();
+        let delta_t = self.time.elapsed_secs();
         let part_length_scalar = (segments as f32 * 2.0).recip();
         let diff = end - start;
         let length = diff.length();

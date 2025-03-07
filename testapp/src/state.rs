@@ -1,7 +1,7 @@
 use bevy::{input::common_conditions::input_just_pressed, prelude::*};
-use bevy_egui::{egui, EguiContext};
+use bevy_inspector_egui::bevy_egui::EguiContext;
 use bevy_inspector_egui::bevy_inspector::ui_for_state;
-use bevy_mod_picking::prelude::*;
+use bevy_inspector_egui::egui;
 
 pub struct StatePlugin;
 
@@ -20,10 +20,6 @@ impl Plugin for StatePlugin {
                     change_state(AppState::Algorithms).run_if(input_just_pressed(KeyCode::Escape)),
                     change_state(AppState::Workplane).run_if(input_just_pressed(KeyCode::KeyW)),
                 ),
-            )
-            .add_systems(
-                Update,
-                unselect_everything.run_if(state_changed::<AppState>),
             );
     }
 }
@@ -58,11 +54,5 @@ pub fn state_ui<S: bevy::state::state::FreelyMutableState + bevy::prelude::Refle
     )
     .show(&ctx, |ui| {
         ui_for_state::<S>(world, ui);
-    });
-}
-
-pub fn unselect_everything(mut selected: Query<&mut PickSelection>) {
-    selected.iter_mut().for_each(|mut selection| {
-        selection.is_selected = false;
     });
 }

@@ -4,10 +4,10 @@ use bevy_math::{DVec2, Vec2};
 use i_overlay::{
     core::{fill_rule::FillRule, overlay_rule::OverlayRule},
     float::{overlay::FloatOverlay, source::resource::OverlayResource},
-    i_float::float::{compatible::FloatPointCompatible, number::FloatNumber},
+    i_float::float::{number::FloatNumber, point::FloatPoint},
     i_shape::base::data::Contour,
 };
-use sealed_helper_traits::IntoOverlayResource;
+use sealed_helper_traits::{IPoint2, IntoOverlayResource};
 
 use crate::{MultiPolygon, MultiRing, Point2, Polygon, Ring, Triangle};
 
@@ -237,11 +237,36 @@ where
 // restrict the API size
 mod sealed_helper_traits {
 
+    use i_overlay::i_float::float::point::FloatPoint;
+
     use super::*;
 
-    pub trait IPoint2: Point2<S2: FloatNumber> + FloatPointCompatible<Self::S2> {}
-    impl IPoint2 for Vec2 {}
-    impl IPoint2 for DVec2 {}
+    pub trait IPoint2: Point2<S2: FloatNumber> {
+        fn to_ipoint(self) -> FloatPoint<Self::S2>;
+        fn from_ipoint(p: FloatPoint<Self::S2>) -> Self;
+    }
+    impl IPoint2 for Vec2 {
+        fn to_ipoint(self) -> FloatPoint<f32> {
+            FloatPoint {
+                x: self.x,
+                y: self.y,
+            }
+        }
+        fn from_ipoint(p: FloatPoint<Self::S2>) -> Self {
+            Self { x: p.x, y: p.y }
+        }
+    }
+    impl IPoint2 for DVec2 {
+        fn to_ipoint(self) -> FloatPoint<f64> {
+            FloatPoint {
+                x: self.x,
+                y: self.y,
+            }
+        }
+        fn from_ipoint(p: FloatPoint<Self::S2>) -> Self {
+            Self { x: p.x, y: p.y }
+        }
+    }
 
     /// Helper trait to integrate [`i-overlay`] with `selo`.
     ///
@@ -253,13 +278,15 @@ mod sealed_helper_traits {
     /// [`i-overlay`]: https://docs.rs/i_overlay/latest/i_overlay/
     pub trait IntoOverlayResource: std::fmt::Debug {
         type P: IPoint2;
-        type Resource: OverlayResource<Self::P, <Self::P as Point2>::S2> + Sized + std::fmt::Debug;
+        type Resource: OverlayResource<FloatPoint<<Self::P as Point2>::S2>, <Self::P as Point2>::S2>
+            + Sized
+            + std::fmt::Debug;
         fn to_overlay_resource(&self) -> Self::Resource;
     }
 
     impl<P: IPoint2> IntoOverlayResource for MultiPolygon<P> {
         type P = P;
-        type Resource = Vec<Vec<Vec<P>>>;
+        type Resource = Vec<Vec<Vec<FloatPoint<P::S2>>>>;
 
         fn to_overlay_resource(&self) -> Self::Resource {
             self.iter().map(|poly| poly.to_overlay_resource()).collect()
@@ -268,7 +295,7 @@ mod sealed_helper_traits {
 
     impl<P: IPoint2> IntoOverlayResource for Polygon<P> {
         type P = P;
-        type Resource = Vec<Vec<P>>;
+        type Resource = Vec<Vec<FloatPoint<P::S2>>>;
 
         fn to_overlay_resource(&self) -> Self::Resource {
             once(self.0.to_overlay_resource())
@@ -279,7 +306,7 @@ mod sealed_helper_traits {
 
     impl<P: IPoint2> IntoOverlayResource for MultiRing<P> {
         type P = P;
-        type Resource = Vec<Vec<P>>;
+        type Resource = Vec<Vec<FloatPoint<P::S2>>>;
         fn to_overlay_resource(&self) -> Self::Resource {
             self.iter().map(|r| r.to_overlay_resource()).collect()
         }
@@ -287,22 +314,24 @@ mod sealed_helper_traits {
 
     impl<P: IPoint2> IntoOverlayResource for Ring<P> {
         type P = P;
-        type Resource = Vec<P>;
+        type Resource = Vec<FloatPoint<P::S2>>;
         fn to_overlay_resource(&self) -> Self::Resource {
-            self.0.iter().rev().cloned().collect()
+            self.0.iter().rev().map(|p| p.to_ipoint()).collect()
         }
     }
 
     impl<P: IPoint2> IntoOverlayResource for Triangle<P> {
         type P = P;
-        type Resource = Vec<P>;
+        type Resource = Vec<FloatPoint<P::S2>>;
         fn to_overlay_resource(&self) -> Self::Resource {
             self.to_ring().to_overlay_resource()
         }
     }
 }
 
-fn paths_to_poly<P: Point2>(paths: impl IntoIterator<Item = Contour<P>>) -> Option<Polygon<P>> {
+fn paths_to_poly<P: IPoint2>(
+    paths: impl IntoIterator<Item = Contour<FloatPoint<P::S2>>>,
+) -> Option<Polygon<P>> {
     let mut paths = paths.into_iter();
     let exterior = paths.next()?;
     let interiors = paths;
@@ -314,11 +343,14 @@ fn paths_to_poly<P: Point2>(paths: impl IntoIterator<Item = Contour<P>>) -> Opti
     Some(poly)
 }
 
-fn path_to_ring<P: Point2>(path: Contour<P>) -> Ring<P> {
+fn path_to_ring<P: IPoint2>(path: Contour<FloatPoint<P::S2>>) -> Ring<P> {
     Ring::new(
         // unfortunately, i-overlay uses opposite conventions with respect to winding compared to what
         // we have. This means, we need to flip the winding before and after using i-overlay
-        path.into_iter().rev().collect::<Vec<_>>(),
+        path.into_iter()
+            .rev()
+            .map(|p| P::from_ipoint(p))
+            .collect::<Vec<_>>(),
     )
 }
 

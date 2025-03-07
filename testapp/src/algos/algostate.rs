@@ -20,8 +20,8 @@ impl Plugin for AlgorithmStatePlugin {
                 Update,
                 next_algo_on_scroll.run_if(
                     state_exists::<AlgorithmState>
-                        .and_then(input_pressed(KeyCode::ControlLeft))
-                        .and_then(on_event::<MouseWheel>()),
+                        .and(input_pressed(KeyCode::ControlLeft))
+                        .and(on_event::<MouseWheel>),
                 ),
             );
     }

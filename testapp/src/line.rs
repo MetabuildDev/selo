@@ -39,15 +39,12 @@ impl Plugin for LinePlugin {
                         .pipe(drop_system)
                         .run_if(any_with_component::<UnfinishedLine>),
                 )
-                    .run_if(
-                        in_state(AppState::Line).and_then(input_just_pressed(MouseButton::Left)),
-                    ),
+                    .run_if(in_state(AppState::Line).and(input_just_pressed(MouseButton::Left))),
             )
             .add_systems(
                 Update,
-                render_drawing_line.run_if(
-                    in_state(AppState::Line).and_then(any_with_component::<UnfinishedLine>),
-                ),
+                render_drawing_line
+                    .run_if(in_state(AppState::Line).and(any_with_component::<UnfinishedLine>)),
             )
             .add_systems(Update, render_lines)
             .add_systems(OnExit(AppState::Line), cleanup_unfinished);
