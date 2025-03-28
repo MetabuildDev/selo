@@ -39,3 +39,6 @@ pub use orientation::*;
 
 mod dedup_points;
 pub use dedup_points::*;
+
+mod orient;
+pub use orient::*;
