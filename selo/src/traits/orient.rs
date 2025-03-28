@@ -1,4 +1,4 @@
-use crate::{Dot, MultiPolygon, MultiRing, Point, Point2, Polygon, Wedge};
+use crate::{Dot, MultiPolygon, MultiRing, Point, Point2, Polygon, Ring, Wedge};
 
 use super::{Flip, Normal};
 
@@ -13,33 +13,34 @@ pub trait Orient2d: Orient {
     fn orient_reversed(&self) -> Self;
 }
 
-pub const DIRECTION_DEFAULT: f32 = 1.0;
-pub const DIRECTION_REVERSED: f32 = -1.0;
+impl<P: Point> Orient for Ring<P> {
+    type P2 = P;
+    fn orient(&self, direction: <Self::P2 as Wedge>::Output) -> Self {
+        if self.normal().dot(direction) >= P::S::from(0.0) {
+            self.clone()
+        } else {
+            self.flip()
+        }
+    }
+}
 
 impl<P: Point> Orient for Polygon<P> {
     type P2 = P;
     fn orient(&self, direction: <Self::P2 as Wedge>::Output) -> Self {
         Polygon(
-            if self.exterior().normal().dot(direction) >= P::S::from(0.0) {
-                self.exterior().clone()
-            } else {
-                self.exterior().flip()
-            },
+            self.exterior().orient(direction),
             MultiRing(
                 self.interior()
                     .into_iter()
-                    .map(|ring| {
-                        if ring.normal().dot(direction) >= P::S::from(0.0) {
-                            ring.flip()
-                        } else {
-                            ring.clone()
-                        }
-                    })
+                    .map(|ring| ring.orient(-direction))
                     .collect(),
             ),
         )
     }
 }
+
+pub const DIRECTION_DEFAULT: f32 = 1.0;
+pub const DIRECTION_REVERSED: f32 = -1.0;
 
 impl<P: Point> Orient for MultiPolygon<P> {
     type P2 = P;
@@ -53,10 +54,10 @@ where
     T::P2: Point2,
 {
     fn orient_default(&self) -> Self {
-        self.orient(<T::P2 as Point2>::S2::from(1.0))
+        self.orient(<T::P2 as Point2>::S2::from(DIRECTION_DEFAULT))
     }
 
     fn orient_reversed(&self) -> Self {
-        self.orient(<T::P2 as Point2>::S2::from(-1.0))
+        self.orient(<T::P2 as Point2>::S2::from(DIRECTION_REVERSED))
     }
 }

@@ -1,7 +1,7 @@
 use std::{
     fmt::Debug,
     iter::Sum,
-    ops::{Add, AddAssign, Div, Mul, Sub, SubAssign},
+    ops::{Add, AddAssign, Div, Mul, Neg, Sub, SubAssign},
     str::FromStr,
 };
 
@@ -67,6 +67,7 @@ pub trait Wedge {
     type Scalar: Float;
     type Output: Clone
         + Copy
+        + Neg<Output = Self::Output>
         + Add<Output = Self::Output>
         + AddAssign
         + Sub<Output = Self::Output>
