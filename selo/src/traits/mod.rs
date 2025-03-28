@@ -34,9 +34,6 @@ pub use intersection::*;
 mod center;
 pub use center::*;
 
-mod orientation;
-pub use orientation::*;
-
 mod dedup_points;
 pub use dedup_points::*;
 
