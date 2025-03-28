@@ -95,6 +95,7 @@ impl BufferGeometry for MultiPolygon<Vec2> {
 impl BufferGeometry for MultiPolygon<DVec2> {
     type P = DVec2;
     fn buffer(&self, distance: f64) -> MultiPolygon<<Self as BufferGeometry>::P> {
+        println!("{:?}", self);
         geo_buffer::buffer_multi_polygon(&self.orient_default().to_geo(), distance).to_selo()
     }
 }

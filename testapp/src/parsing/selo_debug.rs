@@ -21,6 +21,18 @@ pub trait ParsablePoint: Point + Sized {
     fn parse<'s>(input: &mut &'s str) -> PResult<Self>;
 }
 
+impl ParsablePoint for DVec2 {
+    fn parse<'s>(input: &mut &'s str) -> PResult<Self> {
+        delimited(
+            ("DVec2(", multispace0),
+            cut_err(debug_list(2, float)),
+            (multispace0, ")"),
+        )
+        .map(|c| DVec2::new(c[0], c[1]))
+        .parse_next(input)
+    }
+}
+
 impl ParsablePoint for Vec2 {
     fn parse<'s>(input: &mut &'s str) -> PResult<Self> {
         delimited(
