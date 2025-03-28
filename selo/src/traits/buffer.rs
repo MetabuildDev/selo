@@ -58,6 +58,9 @@ impl BufferGeometry for Polygon<DVec2> {
     type P = DVec2;
 
     fn buffer(&self, distance: f64) -> MultiPolygon<<Self as BufferGeometry>::P> {
+        if self.0 .0.is_empty() {
+            return MultiPolygon::empty();
+        }
         geo_buffer::buffer_polygon(&self.orient_default().to_geo(), distance).to_selo()
     }
 }
@@ -95,8 +98,18 @@ impl BufferGeometry for MultiPolygon<Vec2> {
 impl BufferGeometry for MultiPolygon<DVec2> {
     type P = DVec2;
     fn buffer(&self, distance: f64) -> MultiPolygon<<Self as BufferGeometry>::P> {
-        println!("{:?}", self);
-        geo_buffer::buffer_multi_polygon(&self.orient_default().to_geo(), distance).to_selo()
+        geo_buffer::buffer_multi_polygon(
+            &geo::MultiPolygon::new(
+                self.0
+                    .iter()
+                    .flat_map(|x| {
+                        (!x.exterior().0.is_empty()).then_some(x.orient_default().to_geo())
+                    })
+                    .collect(),
+            ),
+            distance,
+        )
+        .to_selo()
     }
 }
 

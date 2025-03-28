@@ -25,9 +25,13 @@ pub fn parse(mut s: &str) -> Result<DynamicGeometries> {
         {
             if s.contains("DVec2") {
                 info!("detected selo debug (DVec2)");
-                selo_debug::parse
+                selo_debug::parse::<DVec2>
                     .parse(&mut s)
-                    .map(|g| DynamicGeometries::Dim2(g))
+                    .map(|g| {
+                        DynamicGeometries::Dim2(
+                            g.into_iter().map(|x| x.map(|x| x.as_vec2())).collect(),
+                        )
+                    })
                     .map_err(|e| anyhow::format_err!("{e}"))?
             } else if s.contains("Vec2") {
                 info!("detected selo debug (Vec2)");
@@ -37,9 +41,13 @@ pub fn parse(mut s: &str) -> Result<DynamicGeometries> {
                     .map_err(|e| anyhow::format_err!("{e}"))?
             } else if s.contains("DVec3") {
                 info!("detected selo debug (DVec3)");
-                selo_debug::parse
+                selo_debug::parse::<DVec3>
                     .parse(&mut s)
-                    .map(|g| DynamicGeometries::Dim3(g))
+                    .map(|g| {
+                        DynamicGeometries::Dim3(
+                            g.into_iter().map(|x| x.map(|x| x.as_vec3())).collect(),
+                        )
+                    })
                     .map_err(|e| anyhow::format_err!("{e}"))?
             } else {
                 info!("detected selo debug (Vec3)");
