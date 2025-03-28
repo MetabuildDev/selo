@@ -1,6 +1,8 @@
 use crate::{prelude::Workplane, primitives::*, Embed, Map, Point, ToGeo, ToSelo, Unembed};
 use bevy_math::{DVec2, DVec3, Vec2, Vec3};
 
+use super::Orient2d;
+
 /// Expand or shrink geometry in normal direction at every point
 ///
 /// - The `distance` determines how distant each edge of the original geometry is to each edge of the result geometry. The effect of the sign will be:
@@ -56,7 +58,10 @@ impl BufferGeometry for Polygon<DVec2> {
     type P = DVec2;
 
     fn buffer(&self, distance: f64) -> MultiPolygon<<Self as BufferGeometry>::P> {
-        geo_buffer::buffer_polygon(&self.to_geo(), distance).to_selo()
+        if self.0 .0.is_empty() {
+            return MultiPolygon::empty();
+        }
+        geo_buffer::buffer_polygon(&self.orient_default().to_geo(), distance).to_selo()
     }
 }
 
@@ -81,20 +86,49 @@ impl BufferGeometry for Polygon<DVec3> {
     }
 }
 
-impl<P> BufferGeometry for MultiPolygon<P>
-where
-    P: Point,
-    Polygon<P>: BufferGeometry<P = P>,
-{
-    type P = P;
+impl BufferGeometry for MultiPolygon<Vec2> {
+    type P = Vec2;
     fn buffer(&self, distance: f64) -> MultiPolygon<<Self as BufferGeometry>::P> {
-        self.0.iter().map(|poly| poly.buffer(distance)).fold(
-            MultiPolygon::empty(),
-            |mut acc, mp| {
-                acc.0.extend(mp.0);
-                acc
-            },
+        self.map(|p| p.as_dvec2())
+            .buffer(distance)
+            .map(|p| p.as_vec2())
+    }
+}
+
+impl BufferGeometry for MultiPolygon<DVec2> {
+    type P = DVec2;
+    fn buffer(&self, distance: f64) -> MultiPolygon<<Self as BufferGeometry>::P> {
+        geo_buffer::buffer_multi_polygon(
+            &geo::MultiPolygon::new(
+                self.0
+                    .iter()
+                    .flat_map(|x| {
+                        (!x.exterior().0.is_empty()).then_some(x.orient_default().to_geo())
+                    })
+                    .collect(),
+            ),
+            distance,
         )
+        .to_selo()
+    }
+}
+
+impl BufferGeometry for MultiPolygon<Vec3> {
+    type P = Vec3;
+    fn buffer(&self, distance: f64) -> MultiPolygon<<Self as BufferGeometry>::P> {
+        Workplane::from_primitive(self)
+            .map_or(MultiPolygon::<<Self as BufferGeometry>::P>::empty(), |wp| {
+                self.embed(wp).buffer(distance).unembed(wp)
+            })
+    }
+}
+
+impl BufferGeometry for MultiPolygon<DVec3> {
+    type P = DVec3;
+    fn buffer(&self, distance: f64) -> MultiPolygon<<Self as BufferGeometry>::P> {
+        self.map(|p| p.as_vec3())
+            .buffer(distance)
+            .map(|p| p.as_dvec3())
     }
 }
 

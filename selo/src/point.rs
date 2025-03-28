@@ -15,6 +15,19 @@ pub trait Dot {
     fn dot(self, rhs: Self) -> Self::Output;
 }
 
+impl Dot for f32 {
+    type Output = f32;
+    fn dot(self, rhs: Self) -> Self::Output {
+        self * rhs
+    }
+}
+impl Dot for f64 {
+    type Output = f64;
+    fn dot(self, rhs: Self) -> Self::Output {
+        self * rhs
+    }
+}
+
 impl Dot for Vec2 {
     type Output = f32;
 
@@ -61,7 +74,8 @@ pub trait Wedge {
         + Sum
         + Mul<Self::Scalar, Output = Self::Output>
         + Div<Self::Scalar, Output = Self::Output>
-        + Normed<SN = Self::Scalar>;
+        + Normed<SN = Self::Scalar>
+        + Dot<Output = Self::Scalar>;
     fn wedge(self, rhs: Self) -> Self::Output;
 }
 

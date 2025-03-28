@@ -8,7 +8,7 @@ use bevy::math::Vec2;
 use selo::prelude::*;
 use winnow::{
     ascii::{float, multispace0},
-    combinator::{alt, cut_err, delimited, opt, separated, separated_pair},
+    combinator::{alt, cut_err, delimited, opt, preceded, separated, separated_pair},
     prelude::*,
 };
 
@@ -49,21 +49,24 @@ fn parse_debug_multipolygon<'s>(input: &mut &'s str) -> PResult<MultiPolygon<Vec
 
 fn parse_debug_polygon<'s>(input: &mut &'s str) -> PResult<Polygon<Vec2>> {
     delimited(
-        "Polygon(",
+        ("Polygon {", multispace0),
         cut_err(separated_pair(
-            parse_debug_ring,
-            ", ",
-            parse_debug_multiring,
+            preceded(("exterior:", multispace0), parse_debug_ring),
+            (",", multispace0),
+            preceded(
+                ("interiors:", multispace0),
+                debug_array(0.., parse_debug_ring),
+            ),
         )),
-        ")",
+        (multispace0, "}"),
     )
-    .map(|(exterior, interiors)| Polygon(exterior, interiors))
+    .map(|(exterior, interiors)| Polygon(exterior, MultiRing(interiors)))
     .parse_next(input)
 }
 
 fn parse_debug_multiring<'s>(input: &mut &'s str) -> PResult<MultiRing<Vec2>> {
     delimited(
-        ("MultiRing(", multispace0),
+        ("MultiLineString(", multispace0),
         debug_array(0.., parse_debug_ring),
         (multispace0, ")"),
     )

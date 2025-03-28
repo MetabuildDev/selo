@@ -1,5 +1,6 @@
 use crate::{
-    Line, LineString, MultiLineString, MultiPolygon, MultiRing, Point, Polygon, Ring, Triangle,
+    Geometry, Line, LineString, MultiLineString, MultiPolygon, MultiRing, Point, Polygon, Ring,
+    Triangle,
 };
 
 use super::IterPoints;
@@ -98,5 +99,25 @@ impl<PIn: Point, POut: Point> Map<PIn, POut> for MultiPolygon<PIn> {
     #[inline]
     fn map(&self, mut f: impl FnMut(PIn) -> POut) -> MultiPolygon<POut> {
         MultiPolygon(self.0.iter().map(|p| p.map(&mut f)).collect())
+    }
+}
+
+impl<PIn: Point, POut: Point> Map<PIn, POut> for Geometry<PIn> {
+    type Output = Geometry<POut>;
+
+    #[inline]
+    fn map(&self, f: impl FnMut(PIn) -> POut) -> Geometry<POut> {
+        match self {
+            Geometry::Line(line) => Geometry::Line(line.map(f)),
+            Geometry::LineString(line_string) => Geometry::LineString(line_string.map(f)),
+            Geometry::MultiLineString(multi_line_string) => {
+                Geometry::MultiLineString(multi_line_string.map(f))
+            }
+            Geometry::Triangle(triangle) => Geometry::Triangle(triangle.map(f)),
+            Geometry::Ring(ring) => Geometry::Ring(ring.map(f)),
+            Geometry::MultiRing(multi_ring) => Geometry::MultiRing(multi_ring.map(f)),
+            Geometry::Polygon(polygon) => Geometry::Polygon(polygon.map(f)),
+            Geometry::MultiPolygon(multi_polygon) => Geometry::MultiPolygon(multi_polygon.map(f)),
+        }
     }
 }
