@@ -18,11 +18,11 @@ use super::{
 };
 
 pub trait ParsablePoint: Point + Sized {
-    fn parse<'s>(input: &mut &'s str) -> PResult<Self>;
+    fn parse<'s>(input: &mut &'s str) -> ModalResult<Self>;
 }
 
 impl ParsablePoint for Vec2 {
-    fn parse<'s>(input: &mut &'s str) -> PResult<Self> {
+    fn parse<'s>(input: &mut &'s str) -> ModalResult<Self> {
         delimited(
             ("Vec2(", multispace0),
             cut_err(debug_list(2, float)),
@@ -33,7 +33,7 @@ impl ParsablePoint for Vec2 {
     }
 }
 impl ParsablePoint for DVec2 {
-    fn parse<'s>(input: &mut &'s str) -> PResult<Self> {
+    fn parse<'s>(input: &mut &'s str) -> ModalResult<Self> {
         delimited(
             ("DVec2(", multispace0),
             cut_err(debug_list(2, float)),
@@ -44,7 +44,7 @@ impl ParsablePoint for DVec2 {
     }
 }
 impl ParsablePoint for Vec3 {
-    fn parse<'s>(input: &mut &'s str) -> PResult<Self> {
+    fn parse<'s>(input: &mut &'s str) -> ModalResult<Self> {
         delimited(
             ("Vec3(", multispace0),
             cut_err(debug_list(3, float)),
@@ -55,7 +55,7 @@ impl ParsablePoint for Vec3 {
     }
 }
 impl ParsablePoint for DVec3 {
-    fn parse<'s>(input: &mut &'s str) -> PResult<Self> {
+    fn parse<'s>(input: &mut &'s str) -> ModalResult<Self> {
         delimited(
             ("DVec3(", multispace0),
             cut_err(debug_list(3, float)),
@@ -66,7 +66,7 @@ impl ParsablePoint for DVec3 {
     }
 }
 
-pub fn parse<'s, P: ParsablePoint>(input: &mut &'s str) -> PResult<Vec<Geometry<P>>> {
+pub fn parse<'s, P: ParsablePoint>(input: &mut &'s str) -> ModalResult<Vec<Geometry<P>>> {
     alt((
         debug_array(0.., parse_debug_single),
         parse_debug_single.map(|g| vec![g]),
@@ -74,7 +74,7 @@ pub fn parse<'s, P: ParsablePoint>(input: &mut &'s str) -> PResult<Vec<Geometry<
     .parse_next(input)
 }
 
-pub fn parse_debug_single<'s, P: ParsablePoint>(input: &mut &'s str) -> PResult<Geometry<P>> {
+pub fn parse_debug_single<'s, P: ParsablePoint>(input: &mut &'s str) -> ModalResult<Geometry<P>> {
     alt((
         parse_debug_multipolygon.map(|g| Geometry::MultiPolygon(g)),
         parse_debug_polygon.map(|g| Geometry::Polygon(g)),
@@ -88,7 +88,9 @@ pub fn parse_debug_single<'s, P: ParsablePoint>(input: &mut &'s str) -> PResult<
     .parse_next(input)
 }
 
-fn parse_debug_multipolygon<'s, P: ParsablePoint>(input: &mut &'s str) -> PResult<MultiPolygon<P>> {
+fn parse_debug_multipolygon<'s, P: ParsablePoint>(
+    input: &mut &'s str,
+) -> ModalResult<MultiPolygon<P>> {
     delimited(
         ("MultiPolygon(", multispace0),
         debug_array(0.., parse_debug_polygon),
@@ -98,7 +100,7 @@ fn parse_debug_multipolygon<'s, P: ParsablePoint>(input: &mut &'s str) -> PResul
     .parse_next(input)
 }
 
-fn parse_debug_polygon<'s, P: ParsablePoint>(input: &mut &'s str) -> PResult<Polygon<P>> {
+fn parse_debug_polygon<'s, P: ParsablePoint>(input: &mut &'s str) -> ModalResult<Polygon<P>> {
     delimited(
         ("Polygon(", multispace0),
         cut_err(seq!(
@@ -113,7 +115,7 @@ fn parse_debug_polygon<'s, P: ParsablePoint>(input: &mut &'s str) -> PResult<Pol
     .parse_next(input)
 }
 
-fn parse_debug_multiring<'s, P: ParsablePoint>(input: &mut &'s str) -> PResult<MultiRing<P>> {
+fn parse_debug_multiring<'s, P: ParsablePoint>(input: &mut &'s str) -> ModalResult<MultiRing<P>> {
     delimited(
         ("MultiRing(", multispace0),
         debug_array(0.., parse_debug_ring),
@@ -123,7 +125,7 @@ fn parse_debug_multiring<'s, P: ParsablePoint>(input: &mut &'s str) -> PResult<M
     .parse_next(input)
 }
 
-fn parse_debug_ring<'s, P: ParsablePoint>(input: &mut &'s str) -> PResult<Ring<P>> {
+fn parse_debug_ring<'s, P: ParsablePoint>(input: &mut &'s str) -> ModalResult<Ring<P>> {
     delimited(
         ("Ring(", multispace0),
         debug_array(0.., P::parse),
@@ -135,7 +137,7 @@ fn parse_debug_ring<'s, P: ParsablePoint>(input: &mut &'s str) -> PResult<Ring<P
 
 fn parse_debug_multilinestring<'s, P: ParsablePoint>(
     input: &mut &'s str,
-) -> PResult<MultiLineString<P>> {
+) -> ModalResult<MultiLineString<P>> {
     delimited(
         ("MultiLineString(", multispace0),
         debug_array(0.., parse_debug_linestring),
@@ -145,7 +147,7 @@ fn parse_debug_multilinestring<'s, P: ParsablePoint>(
     .parse_next(input)
 }
 
-fn parse_debug_linestring<'s, P: ParsablePoint>(input: &mut &'s str) -> PResult<LineString<P>> {
+fn parse_debug_linestring<'s, P: ParsablePoint>(input: &mut &'s str) -> ModalResult<LineString<P>> {
     delimited(
         ("LineString(", multispace0),
         debug_array(0.., P::parse),
@@ -155,7 +157,7 @@ fn parse_debug_linestring<'s, P: ParsablePoint>(input: &mut &'s str) -> PResult<
     .parse_next(input)
 }
 
-fn parse_debug_triangle<'s, P: ParsablePoint>(input: &mut &'s str) -> PResult<Triangle<P>> {
+fn parse_debug_triangle<'s, P: ParsablePoint>(input: &mut &'s str) -> ModalResult<Triangle<P>> {
     delimited(
         ("Triangle(", multispace0),
         debug_array(3, P::parse),
@@ -165,7 +167,7 @@ fn parse_debug_triangle<'s, P: ParsablePoint>(input: &mut &'s str) -> PResult<Tr
     .parse_next(input)
 }
 
-fn parse_debug_line<'s, P: ParsablePoint>(input: &mut &'s str) -> PResult<Line<P>> {
+fn parse_debug_line<'s, P: ParsablePoint>(input: &mut &'s str) -> ModalResult<Line<P>> {
     delimited(
         ("Line(", multispace0),
         debug_array(2, P::parse),

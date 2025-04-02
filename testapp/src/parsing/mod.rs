@@ -4,6 +4,7 @@ use selo::prelude::*;
 use winnow::Parser;
 
 mod geo_debug;
+mod old_geo_debug;
 mod rust_debug;
 mod selo_debug;
 mod wkt;
@@ -58,8 +59,8 @@ pub fn parse(mut s: &str) -> Result<DynamicGeometries> {
             }
         }
         _ if (s.contains("Coord")) && !s.contains("new") => {
-            info!("detected geo debug");
-            geo_debug::parse
+            info!("detected old geo debug");
+            old_geo_debug::parse
                 .parse(&mut s)
                 .map(|g| DynamicGeometries::Dim2(g))
                 .map_err(|e| anyhow::format_err!("{e}"))?
@@ -68,6 +69,13 @@ pub fn parse(mut s: &str) -> Result<DynamicGeometries> {
             // 3d wkt
             info!("detected 3d wkt");
             DynamicGeometries::Dim3(wkt::parse_3d(s)?)
+        }
+        _ if s.contains("TRIANGLE") => {
+            info!("detected geo debug");
+            geo_debug::parse
+                .parse(&mut s)
+                .map(|g| DynamicGeometries::Dim2(g))
+                .map_err(|e| anyhow::format_err!("{e}"))?
         }
         _ => {
             // assume 2d wkt
