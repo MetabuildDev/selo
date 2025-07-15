@@ -110,13 +110,13 @@ fn remove_drag_observers(mut cmds: Commands, points: Query<Entity, With<DragPoin
 
 fn insert_pickability(mut cmds: Commands, points: Query<Entity, With<Point>>) {
     points.iter().for_each(|point| {
-        cmds.entity(point).insert(PickingBehavior::default());
+        cmds.entity(point).insert(Pickable::default());
     });
 }
 
 fn remove_pickability(mut cmds: Commands, points: Query<Entity, With<Point>>) {
     points.iter().for_each(|point| {
-        cmds.entity(point).insert(PickingBehavior::IGNORE);
+        cmds.entity(point).insert(Pickable::IGNORE);
     });
 }
 

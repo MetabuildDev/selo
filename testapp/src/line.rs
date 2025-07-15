@@ -109,7 +109,7 @@ fn line_end(
     mut cmds: Commands,
     unfinished: Query<Entity, With<UnfinishedLine>>,
 ) -> [(Entity, Entity); 1] {
-    let start = unfinished.single();
+    let start = unfinished.single().unwrap();
     let end = entity;
     cmds.entity(start).remove::<UnfinishedLine>();
     [(start, end)]
@@ -207,6 +207,6 @@ fn render_lines(mut gizmos: Gizmos, lines: LineParams<With<JustLine>>) {
 
 fn cleanup_unfinished(mut cmds: Commands, unfinished: Query<Entity, With<UnfinishedLine>>) {
     unfinished.iter().for_each(|entity| {
-        cmds.entity(entity).despawn_recursive();
+        cmds.entity(entity).despawn();
     });
 }

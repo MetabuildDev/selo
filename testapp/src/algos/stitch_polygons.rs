@@ -52,7 +52,7 @@ fn do_stitching(
     triangles: TriangleParams,
     entities: Query<Entity, Or<(With<Triangle>, With<TriangleLine>, With<TrianglePoint>)>>,
 ) {
-    spawn_rings.send_batch(
+    spawn_rings.write_batch(
         triangles
             .iter_triangles()
             .chunk_by(|(_, wp)| *wp)
@@ -71,6 +71,6 @@ fn do_stitching(
     );
 
     entities.iter().for_each(|entity| {
-        cmds.entity(entity).despawn_recursive();
+        cmds.entity(entity).despawn();
     });
 }

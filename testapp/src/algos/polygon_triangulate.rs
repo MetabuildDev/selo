@@ -49,7 +49,7 @@ fn do_triangulation(
     rings: RingParams,
     entities: Query<Entity, Or<(With<Ring2D>, With<RingLine>, With<RingPoint>)>>,
 ) {
-    spawn_triangles.send_batch(
+    spawn_triangles.write_batch(
         rings
             .iter_rings()
             .chunk_by(|(_, wp)| *wp)
@@ -65,6 +65,6 @@ fn do_triangulation(
     );
 
     entities.iter().for_each(|entity| {
-        cmds.entity(entity).despawn_recursive();
+        cmds.entity(entity).despawn();
     });
 }

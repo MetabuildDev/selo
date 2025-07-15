@@ -158,7 +158,7 @@ fn ring_continue(
     last_point: Query<Entity, With<LastRingPoint>>,
 ) -> [(Entity, Entity); 1] {
     let start = cmds
-        .entity(last_point.single())
+        .entity(last_point.single().unwrap())
         .remove::<LastRingPoint>()
         .id();
     let end = cmds
@@ -253,6 +253,20 @@ fn render_rings(mut gizmos: Gizmos, ring: RingParams) {
                     color,
                 );
             });
+
+            for (i, point) in ring.points_open().iter().enumerate() {
+                let p = |mut t: f32| {
+                    t *= std::f32::consts::TAU;
+                    Vec2::new(t.cos(), (t * (i + 1) as f32).sin())
+                };
+                for j in 0..32 {
+                    gizmos.line(
+                        p(j as f32 / 32.0).extend(0.0) + point,
+                        p((j + 1) as f32 / 32.0).extend(0.0) + point,
+                        Color::hsl(i as f32 / ring.points_open().len() as f32 * 360.0, 1.0, 0.5),
+                    );
+                }
+            }
         });
 }
 
@@ -291,6 +305,6 @@ fn cleanup_unfinished(
     unfinished: Query<Entity, Or<(With<UnfinishedRingLine>, With<UnfinishedRingPoint>)>>,
 ) {
     unfinished.iter().for_each(|entity| {
-        cmds.entity(entity).despawn_recursive();
+        cmds.entity(entity).despawn();
     });
 }

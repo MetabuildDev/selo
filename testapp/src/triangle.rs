@@ -129,8 +129,8 @@ fn triangle_end(
     start: Query<Entity, With<TriangleStart>>,
     mid: Query<Entity, With<TriangleMid>>,
 ) -> [(Entity, Entity); 3] {
-    let start = start.single();
-    let mid = mid.single();
+    let start = start.single().unwrap();
+    let mid = mid.single().unwrap();
     cmds.entity(start).remove::<TriangleStart>();
     cmds.entity(mid).remove::<TriangleMid>();
     let end = entity;
@@ -164,8 +164,8 @@ fn render_triangle_construction(
     let pointer_pos = pointer
         .world_position_3d(workplane.current())
         .unwrap_or_default();
-    let start = start.single().translation();
-    let mid = mid.get_single().map(|p| p.translation());
+    let start = start.single().unwrap().translation();
+    let mid = mid.single().map(|p| p.translation());
 
     [(start, pointer_pos)]
         .into_iter()
@@ -196,6 +196,6 @@ fn cleanup_unfinished(
     unfinished: Query<Entity, Or<(With<TriangleStart>, With<TriangleMid>)>>,
 ) {
     unfinished.iter().for_each(|entity| {
-        cmds.entity(entity).despawn_recursive();
+        cmds.entity(entity).despawn();
     });
 }

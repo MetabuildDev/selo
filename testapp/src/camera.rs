@@ -47,7 +47,7 @@ impl CameraParams<'_, '_> {
         &self,
         screen_pos: Vec2,
     ) -> Result<Ray3d, ViewportConversionError> {
-        let (camera, global) = self.camera.single();
+        let (camera, global) = self.camera.single().unwrap();
         camera.viewport_to_world(global, screen_pos)
     }
 
@@ -93,7 +93,7 @@ fn align_camera_with_active_workplane(
     >,
     mut cam: Query<&mut Transform, With<MainCamera>>,
 ) {
-    if let Ok(workplane) = workplane.get_single() {
+    if let Ok(workplane) = workplane.single() {
         cam.iter_mut().for_each(|mut transform| {
             let up = transform.up();
             let normal = workplane.normal();
@@ -129,7 +129,7 @@ fn move_camera(
         else {
             return;
         };
-        let mut camera_tr = cam.single_mut();
+        let mut camera_tr = cam.single_mut().unwrap();
         let to_camera = camera_tr.translation - current_target;
         camera_tr.translation = anchor + to_camera;
     }

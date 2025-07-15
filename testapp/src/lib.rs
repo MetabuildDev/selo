@@ -12,6 +12,7 @@ mod triangle;
 mod workplane;
 
 use bevy::prelude::*;
+use bevy_egui::EguiPlugin;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 pub fn run() {
@@ -19,7 +20,12 @@ pub fn run() {
 
     // plugins
     app.add_plugins(DefaultPlugins)
-        .add_plugins(WorldInspectorPlugin::default())
+        .add_plugins((
+            EguiPlugin {
+                enable_multipass_for_primary_context: false,
+            },
+            WorldInspectorPlugin::default(),
+        ))
         .add_plugins(MeshPickingPlugin);
 
     app.add_plugins((

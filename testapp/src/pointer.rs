@@ -11,7 +11,7 @@ pub struct PointerParams<'w, 's> {
 
 impl PointerParams<'_, '_> {
     pub fn screen_position(&self) -> Option<Vec2> {
-        self.window.single().cursor_position()
+        self.window.single().unwrap().cursor_position()
     }
 
     pub fn world_position_3d(&self, workplane: Workplane) -> Option<Vec3> {

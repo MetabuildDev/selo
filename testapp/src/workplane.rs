@@ -49,7 +49,7 @@ pub struct WorkplaneParams<'w, 's> {
 
 impl WorkplaneParams<'_, '_> {
     pub fn current(&self) -> Workplane {
-        **self.active.single()
+        **self.active.single().unwrap()
     }
 }
 
@@ -58,7 +58,7 @@ fn add_workplane<C: Component>(
     mut cmds: Commands,
     workplane: WorkplaneParams,
 ) {
-    cmds.entity(trigger.entity())
+    cmds.entity(trigger.target())
         .insert(AttachedWorkplane(workplane.current()));
 }
 
@@ -69,7 +69,7 @@ fn keep_active_workplane_unique(
 ) {
     other
         .iter()
-        .filter(|&e| e != trigger.entity())
+        .filter(|&e| e != trigger.target())
         .for_each(|entity| {
             cmds.entity(entity).remove::<ActiveWorkplane>();
         });
@@ -95,19 +95,20 @@ fn render_workplane(mut gizmos: Gizmos, workplane: WorkplaneParams) {
     gizmos.plane_3d(Vec3::ZERO, Dir3::Z, palettes::basic::GREEN);
 }
 
-fn ui_active(world: &mut World) {
+fn ui_active(world: &mut World) -> Result {
     let mut q = world.query::<&mut EguiContext>();
-    let ctx = q.single_mut(world).get_mut().clone();
+    let ctx = q.single_mut(world)?.get_mut().clone();
     let mut q = world.query_filtered::<&StoredWorkplane, With<ActiveWorkplane>>();
-    let mut wp = q.single(world).clone();
+    let mut wp = q.single(world)?.clone();
     let resp =
         egui::Window::new("Workplane Points").show(&ctx, |ui| ui_for_value(&mut wp, ui, world));
     if resp.is_some_and(|inner| inner.inner.is_some_and(|changed| changed)) {
         let mut q = world.query_filtered::<&mut StoredWorkplane, With<ActiveWorkplane>>();
-        let mut current = q.single_mut(world);
+        let mut current = q.single_mut(world)?;
         current.origin = wp.origin;
         current.plane.normal = Dir3::new_unchecked(wp.plane.normal.normalize());
     }
+    Ok(())
 }
 
 fn ui_inactive(world: &mut World) {
@@ -116,7 +117,7 @@ fn ui_inactive(world: &mut World) {
         NewActive(Entity),
     }
     let mut q = world.query::<&mut EguiContext>();
-    let ctx = q.single_mut(world).get_mut().clone();
+    let ctx = q.single_mut(world).unwrap().get_mut().clone();
     let mut q = world
         .query_filtered::<(Entity, &Name), (With<StoredWorkplane>, Without<ActiveWorkplane>)>();
     let wp = q

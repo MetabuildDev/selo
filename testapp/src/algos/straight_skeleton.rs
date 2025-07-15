@@ -62,7 +62,7 @@ fn render_straight_skeleton(
 
 fn ui(mut contexts: Query<&mut EguiContext>, mut val: ResMut<SkeletonOrientation>) {
     egui::Window::new("Straight Skeleton Orientation").show(
-        contexts.single_mut().get_mut(),
+        contexts.single_mut().unwrap().get_mut(),
         |ui| {
             ui.add(egui::Checkbox::new(&mut **val, "Orientation"));
         },

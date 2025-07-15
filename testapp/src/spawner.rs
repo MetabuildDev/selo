@@ -53,34 +53,34 @@ fn spawn_ui(
 
         ui.horizontal(|ui| {
             if ui.button("Submit").clicked() {
-                let workplane = workplane.single().0;
+                let workplane = workplane.single().unwrap().0;
 
                 let mut spawn_geometry = |geometry: Geometry<Vec3>| {
                     match geometry {
                         Geometry::Line(line) => {
-                            ev_spawn_line.send(SpawnLine(line));
+                            ev_spawn_line.write(SpawnLine(line));
                         }
                         Geometry::Triangle(triangle) => {
-                            ev_spawn_triangle.send(SpawnTriangle(triangle));
+                            ev_spawn_triangle.write(SpawnTriangle(triangle));
                         }
                         Geometry::Ring(ring) => {
-                            ev_spawn_ring.send(SpawnRing(ring));
+                            ev_spawn_ring.write(SpawnRing(ring));
                         }
                         Geometry::MultiRing(multi_ring) => {
                             for ring in multi_ring.0 {
-                                ev_spawn_ring.send(SpawnRing(ring));
+                                ev_spawn_ring.write(SpawnRing(ring));
                             }
                         }
                         // TODO: Actual polygons
                         Geometry::Polygon(polygon) => {
                             for ring in polygon.iter_rings() {
-                                ev_spawn_ring.send(SpawnRing(ring.clone()));
+                                ev_spawn_ring.write(SpawnRing(ring.clone()));
                             }
                         }
                         Geometry::MultiPolygon(multi_polygon) => {
                             for polygon in multi_polygon.0 {
                                 for ring in polygon.iter_rings() {
-                                    ev_spawn_ring.send(SpawnRing(ring.clone()));
+                                    ev_spawn_ring.write(SpawnRing(ring.clone()));
                                 }
                             }
                         }
@@ -135,7 +135,7 @@ fn spawn_ui(
 
             if ui.button("Despawn all").clicked() {
                 for e in &q_geometry {
-                    cmds.entity(e).despawn_recursive();
+                    cmds.entity(e).despawn();
                 }
             }
         })

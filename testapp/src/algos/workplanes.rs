@@ -154,7 +154,7 @@ fn render_workplane_transform(mut gizmos: AnimatedGizmos, points: Res<WorkplaneP
 
 fn ui(world: &mut World) {
     let mut q = world.query::<&mut EguiContext>();
-    let ctx = q.single_mut(world).get_mut().clone();
+    let ctx = q.single_mut(world).unwrap().get_mut().clone();
     egui::Window::new("Workplane Points").show(&ctx, |ui| {
         ui_for_resource::<WorkplanePoints>(world, ui);
     });

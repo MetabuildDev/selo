@@ -45,7 +45,7 @@ pub fn state_ui<S: bevy::state::state::FreelyMutableState + bevy::prelude::Refle
     world: &mut World,
 ) {
     let mut q = world.query::<&mut EguiContext>();
-    let ctx = q.single_mut(world).get_mut().clone();
+    let ctx = q.single_mut(world).unwrap().get_mut().clone();
     egui::Window::new(
         std::any::type_name::<S>()
             .split("::")

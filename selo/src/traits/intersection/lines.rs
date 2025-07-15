@@ -26,8 +26,7 @@ use crate::{prelude::Line2DIntersection, LinesIter, Point2};
 /// assert!(intersection_points.contains(&Vec2::new(1.0, 0.0)));
 /// assert!(intersection_points.contains(&Vec2::new(0.0, 1.0)));
 /// ```
-pub trait LineIntersectable<P: Point2, Other>: LinesIter {
-    type Rhs;
+pub trait LineIntersectable<P: Point2, Other: LinesIter<P = P>>: LinesIter<P = P> {
     fn line_intersections(
         &self,
         other: &Other,
@@ -58,7 +57,6 @@ where
     SelfT: LinesIter<P = P>,
     OtherT: LinesIter<P = P>,
 {
-    type Rhs = OtherT;
     fn line_intersections(
         &self,
         other: &OtherT,

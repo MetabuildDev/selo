@@ -61,7 +61,10 @@ fn render_polygon_expansion(
 }
 
 fn ui(mut contexts: Query<&mut EguiContext>, mut val: ResMut<PolygonExpansion>) {
-    egui::Window::new("Polygon Expansion Factor").show(contexts.single_mut().get_mut(), |ui| {
-        ui.add(egui::DragValue::new(&mut **val).speed(0.005));
-    });
+    egui::Window::new("Polygon Expansion Factor").show(
+        contexts.single_mut().unwrap().get_mut(),
+        |ui| {
+            ui.add(egui::DragValue::new(&mut **val).speed(0.005));
+        },
+    );
 }
