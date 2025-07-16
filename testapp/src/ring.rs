@@ -223,7 +223,7 @@ fn cleanup_construction_components(
     });
 }
 
-fn render_rings(mut gizmos: Gizmos, ring: RingParams) {
+fn render_rings(mut gizmos: Gizmos, ring: RingParams, cam: Single<&Transform, With<Camera>>) {
     let colors = {
         use palettes::basic::*;
         [
@@ -255,9 +255,10 @@ fn render_rings(mut gizmos: Gizmos, ring: RingParams) {
             });
 
             for (i, point) in ring.points_open().iter().enumerate() {
+                let dist = cam.translation.distance(*point);
                 let p = |mut t: f32| {
                     t *= std::f32::consts::TAU;
-                    Vec2::new(t.cos(), (t * (i + 1) as f32).sin())
+                    Vec2::new(t.cos(), (t * (i + 1) as f32).sin()) * dist * 0.01
                 };
                 for j in 0..32 {
                     gizmos.line(

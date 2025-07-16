@@ -14,10 +14,12 @@ impl Plugin for PointPlugin {
             .register_type::<DraggedPosition>()
             .add_systems(
                 Update,
-                spawn_point
-                    .pipe(just_point)
-                    .pipe(drop_system)
-                    .run_if(in_state(AppState::Point).and(input_just_pressed(MouseButton::Left))),
+                (
+                    spawn_point.pipe(just_point).pipe(drop_system).run_if(
+                        in_state(AppState::Point).and(input_just_pressed(MouseButton::Left)),
+                    ),
+                    render_point,
+                ),
             )
             .add_systems(
                 OnEnter(AppState::Algorithms),
@@ -97,6 +99,16 @@ fn insert_drag_observers(mut cmds: Commands, points: Query<Entity, With<Point>>)
             DragPointObserver,
         ));
     });
+}
+
+fn render_point(
+    mut q_points: Query<&mut Transform, With<Point>>,
+    cam: Single<&Transform, (With<Camera>, Without<Point>)>,
+) {
+    for mut tr in &mut q_points {
+        let dist = tr.translation.distance(cam.translation);
+        tr.scale = Vec3::splat(dist / 10.0);
+    }
 }
 
 #[derive(Component)]
