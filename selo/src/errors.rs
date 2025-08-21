@@ -1,5 +1,5 @@
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, derive_more::Display, derive_more::Error)]
 pub enum GeometryError {
-    #[error("invalid geometry")]
+    #[display("invalid geometry")]
     InvalidGeometry,
 }
